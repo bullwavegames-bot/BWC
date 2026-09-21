@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
-import { accountLinks, faqs, games, languages, leagues, matchMarkets, matches, promotions, shortcuts, sports } from './data.js'
+import { sendOtp, verifyOtp } from './api.js'
+import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
 
 function Icon({ name, size = 18 }) {
   const s = { width: size, height: size, fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -73,7 +74,7 @@ function LanguagePicker({ embedded = false }) {
 }
 
 function Header() {
-  const { setMenuOpen, setSearchOpen, setAuthMode } = useApp()
+  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user } = useApp()
   return (
     <header className="header">
       <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
@@ -91,8 +92,12 @@ function Header() {
       <div className="header-right">
         <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Icon name="search" /></button>
         <LanguagePicker />
-        <button className="btn btn-ghost" onClick={() => setAuthMode('login')}>Log in</button>
-        <button className="btn btn-yellow" onClick={() => setAuthMode('signup')}>Sign up</button>
+        {loggedIn ? (
+          <NavLink to="/account" className="btn btn-ghost">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
+        ) : (
+          <button className="btn btn-ghost" onClick={() => setAuthMode('login')}>Log in</button>
+        )}
+        {loggedIn ? null : <button className="btn btn-yellow" onClick={() => setAuthMode('signup')}>Sign up</button>}
       </div>
     </header>
   )
@@ -128,7 +133,9 @@ function Sidebar() {
 }
 
 function Betslip() {
-  const { betslip, removeBet, clearSlip } = useApp()
+  const { betslip, removeBet, placeBets, loggedIn, setAuthMode } = useApp()
+  const [stake, setStake] = useState('100')
+  const [slipError, setSlipError] = useState('')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
     <aside className="betslip">
@@ -150,12 +157,29 @@ function Betslip() {
             </div>
           ))}
           <div className="stake">
-            <input placeholder="Stake, ₹" defaultValue="100" />
+            <input placeholder="Stake, ₹" value={stake} onChange={(e) => setStake(e.target.value)} />
           </div>
           <div className="slip-foot">
             <div className="row-between"><span>Total odds</span><b>{total.toFixed(2)}</b></div>
-            <div className="row-between"><span>Possible win</span><b>₹{(total * 100).toFixed(2)}</b></div>
-            <button className="btn btn-yellow btn-block" onClick={clearSlip}>Place bet</button>
+            <div className="row-between"><span>Possible win</span><b>₹{(total * Number(stake || 0)).toFixed(2)}</b></div>
+            {slipError && <p className="hint" style={{ color: 'var(--coral)' }}>{slipError}</p>}
+            <button
+              className="btn btn-yellow btn-block"
+              onClick={async () => {
+                setSlipError('')
+                if (!loggedIn) {
+                  setAuthMode('login')
+                  return
+                }
+                try {
+                  await placeBets(Number(stake))
+                } catch (err) {
+                  setSlipError(err.message)
+                }
+              }}
+            >
+              Place bet
+            </button>
           </div>
         </>
       )}
@@ -164,16 +188,83 @@ function Betslip() {
 }
 
 function AuthModal() {
-  const { authMode, setAuthMode, setLoggedIn } = useApp()
-  const [loginTab, setLoginTab] = useState('Phone number')
+  const { authMode, setAuthMode, login, register, loginWithGoogle, authError, setAuthError } = useApp()
+  const [loginTab, setLoginTab] = useState('E-mail')
   const [signupTab, setSignupTab] = useState('Phone')
   const [showPass, setShowPass] = useState(false)
   const [promoOpen, setPromoOpen] = useState(false)
   const [bonusOpen, setBonusOpen] = useState(false)
   const [accepted, setAccepted] = useState(true)
+  const [bonus, setBonus] = useState('Welcome Casino 100%')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [accountNumber, setAccountNumber] = useState('')
+  const [password, setPassword] = useState('')
+  const [promoCode, setPromoCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [otpHint, setOtpHint] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [phoneVerified, setPhoneVerified] = useState(false)
   if (!authMode) return null
   const isLogin = authMode === 'login'
-  const loginPlaceholder = loginTab === 'E-mail' ? 'E-mail' : loginTab === 'Account number' ? 'Account number' : 'Phone number'
+
+  const requestOtp = async () => {
+    setBusy(true)
+    setAuthError('')
+    setOtpHint('')
+    try {
+      const data = await sendOtp(phone)
+      setOtpSent(true)
+      setPhoneVerified(false)
+      setOtp('')
+      setOtpHint(data.test && data.otp ? `Test OTP: ${data.otp}` : data.message || 'OTP sent.')
+    } catch (err) {
+      setAuthError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const confirmOtp = async () => {
+    setBusy(true)
+    setAuthError('')
+    try {
+      await verifyOtp(phone, otp)
+      setPhoneVerified(true)
+      setOtpHint('Phone verified.')
+    } catch (err) {
+      setPhoneVerified(false)
+      setAuthError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submit = async () => {
+    setBusy(true)
+    setAuthError('')
+    try {
+      if (isLogin) {
+        const method = loginTab === 'E-mail' ? 'email' : loginTab === 'Account number' ? 'account' : 'phone'
+        await login({ method, phone, email, accountNumber, password })
+      } else {
+        await register({
+          method: signupTab === 'E-mail' ? 'email' : 'phone',
+          phone,
+          email,
+          password,
+          promoCode,
+          bonus,
+          phoneVerified: signupTab !== 'Phone' || phoneVerified,
+        })
+      }
+    } catch (err) {
+      setAuthError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="overlay" onClick={() => setAuthMode(null)}>
@@ -183,10 +274,11 @@ function AuthModal() {
           <h1>{isLogin ? 'Log in' : 'Sign up'}</h1>
           <button className="icon-btn" type="button" aria-label="Support">🎧</button>
         </div>
-        <button className="btn-dark" type="button">
+        <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
           <span className="g-mark">G</span> Continue with Google
         </button>
         <div className="or">or</div>
+        {authError && <p className="hint" style={{ color: 'var(--coral)' }}>{authError}</p>}
 
         {isLogin ? (
           <>
@@ -197,18 +289,20 @@ function AuthModal() {
             </div>
             <div className="field">
               <div className="field-row">
-                {loginTab === 'Phone number' && <input className="input" defaultValue="+91" style={{ maxWidth: 88 }} />}
-                <input className="input" placeholder={loginPlaceholder} />
+                {loginTab === 'Phone number' && <input className="input" defaultValue="+91" style={{ maxWidth: 88 }} readOnly />}
+                {loginTab === 'Phone number' && <input className="input" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />}
+                {loginTab === 'Account number' && <input className="input" placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />}
+                {loginTab === 'E-mail' && <input className="input" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />}
               </div>
             </div>
             <div className="field pass-wrap">
-              <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" />
+              <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label="Show password">👁</button>
             </div>
             <button className="forgot" type="button">Forgot your password?</button>
-            <button className="btn btn-yellow btn-block" onClick={() => { setLoggedIn(true); setAuthMode(null) }}>Log in</button>
+            <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>{busy ? 'Please wait…' : 'Log in'}</button>
             <div className="switch-auth">
-              Don't have an account? <button type="button" onClick={() => setAuthMode('signup')}>Sign up</button>
+              Don't have an account? <button type="button" onClick={() => { setAuthError(''); setAuthMode('signup') }}>Sign up</button>
             </div>
           </>
         ) : (
@@ -223,43 +317,65 @@ function AuthModal() {
               <span className="gift">🎁</span>
               <span>
                 <small>Have you not chosen it yet?</small>
-                <strong>Tap here to choose your bonus</strong>
+                <strong>{bonus}</strong>
               </span>
               <span className="chev">{bonusOpen ? '▴' : '▾'}</span>
             </button>
             {bonusOpen && (
               <div className="bonus-list">
                 {['Welcome Casino 100%', 'Sports First Bet', 'No bonus'].map((b) => (
-                  <button key={b} type="button" onClick={() => setBonusOpen(false)}>{b}</button>
+                  <button key={b} type="button" onClick={() => { setBonus(b); setBonusOpen(false) }}>{b}</button>
                 ))}
               </div>
             )}
 
             {signupTab === 'Phone' ? (
-              <div className="field field-row">
-                <div className="flag-box" title="India">🇮🇳</div>
-                <label className="float-field">
-                  <span>Phone number</span>
-                  <input className="input" placeholder="+91(XXXX) XXX - XXX" />
-                </label>
-              </div>
+              <>
+                <div className="field field-row">
+                  <div className="flag-box" title="India">🇮🇳</div>
+                  <label className="float-field">
+                    <span>Phone number</span>
+                    <input className="input" placeholder="+91(XXXX) XXX - XXX" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneVerified(false); setOtpSent(false) }} />
+                  </label>
+                </div>
+                <div className="field">
+                  <input className="input" type="email" placeholder="E-mail (required)" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="otp-row">
+                  <input
+                    className="input"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="4-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    disabled={!otpSent || phoneVerified}
+                  />
+                  {otpSent && !phoneVerified ? (
+                    <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== 4} onClick={confirmOtp}>Verify</button>
+                  ) : (
+                    <button className="btn btn-yellow" type="button" disabled={busy || !phone} onClick={requestOtp}>{otpSent ? 'Resend' : 'Send OTP'}</button>
+                  )}
+                </div>
+                {otpHint && <p className="hint" style={{ color: phoneVerified ? 'var(--mint)' : undefined }}>{otpHint}</p>}
+              </>
             ) : (
               <div className="field">
-                <input className="input" type="email" placeholder="E-mail" />
+                <input className="input" type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             )}
 
             <div className="field pass-wrap">
-              <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" />
+              <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label="Show password">👁</button>
             </div>
-            <p className="hint">• at least 4 characters</p>
+            <p className="hint">• at least 10 characters</p>
 
             <button className="promo-toggle" type="button" onClick={() => setPromoOpen((v) => !v)}>
               <span>▣ I Have a Promo Code</span>
               <span>{promoOpen ? '−' : '+'}</span>
             </button>
-            {promoOpen && <div className="field"><input className="input" placeholder="Promo code" /></div>}
+            {promoOpen && <div className="field"><input className="input" placeholder="Promo code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></div>}
 
             <label className="terms-box">
               <span>
@@ -268,11 +384,11 @@ function AuthModal() {
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
             </label>
 
-            <button className="btn btn-yellow btn-block" disabled={!accepted} onClick={() => { setLoggedIn(true); setAuthMode(null) }}>
-              Create account
+            <button className="btn btn-yellow btn-block" disabled={!accepted || busy || (signupTab === 'Phone' && !phoneVerified)} onClick={submit}>
+              {busy ? 'Please wait…' : signupTab === 'Phone' && !phoneVerified ? 'Verify phone to continue' : 'Create account'}
             </button>
             <div className="switch-auth">
-              Already have an account? <button type="button" onClick={() => setAuthMode('login')}>Log in</button>
+              Already have an account? <button type="button" onClick={() => { setAuthError(''); setAuthMode('login') }}>Log in</button>
             </div>
           </>
         )}
@@ -334,7 +450,9 @@ function Footer() {
 }
 
 function Home() {
-  const liveCasino = games.filter((g) => g.cat === 'live').slice(0, 6)
+  const { catalogMatches: matches, clubGames } = useApp()
+  const catalog = clubGames.length ? clubGames : games
+  const liveCasino = catalog.filter((g) => g.cat === 'live').slice(0, 6)
   return (
     <div>
       <section className="banner">
@@ -360,20 +478,20 @@ function Home() {
         {matches.slice(0, 4).map((m) => <MatchCard key={m.id} m={m} />)}
       </div>
       <div className="game-row">
-        {games.slice(0, 14).map((g) => (
+        {catalog.slice(0, 14).map((g) => (
           <NavLink key={g.id} to={`/casino/${g.cat === 'live' ? 'live-casino' : g.cat === 'slots' ? 'slots' : 'instant-games'}`} className="game-circle">
-            <div className="thumb" style={{ background: `hsl(${g.hue} 70% 40%)` }}>🎰</div>
+            <div className="thumb" style={{ background: g.cover ? `center/cover url(${g.cover})` : `hsl(${g.hue} 70% 40%)` }}>{g.cover ? '' : '🎮'}</div>
             {g.name}
           </NavLink>
         ))}
       </div>
       <div className="section-head">
-        <h2>Popular Live Casino</h2>
+        <h2>Club games</h2>
         <NavLink to="/casino/live-casino">All ›</NavLink>
       </div>
       <div className="casino-row">
         {liveCasino.map((g) => (
-          <NavLink key={g.id} to="/casino/live-casino" className="game-tile" style={{ background: `linear-gradient(160deg, hsl(${g.hue} 55% 38%), #0B121C)` }}>
+          <NavLink key={g.id} to="/casino/live-casino" className="game-tile" style={{ background: g.cover ? `linear-gradient(180deg, transparent, #0B121C), center/cover url(${g.cover})` : `linear-gradient(160deg, hsl(${g.hue} 55% 38%), #0B121C)` }}>
             <span>{g.name}</span>
           </NavLink>
         ))}
@@ -384,6 +502,7 @@ function Home() {
 }
 
 function Live() {
+  const { catalogMatches: matches } = useApp()
   const live = matches.filter((m) => m.live)
   return (
     <div>
@@ -401,6 +520,7 @@ function Live() {
 }
 
 function Upcoming() {
+  const { catalogMatches: matches } = useApp()
   const upcoming = matches.filter((m) => !m.live)
   return (
     <div>
@@ -433,8 +553,10 @@ function Promotions() {
 }
 
 function Casino({ title, cat }) {
-  const items = games.filter((g) => g.cat === cat)
-  const shown = items.length ? items : games
+  const { clubGames } = useApp()
+  const catalog = clubGames.length ? clubGames : games
+  const items = catalog.filter((g) => g.cat === cat)
+  const shown = items.length ? items : catalog
   return (
     <div>
       <h1 className="page-title">{title}</h1>
@@ -445,7 +567,7 @@ function Casino({ title, cat }) {
       </div>
       <div className="casino-row">
         {shown.map((g) => (
-          <div key={g.id} className="game-tile" style={{ background: `linear-gradient(160deg, hsl(${g.hue} 55% 36%), #0B121C)` }}>
+          <div key={g.id} className="game-tile" style={{ background: g.cover ? `linear-gradient(180deg, transparent, #0B121C), center/cover url(${g.cover})` : `linear-gradient(160deg, hsl(${g.hue} 55% 36%), #0B121C)` }}>
             <span>{g.name}</span>
           </div>
         ))}
@@ -456,6 +578,7 @@ function Casino({ title, cat }) {
 
 function Sport() {
   const { name } = useParams()
+  const { catalogMatches: matches } = useApp()
   const key = (name || 'football').replace('-racing', '')
   const list = matches.filter((m) => m.sport === key || m.sport === name)
   const shown = list.length ? list : matches
@@ -474,7 +597,7 @@ function Sport() {
 
 function MatchPage() {
   const { id } = useParams()
-  const { addBet, betslip } = useApp()
+  const { addBet, betslip, catalogMatches: matches } = useApp()
   const m = matches.find((x) => x.id === id) || matches[4]
   return (
     <div>
@@ -506,12 +629,16 @@ function MatchPage() {
 }
 
 function Account() {
+  const { user, loggedIn, setAuthMode, logout } = useApp()
   return (
     <div>
       <h1 className="page-title">My Account</h1>
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ color: '#888' }}>Balance</div>
-        <div style={{ fontSize: 28, fontWeight: 800 }}>₹ 0.00</div>
+        <div style={{ color: '#888' }}>{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Guest'}</div>
+        <div style={{ fontSize: 28, fontWeight: 800 }}>₹ {Number(user?.balance || 0).toFixed(2)}</div>
+        {loggedIn
+          ? <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={logout}>Log out</button>
+          : <button className="btn btn-yellow" style={{ marginTop: 8 }} onClick={() => setAuthMode('login')}>Log in</button>}
       </div>
       <div className="account-grid">
         {accountLinks.map((l) => (
@@ -526,6 +653,9 @@ function Account() {
 }
 
 function Deposit({ type }) {
+  const { moveMoney, setAuthMode, loggedIn } = useApp()
+  const [amount, setAmount] = useState('500')
+  const [message, setMessage] = useState('')
   return (
     <div>
       <h1 className="page-title">{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</h1>
@@ -536,14 +666,33 @@ function Deposit({ type }) {
       </div>
       <div className="field" style={{ marginTop: 16 }}>
         <label>Amount, ₹</label>
-        <input className="input" placeholder="500" />
+        <input className="input" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} />
       </div>
-      <button className="btn btn-yellow btn-block">{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</button>
+      {message && <p className="hint">{message}</p>}
+      <button
+        className="btn btn-yellow btn-block"
+        onClick={async () => {
+          setMessage('')
+          if (!loggedIn) {
+            setAuthMode('login')
+            return
+          }
+          try {
+            await moveMoney(type === 'withdraw' ? 'withdraw' : 'deposit', Number(amount))
+            setMessage(type === 'withdraw' ? 'Withdrawal requested' : 'Deposit added')
+          } catch (err) {
+            setMessage(err.message)
+          }
+        }}
+      >
+        {type === 'withdraw' ? 'Withdraw' : 'Deposit'}
+      </button>
     </div>
   )
 }
 
 function Bets() {
+  const { myBets } = useApp()
   return (
     <div>
       <h1 className="page-title">My bets</h1>
@@ -552,7 +701,15 @@ function Bets() {
           <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
         ))}
       </div>
-      <div className="card">No bets yet. Add odds to the betslip to place your first bet.</div>
+      {myBets.length === 0 ? (
+        <div className="card">No bets yet. Add odds to the betslip to place your first bet.</div>
+      ) : myBets.map((b) => (
+        <div key={b.id} className="card" style={{ marginBottom: 8 }}>
+          <div className="event-meta">{b.status} · {new Date(b.createdAt).toLocaleString()}</div>
+          {b.selections.map((s) => <div key={s.id}>{s.event} · {s.pick} @ {s.odd}</div>)}
+          <div className="row-between" style={{ marginTop: 8 }}><span>Stake ₹{b.stake}</span><b>To win ₹{b.possibleWin}</b></div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -594,7 +751,7 @@ function Faq() {
 }
 
 function Favorites() {
-  const { favorites } = useApp()
+  const { favorites, catalogMatches: matches } = useApp()
   const list = matches.filter((m) => favorites.includes(m.id))
   return (
     <div>
@@ -607,8 +764,8 @@ function Favorites() {
 }
 
 function Parlays() {
-  const { addBet } = useApp()
-  const combo = useMemo(() => matches.slice(1, 4), [])
+  const { addBet, catalogMatches: matches } = useApp()
+  const combo = useMemo(() => matches.slice(1, 4), [matches])
   const total = combo.reduce((a, m) => a * (m.markets[0]?.odd || 1), 1)
   return (
     <div>
@@ -657,7 +814,7 @@ function About() {
 }
 
 function SearchOverlay() {
-  const { searchOpen, setSearchOpen } = useApp()
+  const { searchOpen, setSearchOpen, catalogMatches: matches } = useApp()
   const [q, setQ] = useState('')
   if (!searchOpen) return null
   const results = matches.filter((m) => `${m.home} ${m.away} ${m.league}`.toLowerCase().includes(q.toLowerCase()))
