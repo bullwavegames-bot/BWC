@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { api, clearSession, loadSession, loginWithPhoneOtp, mapAccount, mapClubGame, saveSession } from './api.js'
 import { matches as seedMatches } from './data.js'
 import { assertSupabase, supabase } from './supabase.js'
+import { isTenDigitPhone, passwordError } from './authRules.js'
 
 const AppContext = createContext(null)
 
@@ -125,7 +126,9 @@ export function AppProvider({ children }) {
 
   const updatePassword = async (password) => {
     const client = assertSupabase()
-    if (!password || password.length < 10) throw new Error('Password must be at least 10 characters.')
+    if (!password) throw new Error('Password is required')
+    const nextPasswordError = passwordError(password)
+    if (nextPasswordError) throw new Error(nextPasswordError)
     const { error } = await client.auth.updateUser({ password })
     if (error) throw new Error(error.message)
     setAuthMode(null)
@@ -135,12 +138,12 @@ export function AppProvider({ children }) {
     setAuthError('')
     const email = payload.email?.trim()
     if (!email) throw new Error('E-mail is required for Bullwave Club accounts.')
-    if ((payload.method || 'phone') !== 'email' && !payload.phoneVerified) {
-      throw new Error('Verify the OTP sent to your phone first.')
+    if ((payload.method || 'phone') !== 'email') {
+      if (!isTenDigitPhone(payload.phone)) throw new Error('Enter a 10-digit mobile number.')
+      if (!payload.phoneVerified) throw new Error('Verify the OTP sent to your phone first.')
     }
-    if (!payload.password || payload.password.length < 10) {
-      throw new Error('Password must be at least 10 characters.')
-    }
+    const nextPasswordError = passwordError(payload.password)
+    if (nextPasswordError) throw new Error(nextPasswordError)
     const data = await api('/api/auth/register', {
       method: 'POST',
       body: {
