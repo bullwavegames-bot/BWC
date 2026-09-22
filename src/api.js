@@ -25,6 +25,17 @@ export async function verifyOtp(phone, otp) {
   return data
 }
 
+export async function loginWithPhoneOtp(phone, otp) {
+  const res = await fetch(`${OTP_BASE}/api/auth/otp-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, otp }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || data.message || 'Could not log in with this OTP')
+  return data
+}
+
 export async function api(path, { method = 'GET', body, token } = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,

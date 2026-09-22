@@ -300,7 +300,8 @@ const dialingCountries = [
 ]
 
 function AuthModal() {
-  const { authMode, setAuthMode, login, register, loginWithGoogle, requestPasswordReset, updatePassword, authError, setAuthError } = useApp()
+  const { authMode, setAuthMode, login, loginWithPhone, register, loginWithGoogle, requestPasswordReset, updatePassword, authError, setAuthError } = useApp()
+  const [loginTab, setLoginTab] = useState('Phone')
   const [signupTab, setSignupTab] = useState('Phone')
   const [showPass, setShowPass] = useState(false)
   const [promoOpen, setPromoOpen] = useState(false)
@@ -317,11 +318,20 @@ function AuthModal() {
   const [promoCode, setPromoCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [otp, setOtp] = useState('')
+  const [otpLength, setOtpLength] = useState(4)
   const [otpHint, setOtpHint] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [phoneVerified, setPhoneVerified] = useState(false)
+  const [resendSeconds, setResendSeconds] = useState(0)
   const fullPhone = `${country.dial}${phone.replace(/\D/g, '')}`
   const filteredCountries = dialingCountries.filter((item) => `${item.name} ${item.iso} ${item.dial}`.toLowerCase().includes(countryQuery.trim().toLowerCase()))
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return undefined
+    const timer = window.setTimeout(() => setResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendSeconds])
+
   if (!authMode) return null
   const isLogin = authMode === 'login'
   const isRecover = authMode === 'recover'
@@ -335,6 +345,8 @@ function AuthModal() {
       if (!/^\d{10,15}$/.test(fullPhone.replace(/\D/g, ''))) throw new Error('Enter a valid mobile number for the selected country.')
       const data = await sendOtp(fullPhone)
       setOtpSent(true)
+      setOtpLength(Number(data.length) === 6 ? 6 : 4)
+      setResendSeconds(30)
       setPhoneVerified(false)
       setOtp('')
       setOtpHint(data.test && data.otp ? `Test OTP: ${data.otp}` : data.message || 'OTP sent.')
@@ -349,9 +361,13 @@ function AuthModal() {
     setBusy(true)
     setAuthError('')
     try {
-      await verifyOtp(fullPhone, otp)
-      setPhoneVerified(true)
-      setOtpHint('Phone verified.')
+      if (isLogin) {
+        await loginWithPhone({ phone: fullPhone, otp })
+      } else {
+        await verifyOtp(fullPhone, otp)
+        setPhoneVerified(true)
+        setOtpHint('Phone verified.')
+      }
     } catch (err) {
       setPhoneVerified(false)
       setAuthError(err.message)
@@ -365,6 +381,7 @@ function AuthModal() {
     setAuthError('')
     try {
       if (isLogin) {
+        if (loginTab === 'Phone') return await loginWithPhone({ phone: fullPhone, otp })
         await login({ method: 'email', email, password })
       } else {
         await register({
@@ -409,6 +426,31 @@ function AuthModal() {
     }
   }
 
+  const renderPhoneField = () => (
+    <div className="field field-row phone-field" onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setCountryOpen(false) }}>
+      <button className="flag-box country-trigger" type="button" aria-label={`Country code: ${country.name} ${country.dial}`} aria-expanded={countryOpen} onClick={() => setCountryOpen((open) => !open)}>
+        <CountryFlag code={country.iso} /><b>{country.dial}</b><small>▾</small>
+      </button>
+      <label className="float-field">
+        <span>Phone number</span>
+        <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="Mobile number" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 12)); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }} />
+      </label>
+      {countryOpen && (
+        <div className="country-menu">
+          <input className="country-search" type="search" autoFocus placeholder="Search country or code" aria-label="Search country or dial code" value={countryQuery} onChange={(e) => setCountryQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setCountryOpen(false) }} />
+          <div className="country-list" role="listbox" aria-label="Country calling codes">
+            {filteredCountries.map((item) => (
+              <button key={item.iso} className={item.iso === country.iso ? 'selected' : ''} type="button" role="option" aria-selected={item.iso === country.iso} onClick={() => { setCountry(item); setCountryOpen(false); setCountryQuery(''); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }}>
+                <CountryFlag code={item.iso} /><span className="country-name">{item.name}</span><b>{item.dial}</b>
+              </button>
+            ))}
+            {!filteredCountries.length && <p className="country-empty">No matching country</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="overlay" onClick={() => setAuthMode(null)}>
       <div className={`modal ${isLogin || isRecover || isUpdatePassword ? 'login-modal' : ''}`} role="dialog" aria-modal="true" aria-label={isLogin ? 'Log in' : isRecover ? 'Reset password' : isUpdatePassword ? 'Set new password' : 'Sign up'} onClick={(e) => e.stopPropagation()}>
@@ -423,7 +465,7 @@ function AuthModal() {
             <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
               <span className="g-mark">G</span> Continue with Google
             </button>
-            <div className="or">or continue with e-mail</div>
+            <div className="or">or choose a login method</div>
           </>
         )}
         {authError && <p className="hint" style={{ color: 'var(--coral)' }}>{authError}</p>}
@@ -451,17 +493,51 @@ function AuthModal() {
           </div>
         ) : isLogin ? (
           <>
-            <div className="field">
-              <label className="auth-label" htmlFor="login-email">E-mail address</label>
-              <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+            <div className="tabs tabs-2 login-method-tabs">
+              {['Phone', 'E-mail'].map((method) => (
+                <button key={method} type="button" className={loginTab === method ? 'on' : ''} onClick={() => { setLoginTab(method); setAuthError(''); setOtpHint(''); setOtpSent(false); setOtp('') }}>{method}</button>
+              ))}
             </div>
-            <div className="field pass-wrap">
-              <label className="auth-label" htmlFor="login-password">Password</label>
-              <input id="login-password" className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
-              <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Hide password' : 'Show password'}><Icon name={showPass ? 'close' : 'eye'} size={18} /></button>
-            </div>
-            <button className="forgot" type="button" onClick={() => { setAuthError(''); setRecoverySent(false); setAuthMode('recover') }}>Forgot your password?</button>
-            <button className="btn btn-yellow btn-block" disabled={busy || !email.trim() || !password} onClick={submit}>{busy ? 'Please wait…' : 'Log in to Bullwave Club'}</button>
+            {loginTab === 'Phone' ? (
+              <>
+                {renderPhoneField()}
+                <div className="otp-row login-otp-row">
+                  <input
+                    className="input"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={otpLength}
+                    placeholder={`${otpLength}-digit OTP`}
+                    aria-label="One-time password"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, otpLength))}
+                    disabled={!otpSent}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && otp.length === otpLength) confirmOtp() }}
+                  />
+                  {otpSent ? (
+                    <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== otpLength} onClick={confirmOtp}>{busy ? 'Checking…' : 'Log in'}</button>
+                  ) : (
+                    <button className="btn btn-yellow" type="button" disabled={busy || !phone} onClick={requestOtp}>{busy ? 'Sending…' : 'Send OTP'}</button>
+                  )}
+                </div>
+                {otpSent && <button className="otp-resend" type="button" disabled={busy || resendSeconds > 0} onClick={requestOtp}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Send a new code'}</button>}
+                {otpHint && <p className="hint otp-status">{otpHint}</p>}
+              </>
+            ) : (
+              <>
+                <div className="field">
+                  <label className="auth-label" htmlFor="login-email">E-mail address</label>
+                  <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+                </div>
+                <div className="field pass-wrap">
+                  <label className="auth-label" htmlFor="login-password">Password</label>
+                  <input id="login-password" className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+                  <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Hide password' : 'Show password'}><Icon name={showPass ? 'close' : 'eye'} size={18} /></button>
+                </div>
+                <button className="forgot" type="button" onClick={() => { setAuthError(''); setRecoverySent(false); setAuthMode('recover') }}>Forgot your password?</button>
+                <button className="btn btn-yellow btn-block" disabled={busy || !email.trim() || !password} onClick={submit}>{busy ? 'Please wait…' : 'Log in to Bullwave Club'}</button>
+              </>
+            )}
             <div className="switch-auth">
               Don't have an account? <button type="button" onClick={() => { setAuthError(''); setAuthMode('signup') }}>Sign up</button>
             </div>
@@ -492,28 +568,7 @@ function AuthModal() {
 
             {signupTab === 'Phone' ? (
               <>
-                <div className="field field-row phone-field" onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setCountryOpen(false) }}>
-                  <button className="flag-box country-trigger" type="button" aria-label={`Country code: ${country.name} ${country.dial}`} aria-expanded={countryOpen} onClick={() => setCountryOpen((open) => !open)}>
-                    <CountryFlag code={country.iso} /><b>{country.dial}</b><small>▾</small>
-                  </button>
-                  <label className="float-field">
-                    <span>Phone number</span>
-                    <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="Mobile number" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 12)); setPhoneVerified(false); setOtpSent(false); setOtpHint('') }} />
-                  </label>
-                  {countryOpen && (
-                    <div className="country-menu">
-                      <input className="country-search" type="search" autoFocus placeholder="Search country or code" aria-label="Search country or dial code" value={countryQuery} onChange={(e) => setCountryQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setCountryOpen(false) }} />
-                      <div className="country-list" role="listbox" aria-label="Country calling codes">
-                        {filteredCountries.map((item) => (
-                          <button key={item.iso} className={item.iso === country.iso ? 'selected' : ''} type="button" role="option" aria-selected={item.iso === country.iso} onClick={() => { setCountry(item); setCountryOpen(false); setCountryQuery(''); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }}>
-                            <CountryFlag code={item.iso} /><span className="country-name">{item.name}</span><b>{item.dial}</b>
-                          </button>
-                        ))}
-                        {!filteredCountries.length && <p className="country-empty">No matching country</p>}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {renderPhoneField()}
                 <div className="field">
                   <input className="input" type="email" placeholder="E-mail (required)" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
@@ -521,14 +576,14 @@ function AuthModal() {
                   <input
                     className="input"
                     inputMode="numeric"
-                    maxLength={4}
-                    placeholder="4-digit OTP"
+                    maxLength={otpLength}
+                    placeholder={`${otpLength}-digit OTP`}
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, otpLength))}
                     disabled={!otpSent || phoneVerified}
                   />
                   {otpSent && !phoneVerified ? (
-                    <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== 4} onClick={confirmOtp}>Verify</button>
+                    <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== otpLength} onClick={confirmOtp}>Verify</button>
                   ) : (
                     <button className="btn btn-yellow" type="button" disabled={busy || !phone} onClick={requestOtp}>{otpSent ? 'Resend' : 'Send OTP'}</button>
                   )}

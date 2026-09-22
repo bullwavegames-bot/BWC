@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { sendOtp, verifyOtp, isPhoneVerified } from './otp.js'
+import { consumePhoneVerification, normalizePhone, sendOtp, verifyOtp, isPhoneVerified } from './otp.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
 
 function loadEnvFile() {
@@ -43,9 +43,28 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN
 
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }))
 app.use(express.json())
+app.set('trust proxy', 1)
 
 const users = new Map()
 const bets = []
+const otpRequests = new Map()
+const OTP_WINDOW_MS = 10 * 60 * 1000
+const OTP_REQUEST_LIMIT = 10
+
+function limitOtpRequests(req, res, next) {
+  const key = req.ip || req.socket.remoteAddress || 'unknown'
+  const now = Date.now()
+  const current = otpRequests.get(key)
+  const entry = !current || now - current.startedAt >= OTP_WINDOW_MS
+    ? { startedAt: now, count: 0 }
+    : current
+  entry.count += 1
+  otpRequests.set(key, entry)
+  if (entry.count > OTP_REQUEST_LIMIT) {
+    return res.status(429).json({ error: 'Too many OTP requests. Please try again later.' })
+  }
+  next()
+}
 
 function publicUser(user) {
   return {
@@ -120,7 +139,7 @@ app.get('/api/promotions', (_req, res) => {
   res.json({ promotions })
 })
 
-app.post('/api/otp/send', async (req, res) => {
+app.post('/api/otp/send', limitOtpRequests, async (req, res) => {
   try {
     const data = await sendOtp(req.body?.phone)
     res.json(data)
@@ -138,12 +157,40 @@ app.post('/api/otp/verify', async (req, res) => {
   }
 })
 
+app.post('/api/auth/otp-login', async (req, res) => {
+  try {
+    const phone = normalizePhone(req.body?.phone)
+    await verifyOtp(phone, req.body?.otp, { consume: true })
+
+    let user = findUser({ phone })
+    const isNew = !user
+    if (!user) {
+      user = {
+        id: randomUUID(),
+        phone,
+        email: null,
+        accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
+        passwordHash: null,
+        bonus: 'Welcome Casino 100%',
+        promoCode: null,
+        balance: 0,
+        createdAt: new Date().toISOString(),
+      }
+      users.set(user.id, user)
+    }
+
+    res.json({ token: sign(user), user: publicUser(user), isNew })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message })
+  }
+})
+
 app.post('/api/auth/register', async (req, res) => {
   const { method = 'phone', phone, email, password, promoCode, bonus } = req.body || {}
   if (!password || String(password).length < 4) {
     return res.status(400).json({ error: 'Password must be at least 4 characters' })
   }
-  const identifier = method === 'email' ? email?.trim() : phone?.trim()
+  const identifier = method === 'email' ? email?.trim() : normalizePhone(phone)
   if (!identifier) {
     return res.status(400).json({ error: method === 'email' ? 'E-mail is required' : 'Phone number is required' })
   }
@@ -169,6 +216,7 @@ app.post('/api/auth/register', async (req, res) => {
     createdAt: new Date().toISOString(),
   }
   users.set(user.id, user)
+  if (method !== 'email') consumePhoneVerification(identifier)
   res.status(201).json({ token: sign(user), user: publicUser(user) })
 })
 
@@ -176,7 +224,7 @@ app.post('/api/auth/login', async (req, res) => {
   const { method = 'phone', phone, email, accountNumber, password } = req.body || {}
   if (!password) return res.status(400).json({ error: 'Password is required' })
   const user = findUser({
-    phone: method === 'phone' ? phone?.trim() : undefined,
+    phone: method === 'phone' ? normalizePhone(phone) : undefined,
     email: method === 'email' ? email?.trim() : undefined,
     accountNumber: method === 'account' ? accountNumber?.trim() : undefined,
   })

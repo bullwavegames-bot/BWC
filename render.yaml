@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: bullwavegames
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
+        sync: false
+      - key: MSG91_SENDER_ID
+        value: CBW
+      - key: MSG91_OTP_LENGTH
+        value: "4"
+      - key: OTP_TEST_ENABLED
+        value: "false"

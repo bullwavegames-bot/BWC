@@ -2,6 +2,8 @@ import { createHash, randomInt } from 'node:crypto'
 
 const challenges = new Map()
 const TTL_MS = 10 * 60 * 1000
+const RESEND_COOLDOWN_MS = 30 * 1000
+const MAX_VERIFY_ATTEMPTS = 5
 
 function env(name, fallback = '') {
   return String(process.env[name] ?? fallback).trim().replace(/^['"]+|['"]+$/g, '')
@@ -14,6 +16,7 @@ function otpConfig() {
   const otpLength = Number(env('MSG91_OTP_LENGTH')) === 6 ? 6 : 4
   const testEnabled = ['1', 'true', 'yes', 'on'].includes(env('OTP_TEST_ENABLED').toLowerCase())
     && env('NODE_ENV').toLowerCase() !== 'production'
+    && env('RENDER').toLowerCase() !== 'true'
   return {
     apiKey,
     template,
@@ -36,7 +39,13 @@ function hashOtp(phone, code) {
 }
 
 function saveChallenge(phone, code) {
-  challenges.set(phone, { hash: hashOtp(phone, code), expiresAt: Date.now() + TTL_MS, verified: false })
+  challenges.set(phone, {
+    hash: hashOtp(phone, code),
+    expiresAt: Date.now() + TTL_MS,
+    sentAt: Date.now(),
+    attempts: 0,
+    verified: false,
+  })
 }
 
 export async function sendOtp(rawPhone) {
@@ -45,6 +54,13 @@ export async function sendOtp(rawPhone) {
   if (!/^\d{10,15}$/.test(phone)) {
     const err = new Error('Enter a valid mobile number with country code.')
     err.status = 400
+    throw err
+  }
+
+  const active = challenges.get(phone)
+  if (active && Date.now() - active.sentAt < RESEND_COOLDOWN_MS) {
+    const err = new Error('Please wait 30 seconds before requesting another OTP.')
+    err.status = 429
     throw err
   }
 
@@ -62,17 +78,18 @@ export async function sendOtp(rawPhone) {
     throw err
   }
 
-  const res = await fetch('https://control.msg91.com/api/v5/otp', {
+  const sendUrl = new URL('https://control.msg91.com/api/v5/otp')
+  sendUrl.searchParams.set('template_id', cfg.template)
+  sendUrl.searchParams.set('mobile', phone)
+  sendUrl.searchParams.set('authkey', cfg.apiKey)
+  sendUrl.searchParams.set('otp_expiry', '10')
+  sendUrl.searchParams.set('otp_length', String(cfg.otpLength))
+  if (cfg.senderId) sendUrl.searchParams.set('sender', cfg.senderId)
+
+  const res = await fetch(sendUrl, {
     method: 'POST',
-    headers: { authkey: cfg.apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mobile: phone,
-      template_id: cfg.template,
-      sender: cfg.senderId,
-      otp_expiry: 10,
-      otp_length: cfg.otpLength,
-      realTimeResponse: 1,
-    }),
+    headers: { authkey: cfg.apiKey, Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: '{}',
   })
   const data = await res.json().catch(() => ({}))
   const type = String(data.type || data.status || '').toLowerCase()
@@ -81,11 +98,18 @@ export async function sendOtp(rawPhone) {
     err.status = res.status >= 400 ? res.status : 502
     throw err
   }
-  challenges.set(phone, { hash: 'msg91', expiresAt: Date.now() + TTL_MS, verified: false, provider: 'msg91' })
+  challenges.set(phone, {
+    hash: 'msg91',
+    expiresAt: Date.now() + TTL_MS,
+    sentAt: Date.now(),
+    attempts: 0,
+    verified: false,
+    provider: 'msg91',
+  })
   return { ok: true, phone, length: cfg.otpLength, message: `OTP sent to +${phone}` }
 }
 
-export async function verifyOtp(rawPhone, code) {
+export async function verifyOtp(rawPhone, code, { consume = false } = {}) {
   const cfg = otpConfig()
   const phone = normalizePhone(rawPhone)
   const otp = String(code || '').replace(/\D/g, '')
@@ -97,8 +121,17 @@ export async function verifyOtp(rawPhone, code) {
 
   const row = challenges.get(phone)
   if (!row || Date.now() > row.expiresAt) {
+    challenges.delete(phone)
     const err = new Error('No active OTP. Send a new code first.')
     err.status = 400
+    throw err
+  }
+
+  row.attempts = Number(row.attempts || 0) + 1
+  if (row.attempts > MAX_VERIFY_ATTEMPTS) {
+    challenges.delete(phone)
+    const err = new Error('Too many incorrect attempts. Send a new OTP.')
+    err.status = 429
     throw err
   }
 
@@ -109,13 +142,16 @@ export async function verifyOtp(rawPhone, code) {
       throw err
     }
     row.verified = true
+    if (consume) challenges.delete(phone)
     return { ok: true, phone, verified: true }
   }
 
-  const res = await fetch('https://control.msg91.com/api/v5/otp/verify', {
-    method: 'POST',
-    headers: { authkey: cfg.apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mobile: phone, otp }),
+  const verifyUrl = new URL('https://control.msg91.com/api/v5/otp/verify')
+  verifyUrl.searchParams.set('mobile', phone)
+  verifyUrl.searchParams.set('otp', otp)
+  const res = await fetch(verifyUrl, {
+    method: 'GET',
+    headers: { authkey: cfg.apiKey, Accept: 'application/json' },
   })
   const data = await res.json().catch(() => ({}))
   const type = String(data.type || data.status || '').toLowerCase()
@@ -125,6 +161,7 @@ export async function verifyOtp(rawPhone, code) {
     throw err
   }
   row.verified = true
+  if (consume) challenges.delete(phone)
   return { ok: true, phone, verified: true }
 }
 
@@ -132,4 +169,12 @@ export function isPhoneVerified(rawPhone) {
   const phone = normalizePhone(rawPhone)
   const row = challenges.get(phone)
   return Boolean(row?.verified && Date.now() <= row.expiresAt)
+}
+
+export function consumePhoneVerification(rawPhone) {
+  const phone = normalizePhone(rawPhone)
+  const row = challenges.get(phone)
+  const verified = Boolean(row?.verified && Date.now() <= row.expiresAt)
+  if (verified) challenges.delete(phone)
+  return verified
 }

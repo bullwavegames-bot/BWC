@@ -969,6 +969,20 @@ img { max-width: 100%; }
 .login-modal .forgot:hover, .login-modal .auth-back:hover { text-decoration: underline; }
 .login-modal .btn-block { height: 49px; box-shadow: 0 9px 22px rgba(97,214,176,.14); }
 .login-modal .switch-auth { margin-top: 20px; }
+.login-method-tabs { margin-bottom: 16px; }
+.login-otp-row { margin-top: 3px; }
+.otp-resend {
+  display: block;
+  margin: 10px 0 0 auto;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--mint);
+  font-size: 11px;
+  font-weight: 750;
+}
+.otp-resend:disabled { color: var(--muted); cursor: default; }
+.otp-status { margin-top: 10px; color: #b9c9d8; }
 .recovery-panel p { margin: 5px 0 18px; color: #b9c9d8; line-height: 1.55; }
 .recovery-panel .input { margin-bottom: 18px; }
 .recovery-panel .recovery-message { padding: 15px; border-radius: 10px; border: 1px solid rgba(97,214,176,.32); background: rgba(97,214,176,.09); color: var(--white); overflow-wrap: anywhere; }

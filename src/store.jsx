@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { api, clearSession, loadSession, mapAccount, mapClubGame, saveSession } from './api.js'
+import { api, clearSession, loadSession, loginWithPhoneOtp, mapAccount, mapClubGame, saveSession } from './api.js'
 import { matches as seedMatches } from './data.js'
 import { assertSupabase, supabase } from './supabase.js'
 
@@ -102,6 +102,17 @@ export function AppProvider({ children }) {
     if (error) throw new Error(error.message)
     await hydrateAccount(data.session.access_token, { email: data.user.email, phone: payload.phone })
     setAuthMode(null)
+  }
+
+  const loginWithPhone = async ({ phone, otp }) => {
+    setAuthError('')
+    if (!phone) throw new Error('Phone number is required')
+    if (!otp) throw new Error('Enter the OTP sent to your phone')
+    const data = await loginWithPhoneOtp(phone, otp)
+    const mapped = mapAccount(data, { phone })
+    applySession(data.token, mapped)
+    setAuthMode(null)
+    return mapped
   }
 
   const requestPasswordReset = async (email) => {
@@ -225,6 +236,7 @@ export function AppProvider({ children }) {
       user,
       token,
       login,
+      loginWithPhone,
       requestPasswordReset,
       updatePassword,
       register,
