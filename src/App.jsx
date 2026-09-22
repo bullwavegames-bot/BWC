@@ -251,7 +251,7 @@ function Betslip() {
   const { betslip, removeBet, placeBets, loggedIn, setAuthMode } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
-  const [mode, setMode] = useState('Single')
+  const [mode, setMode] = useState('System')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
     <aside className="betslip">

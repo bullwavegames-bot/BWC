@@ -1611,9 +1611,9 @@ body { font-family: var(--font); background: var(--navy); }
 .app { background: var(--navy); }
 .header { height: var(--header-h); padding: 0 34px 0 38px; gap: 0; background: linear-gradient(95deg,#0c191b,#0e1619 65%,#0a1619); border-color: #334144; }
 .mobile-menu { display: none; }
-.header .logo { width: 278px; height: 62px; margin: 0; padding: 4px 0; gap: 5px; }
-.header .logo-emblem { width: 65px; height: 53px; background-size: 94px 94px; background-position: -18px -8px; }
-.header .logo-wordmark { width: 205px; height: 44px; background-size: 226px 226px; background-position: -13px -144px; }
+.header .logo { width: 292px; height: 62px; margin: 0; padding: 4px 0; gap: 3px; overflow: visible; }
+.header .logo-emblem { width: 62px; height: 53px; background-size: 90px 90px; background-position: -17px -8px; }
+.header .logo-wordmark { width: 220px; height: 44px; background-size: 220px 220px; background-position: -11px -140px; }
 .header .logo { position: relative; }
 .header .logo-wave { position: absolute; left: 170px; top: 8px; width: 102px; height: 30px; background: url('/images/brand/bullwave-transparent.png') -114px -144px / 226px 226px no-repeat; pointer-events: none; }
 .top-nav { margin-left: 35px; gap: 4px; overflow: visible; }
@@ -1743,3 +1743,67 @@ body { font-family: var(--font); background: var(--navy); }
 @media (max-width: 1200px) { .shell { grid-template-columns: var(--side-w) minmax(0,1fr); }.betslip { display: none; }.home-content-grid { grid-template-columns: minmax(0,1.8fr) minmax(280px,1fr); }.top-nav a { padding-inline: 9px; }.header-search { width: 160px; } }
 @media (max-width: 900px) { .shell { grid-template-columns: 1fr; }.sidebar { display: none; }.header { padding-inline: 14px; }.mobile-menu { display: grid; margin-right: 7px; }.top-nav { display: none; }.header-search { width: 36px; height: 36px; padding: 8px; border: 0; }.header-search span { display: none; }.popular-leagues { width: 100%; margin-top: 18px; }.popular-league-grid { width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); }.home-brand-strip { padding-left: 25px; } }
 @media (max-width: 650px) { .header { height: 64px; }.header .logo { width: 167px; height: 36px; padding: 2px 3px; gap: 2px; }.header .logo-emblem { width: 37px; height: 31px; background-size: 54px 54px; background-position: -10px -4px; }.header .logo-wordmark { width: 119px; height: 26px; background-size: 132px 132px; background-position: -7px -84px; }.header .logo-wave { left: 101px; top: 4px; width: 61px; height: 17px; background-size: 132px 132px; background-position: -67px -84px; }.header-right { gap: 2px; }.header .btn-yellow { height: 33px; min-height: 33px; padding-inline: 10px; }.notification-btn { display: none; }.main { padding: 12px 12px 0; }.home-hero { height: 235px; background-position: 59% center; }.hero-message { left: 18px; top: 55px; }.hero-message h1 { font-size: 31px; }.hero-message > div { max-width: 205px; font-size: 13px; }.hero-message p { font-size: 8px; letter-spacing: 2px; }.hero-mantra { display: none; }.reference-home .sport-filter { padding-top: 12px; }.reference-home .sport-filter a { height: 48px; }.home-content-grid { display: block; margin-top: 18px; }.top-matches-panel { margin-top: 19px; }.live-feature-card { height: 285px; }.live-card-top { gap: 7px; padding-inline: 10px; }.live-scoreboard { padding-inline: 4px; }.live-team strong { font-size: 12px; }.live-center-score strong { font-size: 31px; }.live-center-score span { font-size: 15px; }.live-card-actions a { max-width: none; width: auto; flex: 1; white-space: nowrap; font-size: 11px; }.live-card-actions a:first-child { flex: 1.15; }.popular-league-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }.home-brand-strip { margin-inline: -12px; padding-inline: 12px; }.home-brand-strip > span { font-size: 7px; letter-spacing: 1px; }.strip-brand { display: none; }.home-brand-strip p { font-size: 7px; letter-spacing: 1px; } }
+
+/* Light reference theme */
+:root { --navy: #102b4d; --slate: #f7f9fc; --raised: #eef3f9; --mint: #102e53; --cyan: #318fe5; --white: #102033; --muted: #6e7d8f; --line: #e2e8ef; --header-h: 80px; --side-w: 214px; --slip-w: 338px; --font: Inter, system-ui, sans-serif; }
+body { background: #fff; color: #102033; }
+.app { background: #fff; }
+.header { background: #fff; border-bottom: 1px solid #e4e9ef; box-shadow: 0 1px 2px rgba(16,43,77,.03); }
+.header .logo { background: transparent; }
+.logo-emblem, .logo-wordmark { background-image: url('/images/brand/bullwave-original.png'); }
+.logo-wordmark { filter: none; }
+.header .logo-wave { display: none; }
+.top-nav a { color: #152235; }
+.top-nav a.active { color: #173858; background: #e7f0fa; }
+.header-search { border-color: #d8e0e9; color: #6d7885; }
+.header .lang { color: #142237; }
+.icon-btn { color: #1b2b3d; }.icon-btn:hover { background: #edf3f9; }
+.notification-btn i { background: #f0555e; }
+.header .btn-ghost { border-color: #d7e0e9; color: #142237; }.header .btn-ghost:hover { background: #f2f6fa; }
+.header .btn-yellow { background: #102e53; color: #fff; }.header .btn-yellow:hover { background: #1a4676; }
+.shell { background: #fff; }
+.sidebar, .betslip { background: #fbfcfe; border-color: #e4e9ef; }
+.sidebar { padding-top: 10px; }
+.sidebar .side-item { color: #263449; }
+.sidebar .side-item:hover { background: #f1f5fa; }
+.sidebar .side-item.active { color: #fff; background: #102e53; border-color: #102e53; }
+.sidebar .side-item.active .dot { color: #fff; }
+.sidebar .side-count { background: #f4545d; }
+.sidebar .league-toggle { border-color: #e2e8ef; color: #263449; background: #f7f9fc; border: 1px solid #e2e8ef; border-radius: 9px; }
+.sidebar .league-toggle svg { color: #2c82c9; }
+.side-utility { border-top: 1px solid #e2e8ef; margin-top: 11px; padding-top: 12px; }
+.side-club { background: linear-gradient(135deg,#163866,#235da0); border-color: #23558d; color: #fff; }
+.side-club p { color: #dbe8f6; }.side-club button { background: #3b9ef2; color: #06254a; }
+.main { background: #fff; padding-top: 21px; }
+.home-hero { border-color: #e2e8ef; background-image: linear-gradient(90deg,rgba(2,12,19,.88),rgba(2,12,19,.18) 67%,rgba(2,12,19,.22)),url('/images/hero/bullwave-hero.png'); }
+.hero-message h1 span { color: #3999ee; }.hero-message a { border-color: #328fdc; color: #55aaf1; background: rgba(4,27,53,.72); }
+.reference-home .sport-filter a { background: #fff; border-color: #e3e8ee; color: #263448; }.reference-home .sport-filter a.featured-sport { background: #102e53; border-color: #102e53; color: #fff; }
+.sport-filter-icon { color: #456b8a; }.featured-sport .sport-filter-icon { color: #fff; }
+.home-section-title { color: #132b4b; }.live-feature-area .home-section-title svg { color: #15b9c6; fill: #15b9c6; }
+.live-feature-card { border-color: #1e3148; }
+.live-feature-card { color: #fff; }
+.live-feature-card .live-team > span, .live-feature-card .live-center-score span { color: #dce6ec; }
+.live-feature-card .live-lead { color: #fff; }
+.top-matches-panel { background: #fff; border-color: #e2e8ef; }.top-matches-head h2 { color: #142b48; }.top-matches-head a { color: #4780ae; }
+.day-tabs { background: #f2f5f9; }.day-tabs button { color: #59697b; }.day-tabs button.active { color: #fff; background: #102e53; }
+.top-match-row { border-color: #e3e8ed; }.top-match-copy small { color: #6b7887; }.top-match-copy strong { color: #17273b; }.top-match-copy em { color: #718091; }.top-match-score { color: #3da18f; }.top-match-row > svg { color: #91a1b1; }
+.popular-leagues { margin-top: 19px; }.popular-league { background: #fff; border-color: #e2e8ef; }.popular-league strong { color: #23334a; }.popular-league small { color: #718092; }
+.betslip { padding: 12px 11px; }.slip-panel { background: #fff; border-color: #e2e8ef; }.betslip .slip-panel h3 { color: #172c47; }.slip-modes { border-color: #9ba9b6; }.slip-modes button { color: #647180; }.slip-modes button.selected { color: #fff; background: #102e53; }
+.betslip .slip-empty { background: #fff; border: 0; color: #647180; }.slip-empty > strong { color: #172538; }.slip-empty > span { color: #687686; }.slip-empty > .icon { color: #8e9aa2; }
+.slip-login { background: #fff; border-color: #e1e6ec; }.slip-login > strong { color: #172538; }.slip-login > button { background: #102e53; color: #fff; }.slip-login small { color: #536477; }.slip-login small button { color: #287fc4; }
+.slip-rewards { background: linear-gradient(135deg,#fff,#f5f8fc); border-color: #e2e8ef; color: #1c2c40; }.slip-rewards h3 { color: #172b46; }.slip-rewards li { color: #536476; }.slip-rewards li::before { background: #24b4a0; color: #fff; }.slip-rewards > a { background: #102e53; color: #fff; }
+.home-brand-strip { background: linear-gradient(90deg,rgba(9,29,50,.92),rgba(9,29,50,.68)),url('/images/hero/cricket-champion-v1.png') center 58% / cover; }
+@media (max-width: 650px) { .header { background: #fff; }.header .btn-yellow { background: #102e53; }.main { background: #fff; } }
+
+/* Keep the supplied wordmark inside the header at laptop widths. */
+@media (min-width: 651px) {
+  .header .logo { width: 255px; gap: 3px; overflow: visible; }
+  .header .logo-emblem { width: 58px; height: 53px; background-image: url('/images/brand/bullwave-emblem.png'); background-size: contain; background-position: center; background-repeat: no-repeat; }
+  .header .logo-wordmark { width: 194px; height: 44px; background-size: 198px 198px; background-position: -11px -126px; }
+}
+
+@media (max-width: 650px) {
+  .header .logo { width: 167px; gap: 2px; overflow: visible; }
+  .header .logo-emblem { width: 37px; height: 31px; background-image: url('/images/brand/bullwave-emblem.png'); background-size: contain; background-position: center; background-repeat: no-repeat; }
+  .header .logo-wordmark { width: 119px; height: 26px; background-size: 132px 132px; background-position: -7px -84px; }
+}
