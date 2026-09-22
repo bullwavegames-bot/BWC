@@ -169,16 +169,12 @@ function Header() {
   return (
     <header className="header">
       <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
-      <NavLink to="/" className="logo">BULLWAVECLUB</NavLink>
+      <NavLink to="/" className="logo" aria-label="Bullwave Club home"><span className="brand-mark" aria-hidden="true">≈</span><span>BULLWAVE<span className="brand-club">CLUB</span></span></NavLink>
       <nav className="top-nav">
-        <NavLink to="/live"><Icon name="live" size={16} /> Live Events</NavLink>
-        <NavLink to="/upcoming"><Icon name="cal" size={16} /> Upcoming events</NavLink>
-        <NavLink to="/promotions"><Icon name="gift" size={16} /> Promotions</NavLink>
-        <NavLink to="/casino/live-casino"><Icon name="casino" size={16} /> Live Casino</NavLink>
-        <NavLink to="/casino/instant-games"><Icon name="zap" size={16} /> Instant Games</NavLink>
-        <NavLink to="/casino/slots"><Icon name="slots" size={16} /> Slots</NavLink>
-        <NavLink to="/casino/virtual-sports"><Icon name="virtual" size={16} /> Virtual Sport</NavLink>
-        <NavLink to="/casino/tv-games"><Icon name="tv" size={16} /> TV Games</NavLink>
+        <NavLink to="/" end>Sports</NavLink>
+        <NavLink to="/live">Live</NavLink>
+        <NavLink to="/casino/live-casino">Games</NavLink>
+        <NavLink to="/promotions">Rewards</NavLink>
       </nav>
       <div className="header-right">
         <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Icon name="search" /></button>
@@ -195,18 +191,21 @@ function Header() {
 }
 
 function Sidebar() {
+  const [leaguesOpen, setLeaguesOpen] = useState(false)
   return (
     <aside className="sidebar">
-      {sports.map((s) => (
+      <div className="sidebar-label">EXPLORE</div>
+      {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => (
         <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
           <span className="dot" style={{ color: s.color || '#61D6B0' }}>
-            {s.image ? <span className={`sport-image sport-image-${s.id}`} aria-hidden="true">{s.image}</span> : <Icon name={s.icon} size={18} />}
+            <Icon name={s.icon} size={18} />
           </span>
           {s.name}
           {s.count ? <span className="side-count">{s.count}</span> : null}
         </NavLink>
       ))}
-      {leagues.map((g) => (
+      <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <span>{leaguesOpen ? '−' : '+'}</span></button>
+      {leaguesOpen && leagues.map((g) => (
         <div key={g.group} className="league-section">
           <div className="side-group">{g.group}</div>
           <div className="league-list">
@@ -632,15 +631,15 @@ function MatchCard({ m }) {
   const { addBet, betslip, toggleFavorite, favorites } = useApp()
   const selected = (id) => betslip.some((b) => b.id === id)
   return (
-    <article className="card">
+    <article className="card match-card">
       <div className="match-top">
-        <span className={m.live ? 'live' : ''}>{m.time}{m.live ? ' • LIVE' : ''}</span>
-        <span>{m.extra || m.league.split('.')[0]}</span>
+        <span className={m.live ? 'live' : ''}>{m.live ? '● LIVE' : m.time}</span>
+        <span className="match-league">{m.league.split('.').slice(1).join(' · ').trim() || m.league}</span>
       </div>
       <NavLink to={`/match/${m.id}`}>
         <div className="teams">
-          <div className="team"><span>{m.home}</span>{m.score && <span className="score">{m.score[0]} {m.extras?.[0] || ''}</span>}</div>
-          <div className="team"><span>{m.away}</span>{m.score && <span className="score">{m.score[1]} {m.extras?.[1] || ''}</span>}</div>
+          <div className="team"><span>{m.home}</span>{m.score && <span className="score">{m.score[0]}</span>}</div>
+          <div className="team"><span>{m.away}</span>{m.score && <span className="score">{m.score[1]}</span>}</div>
         </div>
       </NavLink>
       {m.markets[0].odd == null ? (
@@ -659,7 +658,7 @@ function MatchCard({ m }) {
           ))}
         </div>
       )}
-      <button className={`star ${favorites.includes(m.id) ? 'on' : ''}`} onClick={() => toggleFavorite(m.id)} type="button">★</button>
+      <button className={`star ${favorites.includes(m.id) ? 'on' : ''}`} onClick={() => toggleFavorite(m.id)} type="button" aria-label={favorites.includes(m.id) ? 'Remove from favorites' : 'Add to favorites'}>★</button>
     </article>
   )
 }
@@ -825,21 +824,37 @@ function Home() {
   const { catalogMatches: matches, clubGames } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const liveCasino = catalog.filter((g) => g.cat === 'live').slice(0, 6)
+  const featured = matches.find((m) => m.live) || matches[0]
   return (
-    <div>
-      <PromotionSlider />
-      <ShortcutCarousel />
+    <div className="home-desk">
+      {featured && <section className="featured-match" aria-label="Featured event">
+        <div className="featured-heading"><span className="desk-eyebrow">THE SPORTS DESK</span><span className="featured-status">{featured.live ? '● LIVE NOW' : featured.time}</span></div>
+        <div className="featured-body">
+          <div className="featured-copy">
+            <p className="featured-league">{featured.league}</p>
+            <h1>{featured.home}<span>vs</span>{featured.away}</h1>
+            <p className="featured-time">{featured.time}</p>
+            <NavLink className="featured-link" to={`/match/${featured.id}`}>Open match center <span aria-hidden="true">↗</span></NavLink>
+          </div>
+          {featured.score && <div className="featured-score" aria-label="Current score"><span>{featured.score[0]}</span><span className="score-divider">:</span><span>{featured.score[1]}</span></div>}
+        </div>
+        <div className="featured-timeline"><span>EVENT UPDATE</span><div><i /></div><span>{featured.live ? 'IN PLAY' : 'UPCOMING'}</span></div>
+      </section>}
+      <nav className="sport-filter" aria-label="Browse by sport">
+        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis'].includes(s.id)).map((s) => <NavLink key={s.id} to={s.to}><Icon name={s.icon} size={18} />{s.name}</NavLink>)}
+      </nav>
       <div className="section-head">
-        <h2>🔥 Hot Matches</h2>
-        <NavLink to="/live">All ›</NavLink>
+        <h2>On the board</h2>
+        <NavLink to="/live">All events <span aria-hidden="true">↗</span></NavLink>
       </div>
       <div className="match-grid">
         {matches.slice(0, 4).map((m) => <MatchCard key={m.id} m={m} />)}
       </div>
-      <GameCarousel catalog={catalog} />
+      <div className="section-head rewards-head"><h2>Club rewards</h2><NavLink to="/promotions">All rewards <span aria-hidden="true">↗</span></NavLink></div>
+      <NavLink to="/promotions" className="rewards-feature"><span>REWARDS / BULLWAVE CLUB</span><strong>More for every match day.</strong><span className="rewards-action">Explore rewards ↗</span></NavLink>
       <div className="section-head">
         <h2>Club games</h2>
-        <NavLink to="/casino/live-casino">All ›</NavLink>
+        <NavLink to="/casino/live-casino">All games <span aria-hidden="true">↗</span></NavLink>
       </div>
       <div className="casino-row">
         {liveCasino.map((g) => (
