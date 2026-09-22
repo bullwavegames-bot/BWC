@@ -157,7 +157,7 @@ app.post('/api/otp/verify', async (req, res) => {
   }
 })
 
-app.post('/api/auth/otp-login', async (req, res) => {
+async function loginWithOtp(req, res) {
   try {
     const phone = normalizePhone(req.body?.phone)
     await verifyOtp(phone, req.body?.otp, { consume: true })
@@ -183,7 +183,10 @@ app.post('/api/auth/otp-login', async (req, res) => {
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message })
   }
-})
+}
+
+app.post('/api/otp/login', loginWithOtp)
+app.post('/api/auth/otp-login', loginWithOtp)
 
 app.post('/api/auth/register', async (req, res) => {
   const { method = 'phone', phone, email, password, promoCode, bonus } = req.body || {}

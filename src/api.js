@@ -26,7 +26,7 @@ export async function verifyOtp(phone, otp) {
 }
 
 export async function loginWithPhoneOtp(phone, otp) {
-  const res = await fetch(`${OTP_BASE}/api/auth/otp-login`, {
+  const res = await fetch(`${OTP_BASE}/api/otp/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone, otp }),
