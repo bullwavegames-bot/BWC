@@ -1,42 +1,28 @@
-import { spawn } from 'node:child_process'
+import { createServer } from 'vite'
 
-const commands = [
-  ['API', ['server/index.js']],
-  ['WEB', ['node_modules/vite/bin/vite.js']],
-]
+process.env.NODE_ENV = 'development'
 
-const children = commands.map(([name, args]) => {
-  const child = spawn(process.execPath, args, {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: ['inherit', 'pipe', 'pipe'],
-  })
+// Keep the API and Vite in one Node process. Spawning two child processes here
+// caused the launcher to exit early in Git Bash on Windows.
+await import('./index.js')
 
-  child.stdout.on('data', (chunk) => process.stdout.write(`[${name}] ${chunk}`))
-  child.stderr.on('data', (chunk) => process.stderr.write(`[${name}] ${chunk}`))
-  return child
+const vite = await createServer({
+  server: {
+    host: true,
+  },
 })
+
+await vite.listen()
+vite.printUrls()
 
 let stopping = false
 
-function stop(exitCode = 0) {
+async function stop() {
   if (stopping) return
   stopping = true
-  for (const child of children) {
-    if (!child.killed) child.kill()
-  }
-  process.exitCode = exitCode
+  await vite.close()
+  process.exit(0)
 }
 
-for (const child of children) {
-  child.on('error', (error) => {
-    console.error(error)
-    stop(1)
-  })
-  child.on('exit', (code) => {
-    if (!stopping) stop(code ?? 1)
-  })
-}
-
-process.on('SIGINT', () => stop())
-process.on('SIGTERM', () => stop())
+process.on('SIGINT', stop)
+process.on('SIGTERM', stop)
