@@ -119,6 +119,10 @@ function Icon({ name, size = 18 }) {
     heart: <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10z" />,
     eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="2.5" /></>,
     close: <path d="M6 6l12 12M18 6 6 18" />,
+    home: <><path d="m3 10 9-7 9 7v10H3z" /><path d="M9 20v-7h6v7" /></>,
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
+    chevron: <path d="m9 5 7 7-7 7" />,
+    help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
   }
   return <svg viewBox="0 0 24 24" {...s}>{paths[name] || paths.star}</svg>
 }
@@ -166,18 +170,26 @@ function LanguagePicker({ embedded = false }) {
 
 function Header() {
   const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user } = useApp()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   return (
     <header className="header">
-      <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
-      <NavLink to="/" className="logo" aria-label="Bullwave Club home"><span className="brand-mark" aria-hidden="true">≈</span><span>BULLWAVE<span className="brand-club">CLUB</span></span></NavLink>
+      <button className="icon-btn mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
+      <NavLink to="/" className="logo" aria-label="Bullwave Club home">
+        <span className="logo-emblem" aria-hidden="true" />
+        <span className="logo-wordmark" aria-hidden="true" />
+        <span className="logo-wave" aria-hidden="true" />
+      </NavLink>
       <nav className="top-nav">
         <NavLink to="/" end>Sports</NavLink>
         <NavLink to="/live">Live</NavLink>
         <NavLink to="/casino/live-casino">Games</NavLink>
-        <NavLink to="/promotions">Rewards</NavLink>
+        <NavLink to="/vip">Rewards</NavLink>
+        <NavLink to="/promotions">Promotions</NavLink>
       </nav>
       <div className="header-right">
-        <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Icon name="search" /></button>
+        <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
+        <button className="icon-btn notification-btn" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Icon name="bell" size={21} /><i /></button>
+        {notificationsOpen && <div className="notifications-popover"><strong>Notifications</strong><p>You're all caught up.</p></div>}
         <LanguagePicker />
         {loggedIn ? (
           <NavLink to="/account" className="btn btn-ghost">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
@@ -192,9 +204,10 @@ function Header() {
 
 function Sidebar() {
   const [leaguesOpen, setLeaguesOpen] = useState(false)
+  const { setAuthMode } = useApp()
   return (
     <aside className="sidebar">
-      <div className="sidebar-label">EXPLORE</div>
+      <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
       {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => (
         <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
           <span className="dot" style={{ color: s.color || '#61D6B0' }}>
@@ -204,7 +217,9 @@ function Sidebar() {
           {s.count ? <span className="side-count">{s.count}</span> : null}
         </NavLink>
       ))}
-      <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <span>{leaguesOpen ? '−' : '+'}</span></button>
+      <NavLink to="/casino/virtual-sports" className="side-item"><span className="dot"><Icon name="virtual" size={18} /></span>Esports</NavLink>
+      <NavLink to="/live" className="side-item"><span className="dot"><Icon name="layers" size={18} /></span>All Sports</NavLink>
+      <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <Icon name="chevron" size={16} /></button>
       {leaguesOpen && leagues.map((g) => (
         <div key={g.group} className="league-section">
           <div className="side-group">{g.group}</div>
@@ -222,6 +237,11 @@ function Sidebar() {
           </div>
         </div>
       ))}
+      <div className="side-utility">
+        <NavLink to="/account/settings" className="side-item"><span className="dot"><Icon name="gear" size={18} /></span>Settings</NavLink>
+        <NavLink to="/faq" className="side-item"><span className="dot"><Icon name="help" size={18} /></span>Help</NavLink>
+      </div>
+      <div className="side-club"><span aria-hidden="true">♛</span><strong>Join Bullwave Club</strong><p>Get exclusive rewards,<br />boosted odds and more!</p><button type="button" onClick={() => setAuthMode('signup')}>Create Account</button></div>
     </aside>
   )
 }
@@ -230,15 +250,19 @@ function Betslip() {
   const { betslip, removeBet, placeBets, loggedIn, setAuthMode } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
+  const [mode, setMode] = useState('Single')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
     <aside className="betslip">
-      <h3>Betslip {betslip.length ? `(${betslip.length})` : ''}</h3>
+      <div className="slip-panel">
+      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}</h3>
+      <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
       {betslip.length === 0 ? (
         <div className="slip-empty">
           <div className="icon"><Icon name="ticket" /></div>
-          <div style={{ color: '#fff', marginBottom: 6 }}>Your betslip is empty</div>
-          Click on odds to add a bet to the betslip
+          <strong>Your bet slip is empty</strong>
+          <span>Click on odds to add a selection<br />to your bet slip.</span>
+          {!loggedIn && <div className="slip-login"><strong>Log in to start betting</strong><button type="button" onClick={() => setAuthMode('login')}>Log in</button><small>Don't have an account? <button type="button" onClick={() => setAuthMode('signup')}>Sign up</button></small></div>}
         </div>
       ) : (
         <>
@@ -254,11 +278,13 @@ function Betslip() {
             <input placeholder="Stake, ₹" value={stake} onChange={(e) => setStake(e.target.value)} />
           </div>
           <div className="slip-foot">
+            {mode !== 'Single' && <p className="hint">{mode} bets are not available yet. Select Single to place a bet.</p>}
             <div className="row-between"><span>Total odds</span><b>{total.toFixed(2)}</b></div>
             <div className="row-between"><span>Possible win</span><b>₹{(total * Number(stake || 0)).toFixed(2)}</b></div>
             {slipError && <p className="hint" style={{ color: 'var(--coral)' }}>{slipError}</p>}
             <button
               className="btn btn-yellow btn-block"
+              disabled={mode !== 'Single'}
               onClick={async () => {
                 setSlipError('')
                 if (!loggedIn) {
@@ -277,6 +303,8 @@ function Betslip() {
           </div>
         </>
       )}
+      </div>
+      <div className="slip-rewards"><span className="reward-crown" aria-hidden="true">♛</span><h3>Exclusive Rewards<br />for Members</h3><ul><li>Higher Odds</li><li>Early Access</li><li>Exclusive Promotions</li><li>Fast Withdrawals</li></ul><NavLink to="/vip">Join Now <span aria-hidden="true">→</span></NavLink></div>
     </aside>
   )
 }
@@ -666,6 +694,7 @@ function MatchCard({ m }) {
 function Footer() {
   return (
     <footer className="footer">
+      <img className="footer-logo" src={`${import.meta.env.BASE_URL}images/brand/bullwave-transparent.png`} alt="Bullwave Club - Higher Minds, Brighter Tomorrows" width="160" height="160" />
       <div className="footer-links">
         <NavLink to="/account">My Account</NavLink>
         <NavLink to="/promotions">Promotions</NavLink>
@@ -822,49 +851,42 @@ function GameCarousel({ catalog }) {
 
 function Home() {
   const { catalogMatches: matches, clubGames } = useApp()
-  const catalog = clubGames.length ? clubGames : games
-  const liveCasino = catalog.filter((g) => g.cat === 'live').slice(0, 6)
   const featured = matches.find((m) => m.live) || matches[0]
+  const [matchDay, setMatchDay] = useState('Today')
+  const todayMatches = [matches.find((m) => m.sport === 'cricket' && m.live), matches.find((m) => m.sport === 'football' && !m.live), matches.find((m) => m.sport === 'tennis'), matches.find((m) => m.sport === 'basketball')].filter(Boolean)
+  const topMatches = matchDay === 'Today' ? (todayMatches.length ? todayMatches : matches.slice(0, 4)) : matchDay === 'Tomorrow' ? matches.filter((m) => /TOMORROW/.test(m.time)).slice(0, 4) : matches.slice(0, 4)
+  const leagueCards = [
+    { name: 'IPL', sport: 'Cricket', mark: 'IPL', className: 'ipl', to: '/sport/cricket' },
+    { name: 'Premier League', sport: 'Football', mark: '♛', className: 'premier', to: '/sport/football' },
+    { name: 'NBA', sport: 'Basketball', mark: 'NBA', className: 'nba', to: '/sport/basketball' },
+    { name: 'ATP Tour', sport: 'Tennis', mark: 'ATP', className: 'atp', to: '/sport/tennis' },
+    { name: 'La Liga', sport: 'Football', mark: 'L', className: 'laliga', to: '/sport/football' },
+    { name: 'Formula 1', sport: 'Motorsport', mark: 'F1', className: 'f1', to: '/live' },
+  ]
   return (
-    <div className="home-desk">
-      {featured && <section className="featured-match" aria-label="Featured event">
-        <div className="featured-heading"><span className="desk-eyebrow">THE SPORTS DESK</span><span className="featured-status">{featured.live ? '● LIVE NOW' : featured.time}</span></div>
-        <div className="featured-body">
-          <div className="featured-copy">
-            <p className="featured-league">{featured.league}</p>
-            <h1>{featured.home}<span>vs</span>{featured.away}</h1>
-            <p className="featured-time">{featured.time}</p>
-            <NavLink className="featured-link" to={`/match/${featured.id}`}>Open match center <span aria-hidden="true">↗</span></NavLink>
-          </div>
-          {featured.score && <div className="featured-score" aria-label="Current score"><span>{featured.score[0]}</span><span className="score-divider">:</span><span>{featured.score[1]}</span></div>}
-        </div>
-        <div className="featured-timeline"><span>EVENT UPDATE</span><div><i /></div><span>{featured.live ? 'IN PLAY' : 'UPCOMING'}</span></div>
-      </section>}
+    <div className="home-desk reference-home">
+      <section className="home-hero" aria-label="Bullwave Club sports">
+        <div className="hero-message"><p>BIGGER GAMES. HIGHER THRILLS.</p><h1>RIDE THE <span>WAVE</span></h1><div>Live sports. Real action. Bigger rewards.</div><NavLink to="/live">Explore Live Events <span aria-hidden="true">→</span></NavLink></div>
+        <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
+      </section>
       <nav className="sport-filter" aria-label="Browse by sport">
-        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis'].includes(s.id)).map((s) => <NavLink key={s.id} to={s.to}><Icon name={s.icon} size={18} />{s.name}</NavLink>)}
+        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
+        <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
-      <div className="section-head">
-        <h2>On the board</h2>
-        <NavLink to="/live">All events <span aria-hidden="true">↗</span></NavLink>
+      <div className="home-content-grid">
+        <section className="live-feature-area">
+          <h2 className="home-section-title"><Icon name="zap" size={24} /> Featured Live</h2>
+          {featured && <article className="live-feature-card">
+            <div className="live-card-top"><span className="live-badge">★ LIVE</span><span className="live-card-league">Youth teams • ODI U-19 • 2nd ODI</span><span className="live-card-innings">● &nbsp;Innings 1&nbsp; <i /> &nbsp;37.2 overs</span></div>
+            <div className="live-scoreboard"><div className="live-team"><CountryFlag code="IN" /><strong>{featured.home}</strong></div><div className="live-center-score"><strong>{featured.score?.[0] || '0/0'}</strong><span>(37.2)</span></div><div className="live-team"><CountryFlag code="AU" /><strong>{featured.away}</strong><span>{featured.score?.[1]?.split(' (')[0] || '0/0'}</span></div></div>
+            <div className="live-lead">Australia U-19 lead by 188 runs</div>
+            <div className="live-card-actions"><NavLink to={`/match/${featured.id}`}>Open Match Center <span aria-hidden="true">→</span></NavLink><NavLink to={`/match/${featured.id}`}>View Odds</NavLink></div>
+          </article>}
+        </section>
+        <section className="top-matches-panel"><div className="top-matches-head"><h2><Icon name="cal" size={20} /> Top Matches</h2><NavLink to="/live">View all live <span aria-hidden="true">→</span></NavLink></div><div className="day-tabs" role="tablist" aria-label="Match day">{['Today', 'Tomorrow', 'This Week'].map((day) => <button key={day} type="button" role="tab" aria-selected={matchDay === day} className={matchDay === day ? 'active' : ''} onClick={() => setMatchDay(day)}>{day}</button>)}</div><div className="top-match-list">{topMatches.length ? topMatches.map((m) => <NavLink to={`/match/${m.id}`} key={m.id} className="top-match-row"><span className={`top-match-icon sport-${m.sport}`}><Icon name={m.sport === 'table-tennis' ? 'table' : m.sport} size={19} /></span><span className="top-match-copy"><small>{m.live ? 'LIVE' : m.time}</small><strong>{m.home} vs {m.away}</strong>{!m.live && <em>{m.league.split('.').slice(-1)[0].trim()}</em>}</span>{m.live && <span className="top-match-score">{m.score?.[0]}{m.sport === 'cricket' ? ' (37.2)' : ''}</span>}<Icon name="chevron" size={15} /></NavLink>) : <p className="top-match-empty">No matches scheduled for this day.</p>}</div></section>
       </div>
-      <div className="match-grid">
-        {matches.slice(0, 4).map((m) => <MatchCard key={m.id} m={m} />)}
-      </div>
-      <div className="section-head rewards-head"><h2>Club rewards</h2><NavLink to="/promotions">All rewards <span aria-hidden="true">↗</span></NavLink></div>
-      <NavLink to="/promotions" className="rewards-feature"><span>REWARDS / BULLWAVE CLUB</span><strong>More for every match day.</strong><span className="rewards-action">Explore rewards ↗</span></NavLink>
-      <div className="section-head">
-        <h2>Club games</h2>
-        <NavLink to="/casino/live-casino">All games <span aria-hidden="true">↗</span></NavLink>
-      </div>
-      <div className="casino-row">
-        {liveCasino.map((g) => (
-          <NavLink key={g.id} to="/casino/live-casino" className="game-tile">
-            <GameArtwork game={g} />
-            <span>{g.name}</span>
-          </NavLink>
-        ))}
-      </div>
-      <Footer />
+      <section className="popular-leagues"><h2 className="home-section-title"><span aria-hidden="true">🏆</span> Popular Leagues</h2><div className="popular-league-grid">{leagueCards.map((league) => <NavLink to={league.to} key={league.name} className="popular-league"><span className={`league-logo ${league.className}`}>{league.mark}</span><span><strong>{league.name}</strong><small>{league.sport}</small></span></NavLink>)}</div></section>
+      <footer className="home-brand-strip"><span>SPORTS BRING US TOGETHER.<br /><b>BULLWAVE</b> KEEPS US AHEAD.</span><div className="strip-brand"><span className="logo-emblem" aria-hidden="true" /><strong>BULL<span>WAVE</span><small>CLUB</small></strong></div><p>SPORTS<br />PEOPLE<br />PASSION<br />PROGRESS</p></footer>
     </div>
   )
 }
