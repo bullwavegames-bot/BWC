@@ -1,8 +1,94 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
+import GameIcon, { getGameIconKind } from './GameIcon.jsx'
+
+const gameVisuals = {
+  aviator: { glyph: '✈', tag: 'FLIGHT', colors: ['#ff6b6b', '#601d32'] },
+  jetx: { glyph: '🚀', tag: 'TURBO', colors: ['#42d9ff', '#153665'] },
+  rummy: { glyph: '♠', tag: 'CARDS', colors: ['#ffb44c', '#6f251e'] },
+  aviatrix: { glyph: '🛩', tag: 'SKY RUSH', colors: ['#cf83ff', '#442070'] },
+  garuda: { glyph: '◆', tag: 'FORTUNE', colors: ['#ffd66b', '#724b12'] },
+  orizon: { glyph: '◉', tag: 'PORTAL', colors: ['#62e6dc', '#135469'] },
+  andar: { glyph: '♣', tag: 'LIVE CARDS', colors: ['#ff9a64', '#5e2837'] },
+  ultimate: { glyph: '7', tag: 'HOT SLOT', colors: ['#ff5f89', '#761d48'] },
+  money: { glyph: '◷', tag: 'GAME SHOW', colors: ['#f4cf65', '#3e6c42'] },
+  coins: { glyph: '777', tag: 'JACKPOT', colors: ['#ffce50', '#704412'] },
+  pmslots: { glyph: '◇', tag: 'BULLWAVE', colors: ['#61d6b0', '#164d52'] },
+  instants: { glyph: '⚡', tag: 'QUICK PLAY', colors: ['#48dfff', '#243c79'] },
+  coinflip: { glyph: '●', tag: 'HEADS / TAILS', colors: ['#f2c45a', '#755226'] },
+  mines: { glyph: '💎', tag: 'GEM HUNT', colors: ['#b982ff', '#3b2768'] },
+  ice: { glyph: '🐟', tag: 'FROZEN WIN', colors: ['#65eaff', '#18507e'] },
+  wonderland: { glyph: '♛', tag: 'MAGIC', colors: ['#ee91ff', '#502477'] },
+  lightning: { glyph: 'ϟ', tag: 'LIVE WHEEL', colors: ['#66edff', '#24347d'] },
+  monopoly: { glyph: '●', tag: 'BIG BALLER', colors: ['#ffbd63', '#6a2730'] },
+  reddoor: { glyph: '▯', tag: 'LIVE WHEEL', colors: ['#ff656b', '#651e27'] },
+  crash: { glyph: '↗', tag: 'MULTIPLIER', colors: ['#ff755d', '#63213e'] },
+  plinko: { glyph: '▽', tag: 'DROP & WIN', colors: ['#59e1c7', '#174d64'] },
+  keno: { glyph: '●', tag: 'LUCKY DRAW', colors: ['#77a7ff', '#28396d'] },
+  virtualc: { glyph: '🏏', tag: 'VIRTUAL', colors: ['#73df8b', '#205941'] },
+  efootball: { glyph: '⚽', tag: 'E-SPORT', colors: ['#7fe899', '#1a5365'] },
+}
+
+const gameIconTags = {
+  '2048': 'NUMBER PUZZLE', aim: 'SKILL', blob: 'ARENA', bubble: 'ARCADE', carrom: 'BOARD GAME',
+  chess: 'STRATEGY', crossword: 'WORD GAME', draw: 'CREATIVE', runner: 'ARCADE', knowledge: 'TRIVIA',
+  city: 'SIMULATION', jigsaw: 'PUZZLE', kite: 'ARCADE', lantern: 'PUZZLE', ludo: 'BOARD GAME',
+  rooms: 'MULTIPLAYER', rummy: 'CARDS',
+}
+
+function GameArtwork({ game }) {
+  const fallback = Object.values(gameVisuals)[Math.abs([...String(game.name)].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % Object.keys(gameVisuals).length]
+  const visual = gameVisuals[game.id] || fallback
+  const iconKind = getGameIconKind(game)
+  const safeId = String(game.id).replace(/[^a-z0-9]/gi, '-')
+  const gradientId = `game-gradient-${safeId}`
+  const glowId = `game-glow-${safeId}`
+  const patternId = `game-pattern-${safeId}`
+  return (
+    <svg className="game-artwork" viewBox="0 0 160 110" role="img" aria-label={`${game.name} artwork`}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor={visual.colors[0]} />
+          <stop offset="1" stopColor={visual.colors[1]} />
+        </linearGradient>
+        <radialGradient id={glowId} cx="50%" cy="42%" r="62%">
+          <stop stopColor="#fff" stopOpacity=".32" />
+          <stop offset=".52" stopColor={visual.colors[0]} stopOpacity=".12" />
+          <stop offset="1" stopColor="#020913" stopOpacity=".48" />
+        </radialGradient>
+        <pattern id={patternId} width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <path d="M0 0v14" stroke="#fff" strokeWidth="1" opacity=".055" />
+        </pattern>
+      </defs>
+      <rect width="160" height="110" rx="14" fill={`url(#${gradientId})`} />
+      <rect width="160" height="110" rx="14" fill={`url(#${glowId})`} />
+      <rect width="160" height="110" rx="14" fill={`url(#${patternId})`} />
+      <circle cx="139" cy="12" r="34" fill="#fff" opacity=".09" />
+      <circle cx="13" cy="104" r="46" fill="#020916" opacity=".28" />
+      <path d="M-8 83c31-27 55 18 88-7s59-8 88 4" fill="none" stroke="#fff" strokeWidth="3" opacity=".18" />
+      <path d="M-4 92c34-21 58 18 94-8s54-6 76 3" fill="none" stroke={visual.colors[0]} strokeWidth="2" opacity=".42" />
+      <rect x="10" y="9" width="58" height="17" rx="8.5" fill="#03101d" opacity=".68" stroke="#fff" strokeOpacity=".16" />
+      <circle cx="20" cy="17.5" r="3" fill={visual.colors[0]} />
+      <text x="28" y="20.5" className="game-art-tag">{iconKind ? gameIconTags[iconKind] : visual.tag || game.cat || 'PLAY'}</text>
+      {iconKind ? <GameIcon game={game} kind={iconKind} tile /> : <>
+        <g className="game-art-ring">
+          <circle cx="80" cy="61" r="31" fill="#05111f" opacity=".34" stroke="#fff" strokeOpacity=".18" />
+          <circle cx="80" cy="61" r="25" fill="none" stroke="#fff" strokeWidth="1.5" strokeDasharray="5 5" opacity=".28" />
+          <circle cx="105" cy="61" r="3" fill={visual.colors[0]} />
+        </g>
+        <text x="80" y="75" textAnchor="middle" className="game-glyph">{visual.glyph}</text>
+      </>}
+      <g fill="#fff">
+        <circle cx="130" cy="84" r="2" opacity=".7" />
+        <circle cx="140" cy="75" r="1.4" opacity=".45" />
+        <circle cx="124" cy="71" r="1" opacity=".5" />
+      </g>
+    </svg>
+  )
+}
 
 function Icon({ name, size = 18 }) {
   const s = { width: size, height: size, fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -19,21 +105,26 @@ function Icon({ name, size = 18 }) {
     virtual: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
     star: <path d="m12 3 2.4 6.6H21l-5.4 4 2.1 6.4L12 16.8 6.3 20l2.1-6.4L3 9.6h6.6z" />,
     layers: <path d="m12 3 9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5" />,
-    football: <circle cx="12" cy="12" r="8" />,
-    cricket: <path d="M5 19 19 5M8 19h8M5 16V8" />,
-    basketball: <><circle cx="12" cy="12" r="8" /><path d="M4.5 12h15M12 4.5c3 3 3 12 0 15M12 4.5c-3 3-3 12 0 15" /></>,
-    tennis: <><circle cx="12" cy="12" r="8" /><path d="M6 7c4 2 8 8 10 11" /></>,
-    table: <><circle cx="12" cy="12" r="3" /><path d="M4 12h16" /></>,
-    horse: <path d="M5 18c2-6 6-10 14-12-2 4-1 8-4 11H8" />,
+    football: <><circle cx="12" cy="12" r="9" /><path d="m12 8 3.6 2.6-1.4 4.2H9.8l-1.4-4.2zM12 8V3.1M15.6 10.6l4.7-1.5M14.2 14.8l2.9 4M9.8 14.8l-2.9 4M8.4 10.6 3.7 9.1" /></>,
+    cricket: <><path d="m14.7 3.5 3.8 2.2-8.2 14.2-3.8-2.2zM8.2 19l-1.5 2.5" /><path d="M3.5 8v12M6 8v12M2.5 8h4.5M2.5 20h4.5" /><circle cx="19.2" cy="17.7" r="1.8" fill="currentColor" stroke="none" /></>,
+    basketball: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.7 2.5 4.1 5.5 4.1 9S14.7 18.5 12 21M12 3C9.3 5.5 7.9 8.5 7.9 12S9.3 18.5 12 21M5.8 5.7c3.3 2.1 9.1 2.1 12.4 0M5.8 18.3c3.3-2.1 9.1-2.1 12.4 0" /></>,
+    tennis: <><circle cx="12" cy="12" r="9" /><path d="M5.7 5.7c3.2 2 4.7 4.1 5 6.5.3 2.5 2 4.5 5.6 6.1M18.3 5.7c-3.2 2-4.7 4.1-5 6.5-.3 2.5-2 4.5-5.6 6.1" /></>,
+    table: <><path d="M4 14h16M5.5 14l-1 6M18.5 14l1 6M12 14v6M4 17h16" /><path d="M8.4 4.2a4 4 0 1 1-3.7 6.6A4 4 0 0 1 8.4 4.2Z" /><path d="m7 11 2 4" /><circle cx="17.8" cy="7" r="1.4" fill="currentColor" stroke="none" /></>,
+    horse: <><path d="M5 19c.8-4.9 3.4-8 7.7-9.5L15 4l2.3 4.2 2.7 1.5-1.8 3.6-4.1.5-2.5 5.2Z" /><path d="m12.7 9.5 2.8 2.5M8.2 12.2l-3-1.7M8.5 19l-2.7 2M12.2 19l2.1 2M16.7 8.3l2-3.3" /><circle cx="17" cy="10.1" r=".7" fill="currentColor" stroke="none" /></>,
     ticket: <path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2z" />,
     plus: <path d="M12 5v14M5 12h14" />,
     minus: <path d="M5 12h14" />,
     shield: <path d="M12 3 20 7v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />,
     gear: <><circle cx="12" cy="12" r="3" /><path d="M12 3v2M12 19v2M4.9 6.5l1.5 1.5M17.6 16l1.5 1.5M3 12h2M19 12h2M4.9 17.5l1.5-1.5M17.6 8l1.5-1.5" /></>,
     heart: <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10z" />,
+    eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="2.5" /></>,
     close: <path d="M6 6l12 12M18 6 6 18" />,
   }
   return <svg viewBox="0 0 24 24" {...s}>{paths[name] || paths.star}</svg>
+}
+
+function CountryFlag({ code, className = '' }) {
+  return <img className={`country-flag-image ${className}`} src={`${import.meta.env.BASE_URL}images/flags/${code.toLowerCase()}.svg`} alt="" width="24" height="18" />
 }
 
 function LanguagePicker({ embedded = false }) {
@@ -50,7 +141,7 @@ function LanguagePicker({ embedded = false }) {
     <div className={`lang-menu ${embedded ? 'in-page' : ''}`}>
       {languages.map((l) => (
         <button key={l.code} type="button" className={`lang-row ${language === l.code ? 'on' : ''}`} onClick={() => pick(l.code)}>
-          <span className="lang-flag">{l.flag}</span>
+          <CountryFlag code={l.country} className="lang-flag" />
           <span className="lang-name">{l.name}</span>
           <span className="lang-radio" aria-hidden />
         </button>
@@ -61,7 +152,7 @@ function LanguagePicker({ embedded = false }) {
   return (
     <div className="lang-wrap">
       <button className="lang" type="button" onClick={() => setLangOpen(!langOpen)}>
-        {current.flag} {current.code}
+        <CountryFlag code={current.country} /> {current.code}
       </button>
       {langOpen && (
         <>
@@ -108,24 +199,28 @@ function Sidebar() {
     <aside className="sidebar">
       {sports.map((s) => (
         <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
-          <span className="dot" style={{ color: s.color || '#61D6B0' }}><Icon name={s.icon} size={16} /></span>
+          <span className="dot" style={{ color: s.color || '#61D6B0' }}>
+            {s.image ? <span className={`sport-image sport-image-${s.id}`} aria-hidden="true">{s.image}</span> : <Icon name={s.icon} size={18} />}
+          </span>
           {s.name}
           {s.count ? <span className="side-count">{s.count}</span> : null}
         </NavLink>
       ))}
       {leagues.map((g) => (
-        <div key={g.group}>
+        <div key={g.group} className="league-section">
           <div className="side-group">{g.group}</div>
-          {g.items.map((l) => (
-            <NavLink key={l.name} to="/sport/football" className="league">
-              <span>{l.flag}</span>
-              <div>
-                <div>{l.name}</div>
-                <div className="meta">{l.sub}</div>
-              </div>
-              <span className="chev">›</span>
-            </NavLink>
-          ))}
+          <div className="league-list">
+            {g.items.map((l, i) => (
+              <NavLink key={`${l.name}-${i}`} to={g.to} className="league">
+                <span className={`league-mark mark-${l.code}`} aria-hidden="true"><i /></span>
+                <div className="league-copy">
+                  <div className="meta">{l.sub}</div>
+                  <div className="league-name">{l.name}</div>
+                </div>
+                <span className="chev">›</span>
+              </NavLink>
+            ))}
+          </div>
         </div>
       ))}
     </aside>
@@ -187,9 +282,25 @@ function Betslip() {
   )
 }
 
+const dialingCountries = [
+  { iso: 'IN', name: 'India', dial: '+91' },
+  { iso: 'AE', name: 'United Arab Emirates', dial: '+971' },
+  { iso: 'US', name: 'United States', dial: '+1' },
+  { iso: 'CA', name: 'Canada', dial: '+1' },
+  { iso: 'GB', name: 'United Kingdom', dial: '+44' },
+  { iso: 'AU', name: 'Australia', dial: '+61' },
+  { iso: 'SG', name: 'Singapore', dial: '+65' },
+  { iso: 'SA', name: 'Saudi Arabia', dial: '+966' },
+  { iso: 'PK', name: 'Pakistan', dial: '+92' },
+  { iso: 'BD', name: 'Bangladesh', dial: '+880' },
+  { iso: 'NP', name: 'Nepal', dial: '+977' },
+  { iso: 'LK', name: 'Sri Lanka', dial: '+94' },
+  { iso: 'DE', name: 'Germany', dial: '+49' },
+  { iso: 'FR', name: 'France', dial: '+33' },
+]
+
 function AuthModal() {
-  const { authMode, setAuthMode, login, register, loginWithGoogle, authError, setAuthError } = useApp()
-  const [loginTab, setLoginTab] = useState('E-mail')
+  const { authMode, setAuthMode, login, register, loginWithGoogle, requestPasswordReset, updatePassword, authError, setAuthError } = useApp()
   const [signupTab, setSignupTab] = useState('Phone')
   const [showPass, setShowPass] = useState(false)
   const [promoOpen, setPromoOpen] = useState(false)
@@ -197,24 +308,32 @@ function AuthModal() {
   const [accepted, setAccepted] = useState(true)
   const [bonus, setBonus] = useState('Welcome Casino 100%')
   const [phone, setPhone] = useState('')
+  const [country, setCountry] = useState(dialingCountries[0])
+  const [countryOpen, setCountryOpen] = useState(false)
+  const [countryQuery, setCountryQuery] = useState('')
   const [email, setEmail] = useState('')
-  const [accountNumber, setAccountNumber] = useState('')
   const [password, setPassword] = useState('')
+  const [recoverySent, setRecoverySent] = useState(false)
   const [promoCode, setPromoCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [otp, setOtp] = useState('')
   const [otpHint, setOtpHint] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [phoneVerified, setPhoneVerified] = useState(false)
+  const fullPhone = `${country.dial}${phone.replace(/\D/g, '')}`
+  const filteredCountries = dialingCountries.filter((item) => `${item.name} ${item.iso} ${item.dial}`.toLowerCase().includes(countryQuery.trim().toLowerCase()))
   if (!authMode) return null
   const isLogin = authMode === 'login'
+  const isRecover = authMode === 'recover'
+  const isUpdatePassword = authMode === 'update-password'
 
   const requestOtp = async () => {
     setBusy(true)
     setAuthError('')
     setOtpHint('')
     try {
-      const data = await sendOtp(phone)
+      if (!/^\d{10,15}$/.test(fullPhone.replace(/\D/g, ''))) throw new Error('Enter a valid mobile number for the selected country.')
+      const data = await sendOtp(fullPhone)
       setOtpSent(true)
       setPhoneVerified(false)
       setOtp('')
@@ -230,7 +349,7 @@ function AuthModal() {
     setBusy(true)
     setAuthError('')
     try {
-      await verifyOtp(phone, otp)
+      await verifyOtp(fullPhone, otp)
       setPhoneVerified(true)
       setOtpHint('Phone verified.')
     } catch (err) {
@@ -246,12 +365,11 @@ function AuthModal() {
     setAuthError('')
     try {
       if (isLogin) {
-        const method = loginTab === 'E-mail' ? 'email' : loginTab === 'Account number' ? 'account' : 'phone'
-        await login({ method, phone, email, accountNumber, password })
+        await login({ method: 'email', email, password })
       } else {
         await register({
           method: signupTab === 'E-mail' ? 'email' : 'phone',
-          phone,
+          phone: signupTab === 'Phone' ? fullPhone : '',
           email,
           password,
           promoCode,
@@ -266,41 +384,84 @@ function AuthModal() {
     }
   }
 
+  const sendRecovery = async () => {
+    setBusy(true)
+    setAuthError('')
+    try {
+      await requestPasswordReset(email)
+      setRecoverySent(true)
+    } catch (err) {
+      setAuthError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveNewPassword = async () => {
+    setBusy(true)
+    setAuthError('')
+    try {
+      await updatePassword(password)
+    } catch (err) {
+      setAuthError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="overlay" onClick={() => setAuthMode(null)}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${isLogin || isRecover || isUpdatePassword ? 'login-modal' : ''}`} role="dialog" aria-modal="true" aria-label={isLogin ? 'Log in' : isRecover ? 'Reset password' : isUpdatePassword ? 'Set new password' : 'Sign up'} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <button className="icon-btn" onClick={() => setAuthMode(null)} aria-label="Close"><Icon name="close" /></button>
-          <h1>{isLogin ? 'Log in' : 'Sign up'}</h1>
+          <h1>{isLogin ? 'Log in' : isRecover ? 'Reset password' : isUpdatePassword ? 'New password' : 'Sign up'}</h1>
           <button className="icon-btn" type="button" aria-label="Support">🎧</button>
         </div>
-        <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
-          <span className="g-mark">G</span> Continue with Google
-        </button>
-        <div className="or">or</div>
+        {(isLogin || authMode === 'signup') && (
+          <>
+            {isLogin && <div className="login-intro"><span>WELCOME BACK</span><p>Sign in to your Bullwave Club account</p></div>}
+            <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
+              <span className="g-mark">G</span> Continue with Google
+            </button>
+            <div className="or">or continue with e-mail</div>
+          </>
+        )}
         {authError && <p className="hint" style={{ color: 'var(--coral)' }}>{authError}</p>}
 
-        {isLogin ? (
+        {isRecover ? (
+          <div className="recovery-panel">
+            {recoverySent ? (
+              <p className="recovery-message">If an account exists for <strong>{email}</strong>, a password reset link is on its way. Check your inbox.</p>
+            ) : (
+              <>
+                <p>Enter the e-mail linked to your account. We’ll send you a secure reset link.</p>
+                <label className="auth-label" htmlFor="recovery-email">Account e-mail</label>
+                <input id="recovery-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendRecovery() }} />
+                <button className="btn btn-yellow btn-block" type="button" disabled={busy || !email.trim()} onClick={sendRecovery}>{busy ? 'Sending…' : 'Send reset link'}</button>
+              </>
+            )}
+            <button className="auth-back" type="button" onClick={() => { setAuthError(''); setAuthMode('login') }}>← Back to log in</button>
+          </div>
+        ) : isUpdatePassword ? (
+          <div className="recovery-panel">
+            <p>Choose a new password for your Bullwave Club account.</p>
+            <label className="auth-label" htmlFor="new-password">New password</label>
+            <input id="new-password" className="input" type="password" autoComplete="new-password" placeholder="At least 10 characters" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveNewPassword() }} />
+            <button className="btn btn-yellow btn-block" type="button" disabled={busy || password.length < 10} onClick={saveNewPassword}>{busy ? 'Saving…' : 'Save new password'}</button>
+          </div>
+        ) : isLogin ? (
           <>
-            <div className="tabs tabs-3">
-              {['Phone number', 'Account number', 'E-mail'].map((t) => (
-                <button key={t} className={loginTab === t ? 'on' : ''} onClick={() => setLoginTab(t)}>{t}</button>
-              ))}
-            </div>
             <div className="field">
-              <div className="field-row">
-                {loginTab === 'Phone number' && <input className="input" defaultValue="+91" style={{ maxWidth: 88 }} readOnly />}
-                {loginTab === 'Phone number' && <input className="input" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />}
-                {loginTab === 'Account number' && <input className="input" placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />}
-                {loginTab === 'E-mail' && <input className="input" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />}
-              </div>
+              <label className="auth-label" htmlFor="login-email">E-mail address</label>
+              <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
             </div>
             <div className="field pass-wrap">
-              <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label="Show password">👁</button>
+              <label className="auth-label" htmlFor="login-password">Password</label>
+              <input id="login-password" className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+              <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Hide password' : 'Show password'}><Icon name={showPass ? 'close' : 'eye'} size={18} /></button>
             </div>
-            <button className="forgot" type="button">Forgot your password?</button>
-            <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>{busy ? 'Please wait…' : 'Log in'}</button>
+            <button className="forgot" type="button" onClick={() => { setAuthError(''); setRecoverySent(false); setAuthMode('recover') }}>Forgot your password?</button>
+            <button className="btn btn-yellow btn-block" disabled={busy || !email.trim() || !password} onClick={submit}>{busy ? 'Please wait…' : 'Log in to Bullwave Club'}</button>
             <div className="switch-auth">
               Don't have an account? <button type="button" onClick={() => { setAuthError(''); setAuthMode('signup') }}>Sign up</button>
             </div>
@@ -331,12 +492,27 @@ function AuthModal() {
 
             {signupTab === 'Phone' ? (
               <>
-                <div className="field field-row">
-                  <div className="flag-box" title="India">🇮🇳</div>
+                <div className="field field-row phone-field" onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setCountryOpen(false) }}>
+                  <button className="flag-box country-trigger" type="button" aria-label={`Country code: ${country.name} ${country.dial}`} aria-expanded={countryOpen} onClick={() => setCountryOpen((open) => !open)}>
+                    <CountryFlag code={country.iso} /><b>{country.dial}</b><small>▾</small>
+                  </button>
                   <label className="float-field">
                     <span>Phone number</span>
-                    <input className="input" placeholder="+91(XXXX) XXX - XXX" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneVerified(false); setOtpSent(false) }} />
+                    <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="Mobile number" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 12)); setPhoneVerified(false); setOtpSent(false); setOtpHint('') }} />
                   </label>
+                  {countryOpen && (
+                    <div className="country-menu">
+                      <input className="country-search" type="search" autoFocus placeholder="Search country or code" aria-label="Search country or dial code" value={countryQuery} onChange={(e) => setCountryQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setCountryOpen(false) }} />
+                      <div className="country-list" role="listbox" aria-label="Country calling codes">
+                        {filteredCountries.map((item) => (
+                          <button key={item.iso} className={item.iso === country.iso ? 'selected' : ''} type="button" role="option" aria-selected={item.iso === country.iso} onClick={() => { setCountry(item); setCountryOpen(false); setCountryQuery(''); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }}>
+                            <CountryFlag code={item.iso} /><span className="country-name">{item.name}</span><b>{item.dial}</b>
+                          </button>
+                        ))}
+                        {!filteredCountries.length && <p className="country-empty">No matching country</p>}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="field">
                   <input className="input" type="email" placeholder="E-mail (required)" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -449,27 +625,155 @@ function Footer() {
   )
 }
 
+const heroPromotions = [
+  { kicker: 'New player offer', title: 'WELCOME BONUS', detail: 'Get Sports Bonus 100% up to ₹50,000', cta: 'Claim bonus', image: 'images/hero/cricket-champion-v1.png', position: 'center' },
+  { kicker: 'Bullwave rewards', title: 'SPIN THE WHEEL', detail: 'A fresh surprise is waiting in Promotions', cta: 'Explore rewards', image: 'images/promotions/wheel-v1.webp', position: 'center, right center', size: 'cover, auto 100%' },
+  { kicker: 'Live casino', title: 'CASINO RELOAD', detail: 'Discover live tables and new club offers', cta: 'See promotions', image: 'images/promotions/casino-hero-v2.webp', position: 'center, right center', size: 'cover, auto 100%' },
+]
+
+function PromotionSlider() {
+  const [active, setActive] = useState(0)
+  const [paused, setPaused] = useState(false)
+  useEffect(() => {
+    if (paused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % heroPromotions.length), 6000)
+    return () => window.clearInterval(timer)
+  }, [paused])
+  const move = (step) => setActive((current) => (current + step + heroPromotions.length) % heroPromotions.length)
+  return (
+    <section className="banner hero-slider" aria-label="Featured promotions" aria-roledescription="carousel" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false) }}>
+      {heroPromotions.map((slide, index) => (
+        <div key={slide.title} className={`hero-slide ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} inert={active !== index ? true : undefined} style={{ backgroundImage: `linear-gradient(90deg, rgba(4,13,24,.98) 0%, rgba(4,13,24,.82) 37%, rgba(4,13,24,.18) 78%), url('${import.meta.env.BASE_URL}${slide.image}')`, backgroundPosition: slide.position, backgroundSize: slide.size || 'cover' }}>
+          <div className="banner-content">
+            <span className="banner-kicker">{slide.kicker}</span>
+            <h1>{slide.title}</h1>
+            <p>{slide.detail}</p>
+            <NavLink to="/promotions" className="btn btn-yellow banner-cta">{slide.cta}</NavLink>
+          </div>
+        </div>
+      ))}
+      <button className="hero-arrow hero-prev" type="button" aria-label="Previous promotion" onClick={() => move(-1)}>‹</button>
+      <button className="hero-arrow hero-next" type="button" aria-label="Next promotion" onClick={() => move(1)}>›</button>
+      <div className="hero-dots" aria-label="Choose promotion">
+        {heroPromotions.map((slide, index) => (
+          <button key={slide.title} type="button" className={active === index ? 'is-active' : ''} aria-label={`Show promotion ${index + 1}: ${slide.title}`} aria-current={active === index ? 'true' : undefined} onClick={() => setActive(index)} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action }) {
+  return <section className="page-intro">
+    <div className="page-intro-copy">
+      <span className="eyebrow">{eyebrow}</span>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      {action && <NavLink className="page-intro-action" to={action.to}>{action.label}<span aria-hidden="true">↗</span></NavLink>}
+    </div>
+    <div className="page-intro-detail">
+      <div className="page-intro-emblem" aria-hidden="true"><Icon name={icon} size={42} /></div>
+      {stats.length > 0 && <div className="page-intro-stats">{stats.map((item) => <div key={item.label}><b>{item.value}</b><span>{item.label}</span></div>)}</div>}
+    </div>
+  </section>
+}
+
+function FeatureCards({ items }) {
+  return <div className="feature-grid">{items.map((item) => {
+    const content = <><span className="feature-icon"><Icon name={item.icon} size={23} /></span><strong>{item.title}</strong><span className="feature-detail">{item.detail}</span>{item.to && <span className="feature-link">Explore <span aria-hidden="true">↗</span></span>}</>
+    return item.to ? <NavLink key={item.title} to={item.to} className="feature-card">{content}</NavLink> : <div key={item.title} className="feature-card">{content}</div>
+  })}</div>
+}
+
+function EmptyState({ icon = 'star', title, detail, action }) {
+  return <div className="empty-state"><span className="empty-state-icon"><Icon name={icon} size={30} /></span><h2>{title}</h2><p>{detail}</p>{action && <NavLink to={action.to} className="btn btn-yellow">{action.label}</NavLink>}</div>
+}
+
+function useCarouselControls() {
+  const rowRef = useRef(null)
+  const [edges, setEdges] = useState({ start: true, end: false })
+
+  useEffect(() => {
+    const row = rowRef.current
+    if (!row) return undefined
+    const updateEdges = () => setEdges({
+      start: row.scrollLeft <= 2,
+      end: row.scrollLeft + row.clientWidth >= row.scrollWidth - 2,
+    })
+    updateEdges()
+    row.addEventListener('scroll', updateEdges, { passive: true })
+    const observer = new ResizeObserver(updateEdges)
+    observer.observe(row)
+    const contentObserver = new MutationObserver(updateEdges)
+    contentObserver.observe(row, { childList: true })
+    return () => {
+      row.removeEventListener('scroll', updateEdges)
+      observer.disconnect()
+      contentObserver.disconnect()
+    }
+  }, [])
+
+  const move = (direction) => {
+    const row = rowRef.current
+    if (!row) return
+    row.scrollBy({ left: direction * Math.max(260, row.clientWidth * 0.7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+  }
+
+  return { rowRef, edges, move }
+}
+
+function CarouselArrow({ direction, label, onClick, disabled }) {
+  return <button className="quick-arrow" type="button" aria-label={label} onClick={onClick} disabled={disabled}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={direction === 'previous' ? 'm14.5 5-7 7 7 7' : 'm9.5 5 7 7-7 7'} /></svg>
+  </button>
+}
+
+function ShortcutCarousel() {
+  const { rowRef, edges, move } = useCarouselControls()
+
+  return (
+    <nav className="quick-carousel" aria-label="Explore Bullwave Club">
+      <CarouselArrow direction="previous" label="Previous shortcuts" onClick={() => move(-1)} disabled={edges.start} />
+      <div className="quick-row" ref={rowRef}>
+        {shortcuts.map((s) => (
+          <NavLink key={s.name} to={s.to} className="quick" style={{ '--orb-accent': s.color }}>
+            <div className="orb" style={{ background: s.color }}>
+              <img src={`${import.meta.env.BASE_URL}images/shortcuts/${s.image}.svg`} alt="" width="54" height="54" />
+            </div>
+            <span>{s.name}</span>
+          </NavLink>
+        ))}
+      </div>
+      <CarouselArrow direction="next" label="Next shortcuts" onClick={() => move(1)} disabled={edges.end} />
+    </nav>
+  )
+}
+
+function GameCarousel({ catalog }) {
+  const { rowRef, edges, move } = useCarouselControls()
+  return <nav className="game-carousel" aria-label="Browse games">
+    <CarouselArrow direction="previous" label="Previous games" onClick={() => move(-1)} disabled={edges.start} />
+    <div className="game-row" ref={rowRef}>
+      {catalog.slice(0, 14).map((g) => {
+        const iconKind = getGameIconKind(g)
+        return <NavLink key={g.id} to={`/casino/${g.cat === 'live' ? 'live-casino' : g.cat === 'slots' ? 'slots' : 'instant-games'}`} className="game-circle">
+          <div className="thumb">{iconKind ? <GameIcon game={g} kind={iconKind} /> : <GameArtwork game={g} />}</div>
+          {g.name}
+        </NavLink>
+      })}
+    </div>
+    <CarouselArrow direction="next" label="Next games" onClick={() => move(1)} disabled={edges.end} />
+  </nav>
+}
+
 function Home() {
   const { catalogMatches: matches, clubGames } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const liveCasino = catalog.filter((g) => g.cat === 'live').slice(0, 6)
   return (
     <div>
-      <section className="banner">
-        <div>
-          <h1>WELCOME BONUS</h1>
-          <p>Get Live Casino Bonus 100% up to ₹50,000</p>
-          <NavLink to="/promotions" className="btn btn-yellow" style={{ display: 'inline-flex', alignItems: 'center' }}>Get Now</NavLink>
-        </div>
-      </section>
-      <div className="quick-row">
-        {shortcuts.map((s) => (
-          <NavLink key={s.name} to={s.to} className="quick">
-            <div className="orb" style={{ background: s.color }}>{s.name.slice(0, 1)}</div>
-            {s.name}
-          </NavLink>
-        ))}
-      </div>
+      <PromotionSlider />
+      <ShortcutCarousel />
       <div className="section-head">
         <h2>🔥 Hot Matches</h2>
         <NavLink to="/live">All ›</NavLink>
@@ -477,21 +781,15 @@ function Home() {
       <div className="match-grid">
         {matches.slice(0, 4).map((m) => <MatchCard key={m.id} m={m} />)}
       </div>
-      <div className="game-row">
-        {catalog.slice(0, 14).map((g) => (
-          <NavLink key={g.id} to={`/casino/${g.cat === 'live' ? 'live-casino' : g.cat === 'slots' ? 'slots' : 'instant-games'}`} className="game-circle">
-            <div className="thumb" style={{ background: g.cover ? `center/cover url(${g.cover})` : `hsl(${g.hue} 70% 40%)` }}>{g.cover ? '' : '🎮'}</div>
-            {g.name}
-          </NavLink>
-        ))}
-      </div>
+      <GameCarousel catalog={catalog} />
       <div className="section-head">
         <h2>Club games</h2>
         <NavLink to="/casino/live-casino">All ›</NavLink>
       </div>
       <div className="casino-row">
         {liveCasino.map((g) => (
-          <NavLink key={g.id} to="/casino/live-casino" className="game-tile" style={{ background: g.cover ? `linear-gradient(180deg, transparent, #0B121C), center/cover url(${g.cover})` : `linear-gradient(160deg, hsl(${g.hue} 55% 38%), #0B121C)` }}>
+          <NavLink key={g.id} to="/casino/live-casino" className="game-tile">
+            <GameArtwork game={g} />
             <span>{g.name}</span>
           </NavLink>
         ))}
@@ -504,17 +802,18 @@ function Home() {
 function Live() {
   const { catalogMatches: matches } = useApp()
   const live = matches.filter((m) => m.live)
+  const [sport, setSport] = useState('All Live')
+  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === sport.toLowerCase().replaceAll(' ', '-'))
   return (
-    <div>
-      <h1 className="page-title">Live Events</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
       <div className="filters">
-        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Table Tennis'].map((c, i) => (
-          <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
+        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Table Tennis'].map((c) => (
+          <button key={c} type="button" className={`chip ${sport === c ? 'on' : ''}`} onClick={() => setSport(c)}>{c}</button>
         ))}
       </div>
-      <div className="match-grid">
-        {(live.length ? live : matches).map((m) => <MatchCard key={m.id} m={m} />)}
-      </div>
+      <div className="content-section-title"><h2>{sport === 'All Live' ? 'Live right now' : `${sport} live`}</h2><span>{filtered.length} events</span></div>
+      {filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="live" title="No live events in this sport" detail="Try another sport or browse upcoming fixtures." action={{ to: '/upcoming', label: 'See upcoming events' }} />}
     </div>
   )
 }
@@ -522,32 +821,71 @@ function Live() {
 function Upcoming() {
   const { catalogMatches: matches } = useApp()
   const upcoming = matches.filter((m) => !m.live)
+  const [when, setWhen] = useState('All')
+  const filtered = when === 'All' ? upcoming : upcoming.filter((m) => String(m.time || '').toUpperCase().startsWith(when.toUpperCase()))
   return (
-    <div>
-      <h1 className="page-title">Upcoming events</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="NEXT UP" title="Upcoming events" description="Plan ahead with the fixtures and markets on the schedule." icon="cal" stats={[{ label: 'Fixtures', value: upcoming.length }, { label: 'Sports', value: new Set(upcoming.map((m) => m.sport)).size }]} action={{ to: '/live', label: 'Explore live events' }} />
       <div className="filters">
-        {['All', 'Today', 'Tomorrow', 'Weekend'].map((c, i) => (
-          <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
+        {['All', 'Today', 'Tomorrow'].map((c) => (
+          <button key={c} type="button" className={`chip ${when === c ? 'on' : ''}`} onClick={() => setWhen(c)}>{c}</button>
         ))}
       </div>
-      <div className="match-grid">{upcoming.map((m) => <MatchCard key={m.id} m={m} />)}</div>
+      <div className="content-section-title"><h2>{when === 'All' ? 'On the calendar' : when}</h2><span>{filtered.length} fixtures</span></div>
+      {filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No fixtures in this window" detail="Check all upcoming events for more matches." action={{ to: '/upcoming', label: 'All fixtures' }} />}
     </div>
   )
 }
 
 function Promotions() {
+  const [category, setCategory] = useState('All offers')
+  const shown = category === 'All offers' ? promotions : promotions.filter((p) => p.category === category)
   return (
-    <div>
-      <h1 className="page-title">Promotions</h1>
+    <div className="promotions-page">
+      <PageIntro eyebrow="BULLWAVE REWARDS" title="Promotions" description="Fresh boosts, free bets and member offers in one place." icon="gift" stats={[{ label: 'Offers', value: promotions.length }, { label: 'Categories', value: new Set(promotions.map((p) => p.category)).size }]} />
+      <div className="filters promo-tabs">
+        {['All offers', 'Sports', 'Casino', 'Instant'].map((c) => <button key={c} type="button" className={`chip ${category === c ? 'on' : ''}`} onClick={() => setCategory(c)}>{c}</button>)}
+      </div>
+      <div className="content-section-title"><h2>{category === 'All offers' ? 'Latest offers' : `${category} offers`}</h2><span>{shown.length} available</span></div>
       <div className="promo-grid">
-        {promotions.map((p) => (
+        {shown.map((p) => (
           <article key={p.id} className={`promo tone-${p.tone}`}>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
-            <NavLink to="/account/deposit" className="btn btn-yellow" style={{ width: 'fit-content', display: 'inline-flex', alignItems: 'center' }}>{p.cta}</NavLink>
+            <div className="promo-glow" />
+            <div className="promo-main">
+              <div className="promo-copy">
+                <div className="promo-meta"><span>{p.category}</span><b>● {p.expires}</b></div>
+                <h3>{p.title}</h3>
+                <p>{p.text}</p>
+              </div>
+              <PromoArtwork type={p.art} />
+            </div>
+            <NavLink to="/account/deposit" className="promo-action">
+              <span><b>{p.cta}</b><small>Terms apply</small></span>
+              <i aria-hidden="true">→</i>
+            </NavLink>
           </article>
         ))}
       </div>
+    </div>
+  )
+}
+
+function PromoArtwork({ type }) {
+  const pictures = {
+    wheel: 'wheel-v1.webp',
+    shield: 'shield-v1.webp',
+    scratch: 'scratch-v1.webp',
+    trophy: 'cricket-v1.webp',
+    chips: 'casino-card-v2.webp',
+    gift: 'dash-v1.webp',
+    coin: '777-v1.webp',
+    cricket: 'welcome-v1.webp',
+    crown: 'royal-v1.webp',
+    rocket: 'crash-v1.webp',
+  }
+  return (
+    <div className={`promo-art promo-art-${type}`} aria-hidden="true">
+      <img src={`/images/promotions/${pictures[type] || pictures.wheel}`} alt="" loading="lazy" decoding="async" />
     </div>
   )
 }
@@ -556,22 +894,24 @@ function Casino({ title, cat }) {
   const { clubGames } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const items = catalog.filter((g) => g.cat === cat)
-  const shown = items.length ? items : catalog
+  const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Explore digital sports and strategy games.', tv: 'Game shows and trivia in the Bullwave collection.' }
+  const categories = [{ label: 'Live Casino', to: '/casino/live-casino', cat: 'live' }, { label: 'Instant Games', to: '/casino/instant-games', cat: 'instant' }, { label: 'Slots', to: '/casino/slots', cat: 'slots' }, { label: 'Virtual Sport', to: '/casino/virtual-sports', cat: 'virtual' }, { label: 'TV Games', to: '/casino/tv-games', cat: 'tv' }]
   return (
-    <div>
-      <h1 className="page-title">{title}</h1>
-      <div className="filters">
-        {['All', 'Popular', 'New', 'Bonus buy', 'Jackpot'].map((c, i) => (
-          <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
-        ))}
+    <div className="content-page">
+      <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} stats={[{ label: 'Games', value: items.length }, { label: 'Collection', value: title }]} action={{ to: '/promotions', label: 'View promotions' }} />
+      <div className="filters category-tabs">
+        {categories.map((category) => <NavLink key={category.cat} to={category.to} className={`chip ${cat === category.cat ? 'on' : ''}`}>{category.label}</NavLink>)}
       </div>
-      <div className="casino-row">
-        {shown.map((g) => (
-          <div key={g.id} className="game-tile" style={{ background: g.cover ? `linear-gradient(180deg, transparent, #0B121C), center/cover url(${g.cover})` : `linear-gradient(160deg, hsl(${g.hue} 55% 36%), #0B121C)` }}>
+      {items.length > 0 && <div className="game-spotlight"><div className="game-spotlight-art"><GameArtwork game={items[0]} /></div><div className="game-spotlight-copy"><span className="eyebrow">FEATURED IN {title.toUpperCase()}</span><h2>{items[0].name}</h2><p>Take a closer look at this club favorite, then browse the full collection below.</p><a href="#game-collection" className="page-intro-action">Browse games <span aria-hidden="true">↘</span></a></div></div>}
+      <div className="content-section-title" id="game-collection"><h2>Explore {title}</h2><span>{items.length} games</span></div>
+      {items.length ? <div className="casino-row">
+        {items.map((g) => (
+          <div key={g.id} className="game-tile">
+            <GameArtwork game={g} />
             <span>{g.name}</span>
           </div>
         ))}
-      </div>
+      </div> : <EmptyState icon="casino" title="More games are on the way" detail="Browse another collection while this one is being updated." action={{ to: '/casino/live-casino', label: 'Browse live casino' }} />}
     </div>
   )
 }
@@ -579,18 +919,22 @@ function Casino({ title, cat }) {
 function Sport() {
   const { name } = useParams()
   const { catalogMatches: matches } = useApp()
+  const [view, setView] = useState('All')
   const key = (name || 'football').replace('-racing', '')
   const list = matches.filter((m) => m.sport === key || m.sport === name)
-  const shown = list.length ? list : matches
+  const shown = view === 'All' ? list : list.filter((m) => view === 'Live' ? m.live : !m.live)
+  const title = (name || '').replaceAll('-', ' ')
+  useEffect(() => setView('All'), [name])
   return (
-    <div>
-      <h1 className="page-title" style={{ textTransform: 'capitalize' }}>{(name || '').replaceAll('-', ' ')}</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={name === 'football' ? 'football' : name === 'basketball' ? 'basketball' : name === 'tennis' ? 'tennis' : name === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
       <div className="filters">
-        {['Live', 'Upcoming', 'Outrights', 'Results'].map((c, i) => (
-          <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
+        {['All', 'Live', 'Upcoming'].map((c) => (
+          <button key={c} type="button" className={`chip ${view === c ? 'on' : ''}`} onClick={() => setView(c)}>{c}</button>
         ))}
       </div>
-      <div className="match-grid">{shown.map((m) => <MatchCard key={m.id} m={m} />)}</div>
+      <div className="content-section-title"><h2>{view === 'All' ? 'All events' : view}</h2><span>{shown.length} events</span></div>
+      {shown.length ? <div className="match-grid">{shown.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No events in this view" detail="Try another tab or see all live events." action={{ to: '/live', label: 'Browse live events' }} />}
     </div>
   )
 }
@@ -600,8 +944,9 @@ function MatchPage() {
   const { addBet, betslip, catalogMatches: matches } = useApp()
   const m = matches.find((x) => x.id === id) || matches[4]
   return (
-    <div>
-      <div className="card" style={{ marginBottom: 14 }}>
+    <div className="content-page">
+      <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={m.sport === 'football' ? 'football' : m.sport === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
+      <div className="card match-summary" style={{ marginBottom: 14 }}>
         <div className="event-meta">{m.league} · {m.time}{m.live ? ' LIVE' : ''}</div>
         <h1 style={{ margin: '8px 0 0' }}>{m.home} {m.score?.[0] || ''} — {m.score?.[1] || ''} {m.away}</h1>
       </div>
@@ -631,20 +976,22 @@ function MatchPage() {
 function Account() {
   const { user, loggedIn, setAuthMode, logout } = useApp()
   return (
-    <div>
-      <h1 className="page-title">My Account</h1>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ color: '#888' }}>{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Guest'}</div>
-        <div style={{ fontSize: 28, fontWeight: 800 }}>₹ {Number(user?.balance || 0).toFixed(2)}</div>
+    <div className="content-page">
+      <PageIntro eyebrow="MEMBER AREA" title="My Account" description="Your balance, bets and club settings together in one place." icon="shield" stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Balance', value: `₹${Number(user?.balance || 0).toFixed(2)}` }]} />
+      <div className="card wallet-card">
+        <div className="wallet-top"><span className="eyebrow">AVAILABLE BALANCE</span><Icon name="shield" size={24} /></div>
+        <div className="wallet-balance">₹ {Number(user?.balance || 0).toFixed(2)}</div>
+        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to manage your account'}</div>
         {loggedIn
           ? <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={logout}>Log out</button>
           : <button className="btn btn-yellow" style={{ marginTop: 8 }} onClick={() => setAuthMode('login')}>Log in</button>}
       </div>
+      <div className="content-section-title"><h2>Quick access</h2><span>Manage your club account</span></div>
       <div className="account-grid">
         {accountLinks.map((l) => (
           <NavLink key={l.name} to={l.to} className="account-tile">
-            <Icon name={l.icon} />
-            <div style={{ marginTop: 10, fontWeight: 700 }}>{l.name}</div>
+            <span className="feature-icon"><Icon name={l.icon} size={23} /></span>
+            <strong>{l.name}</strong><span className="account-tile-arrow" aria-hidden="true">↗</span>
           </NavLink>
         ))}
       </div>
@@ -657,53 +1004,54 @@ function Deposit({ type }) {
   const [amount, setAmount] = useState('500')
   const [message, setMessage] = useState('')
   return (
-    <div>
-      <h1 className="page-title">{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="WALLET" title={type === 'withdraw' ? 'Withdraw' : 'Deposit'} description={type === 'withdraw' ? 'Review the amount before requesting a withdrawal.' : 'Choose an amount to add to your club wallet.'} icon={type === 'withdraw' ? 'minus' : 'plus'} action={{ to: '/account', label: 'Back to account' }} />
+      <div className="content-section-title"><h2>Payment methods</h2><span>Available options</span></div>
       <div className="pay-grid">
         {['UPI', 'Paytm', 'PhonePe', 'NetBanking', 'USDT', 'BTC', 'ETH', 'Card'].map((p) => (
-          <div key={p} className="pay">{p}</div>
+          <div key={p} className="pay"><span className="pay-mark">{p.slice(0, 2)}</span><strong>{p}</strong></div>
         ))}
       </div>
-      <div className="field" style={{ marginTop: 16 }}>
-        <label>Amount, ₹</label>
-        <input className="input" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      <div className="payment-shell">
+        <div className="content-section-title"><h2>Enter amount</h2><span>INR</span></div>
+        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min="1" inputMode="decimal" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        {message && <p className="hint">{message}</p>}
+        <button
+          className="btn btn-yellow btn-block"
+          onClick={async () => {
+            setMessage('')
+            if (!loggedIn) {
+              setAuthMode('login')
+              return
+            }
+            try {
+              await moveMoney(type === 'withdraw' ? 'withdraw' : 'deposit', Number(amount))
+              setMessage(type === 'withdraw' ? 'Withdrawal requested' : 'Deposit added')
+            } catch (err) {
+              setMessage(err.message)
+            }
+          }}
+        >{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</button>
       </div>
-      {message && <p className="hint">{message}</p>}
-      <button
-        className="btn btn-yellow btn-block"
-        onClick={async () => {
-          setMessage('')
-          if (!loggedIn) {
-            setAuthMode('login')
-            return
-          }
-          try {
-            await moveMoney(type === 'withdraw' ? 'withdraw' : 'deposit', Number(amount))
-            setMessage(type === 'withdraw' ? 'Withdrawal requested' : 'Deposit added')
-          } catch (err) {
-            setMessage(err.message)
-          }
-        }}
-      >
-        {type === 'withdraw' ? 'Withdraw' : 'Deposit'}
-      </button>
     </div>
   )
 }
 
 function Bets() {
   const { myBets } = useApp()
+  const [filter, setFilter] = useState('All')
+  const shown = filter === 'All' ? myBets : myBets.filter((b) => filter === 'Open' ? ['open', 'pending'].includes(String(b.status).toLowerCase()) : ['settled', 'won', 'lost'].includes(String(b.status).toLowerCase()))
   return (
-    <div>
-      <h1 className="page-title">My bets</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="BET HISTORY" title="My bets" description="Review your open and settled bets in one place." icon="ticket" stats={[{ label: 'Total bets', value: myBets.length }, { label: 'Open', value: myBets.filter((b) => ['open', 'pending'].includes(String(b.status).toLowerCase())).length }]} action={{ to: '/live', label: 'Explore events' }} />
       <div className="filters">
-        {['All', 'Open', 'Settled', 'Cash out'].map((c, i) => (
-          <button key={c} className={`chip ${i === 0 ? 'on' : ''}`}>{c}</button>
+        {['All', 'Open', 'Settled'].map((c) => (
+          <button key={c} type="button" className={`chip ${filter === c ? 'on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
         ))}
       </div>
-      {myBets.length === 0 ? (
-        <div className="card">No bets yet. Add odds to the betslip to place your first bet.</div>
-      ) : myBets.map((b) => (
+      {shown.length === 0 ? (
+        <EmptyState icon="ticket" title={filter === 'All' ? 'No bets yet' : `No ${filter.toLowerCase()} bets`} detail="Add an outcome to your betslip when you find a match you like." action={{ to: '/live', label: 'Browse live events' }} />
+      ) : shown.map((b) => (
         <div key={b.id} className="card" style={{ marginBottom: 8 }}>
           <div className="event-meta">{b.status} · {new Date(b.createdAt).toLocaleString()}</div>
           {b.selections.map((s) => <div key={s.id}>{s.event} · {s.pick} @ {s.odd}</div>)}
@@ -715,20 +1063,17 @@ function Bets() {
 }
 
 function Vip() {
+  const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite']
   return (
-    <div>
-      <section className="banner">
-        <div>
-          <h1>BULLWAVE CLUB VIP</h1>
-          <p>Personal manager, higher limits, exclusive bonuses</p>
-          <button className="btn btn-yellow">Join VIP</button>
-        </div>
-      </section>
-      <div className="promo-grid" style={{ marginTop: 16 }}>
-        {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite'].map((t, i) => (
-          <div key={t} className="account-tile">
-            <h3>{t}</h3>
-            <p style={{ color: '#999' }}>Level {i + 1} rewards and cashback</p>
+    <div className="content-page">
+      <PageIntro eyebrow="MEMBER REWARDS" title="Bullwave Club VIP" description="A club journey with tiered rewards and exclusive offers." icon="shield" stats={[{ label: 'Tiers', value: tiers.length }, { label: 'Top tier', value: 'Elite' }]} action={{ to: '/account', label: 'My account' }} />
+      <FeatureCards items={[{ icon: 'gift', title: 'Club offers', detail: 'Explore current rewards and promotions.', to: '/promotions' }, { icon: 'shield', title: 'Member area', detail: 'Keep track of your account and activity.', to: '/account' }, { icon: 'star', title: 'VIP tiers', detail: 'Browse the club journey below.' }]} />
+      <div className="content-section-title"><h2>VIP tiers</h2><span>Find your level</span></div>
+      <div className="tier-grid">
+        {tiers.map((t, i) => (
+          <div key={t} className={`tier-card tier-${t.toLowerCase()}`}>
+            <span className="tier-number">0{i + 1}</span><span className="tier-medal"><Icon name="star" size={26} /></span>
+            <h3>{t}</h3><p>Level {i + 1} club rewards</p>
           </div>
         ))}
       </div>
@@ -738,14 +1083,13 @@ function Vip() {
 
 function Faq() {
   return (
-    <div className="faq">
-      <h1 className="page-title">FAQ</h1>
-      {faqs.map((f) => (
-        <details key={f.q}>
-          <summary>{f.q}</summary>
-          <p>{f.a}</p>
-        </details>
-      ))}
+    <div className="faq content-page">
+      <PageIntro eyebrow="HELP CENTER" title="Frequently asked questions" description="Quick answers to common questions about using Bullwave Club." icon="gear" stats={[{ label: 'Answers', value: faqs.length }, { label: 'Topics', value: 'Club help' }]} action={{ to: '/more', label: 'More options' }} />
+      <div className="content-section-title"><h2>Popular questions</h2><span>Select a question to expand</span></div>
+      <div className="faq-list">{faqs.map((f) => (
+        <details key={f.q}><summary>{f.q}<span aria-hidden="true">+</span></summary><p>{f.a}</p></details>
+      ))}</div>
+      <FeatureCards items={[{ icon: 'gift', title: 'Promotions', detail: 'See the current club offers.', to: '/promotions' }, { icon: 'gear', title: 'Preferences', detail: 'Review language and odds settings.', to: '/more' }]} />
     </div>
   )
 }
@@ -754,9 +1098,9 @@ function Favorites() {
   const { favorites, catalogMatches: matches } = useApp()
   const list = matches.filter((m) => favorites.includes(m.id))
   return (
-    <div>
-      <h1 className="page-title">Favorites</h1>
-      {list.length === 0 ? <div className="card">Star an event to save it here.</div> : (
+    <div className="content-page">
+      <PageIntro eyebrow="YOUR PICKS" title="Favorites" description="Keep the matches you care about close at hand." icon="star" stats={[{ label: 'Saved events', value: list.length }, { label: 'Available', value: matches.length }]} action={{ to: '/live', label: 'Explore events' }} />
+      {list.length === 0 ? <EmptyState icon="star" title="No favorites yet" detail="Tap the star on a match to save it here." action={{ to: '/live', label: 'Find live events' }} /> : (
         <div className="match-grid">{list.map((m) => <MatchCard key={m.id} m={m} />)}</div>
       )}
     </div>
@@ -768,14 +1112,12 @@ function Parlays() {
   const combo = useMemo(() => matches.slice(1, 4), [matches])
   const total = combo.reduce((a, m) => a * (m.markets[0]?.odd || 1), 1)
   return (
-    <div>
-      <h1 className="page-title">Top Parlays</h1>
-      <div className="card">
-        <div className="event-meta">Ready-made accumulators</div>
+    <div className="content-page">
+      <PageIntro eyebrow="MATCH COMBINATIONS" title="Top Parlays" description="Explore a ready-made match combination and review each selection." icon="layers" stats={[{ label: 'Selections', value: combo.length }, { label: 'Combined odds', value: total.toFixed(2) }]} action={{ to: '/live', label: 'Explore events' }} />
+      <div className="card parlay-card">
+        <div className="eyebrow">FEATURED COMBINATION</div>
         {combo.map((m) => (
-          <div key={m.id} style={{ padding: '10px 0', borderBottom: '1px solid #2A3C50' }}>
-            {m.home} vs {m.away} · {m.markets[0]?.odd}
-          </div>
+          <div key={m.id} className="parlay-pick"><span className="feature-icon"><Icon name={m.sport === 'football' ? 'football' : 'live'} size={18} /></span><span>{m.home} vs {m.away}</span><b>{m.markets[0]?.odd?.toFixed(2)}</b></div>
         ))}
         <div className="row-between" style={{ marginTop: 12 }}><span>Total odds</span><b>{total.toFixed(2)}</b></div>
         <button className="btn btn-yellow btn-block" onClick={() => combo.forEach((m) => addBet({ id: m.markets[0].id, event: `${m.home} vs ${m.away}`, pick: m.markets[0].label, odd: m.markets[0].odd }))}>Add to betslip</button>
@@ -784,18 +1126,19 @@ function Parlays() {
   )
 }
 
-function More() {
+function More({ settings = false }) {
   const { oddsFormat, setOddsFormat, theme, setTheme } = useApp()
   return (
-    <div>
-      <h1 className="page-title">More</h1>
+    <div className="content-page">
+      <PageIntro eyebrow="YOUR CLUB" title={settings ? 'Settings' : 'More'} description="Personalize the display and find more from Bullwave Club." icon="gear" stats={[{ label: 'Preferences', value: '3' }, { label: 'Club', value: 'Bullwave' }]} />
+      <div className="content-section-title"><h2>Preferences</h2><span>Make it yours</span></div>
       <div className="card menu-item">Theme <select value={theme} onChange={(e) => setTheme(e.target.value)} className="input" style={{ width: 140, height: 36 }}><option value="dark">Dark</option><option value="light">Light</option></select></div>
       <div className="card" style={{ marginTop: 8, padding: 8 }}>
         <div style={{ padding: '8px 10px', color: 'var(--muted)' }}>Language</div>
         <LanguagePicker embedded />
       </div>
       <div className="card menu-item" style={{ marginTop: 8 }}>Odds Format <select value={oddsFormat} onChange={(e) => setOddsFormat(e.target.value)} className="input" style={{ width: 140, height: 36 }}><option value="decimal">2.20</option><option value="fractional">6/5</option><option value="american">+120</option></select></div>
-      <div className="card" style={{ marginTop: 8 }}>
+      <div className="card more-links" style={{ marginTop: 8 }}>
         <NavLink className="menu-item" to="/about">About Bullwave Club</NavLink>
         <NavLink className="menu-item" to="/faq">FAQ</NavLink>
         <NavLink className="menu-item" to="/vip">VIP Club</NavLink>
@@ -806,11 +1149,15 @@ function More() {
 
 function About() {
   return (
-    <div>
-      <h1 className="page-title">About Bullwave Club</h1>
-      <div className="card">Sportsbook, live betting, casino, instant games and promotions — the Bullwave Club interface.</div>
+    <div className="content-page">
+      <PageIntro eyebrow="OUR CLUB" title="About Bullwave Club" description="Sports, games and rewards brought together in one club interface." icon="shield" stats={[{ label: 'Explore', value: 'Sports' }, { label: 'Discover', value: 'Games' }]} />
+      <FeatureCards items={[{ icon: 'live', title: 'Sports', detail: 'Follow live events and upcoming fixtures.', to: '/live' }, { icon: 'casino', title: 'Games', detail: 'Browse the club game collections.', to: '/casino/live-casino' }, { icon: 'gift', title: 'Rewards', detail: 'See the current promotions.', to: '/promotions' }]} />
     </div>
   )
+}
+
+function Verification() {
+  return <div className="content-page"><PageIntro eyebrow="ACCOUNT" title="Verification" description="Review your account details and available verification steps." icon="shield" action={{ to: '/account', label: 'Back to account' }} /><EmptyState icon="shield" title="Verification details" detail="Account verification options will appear here when available for your account." action={{ to: '/account', label: 'My account' }} /></div>
 }
 
 function SearchOverlay() {
@@ -879,8 +1226,8 @@ export default function App() {
             <Route path="/account/deposit" element={<Deposit type="deposit" />} />
             <Route path="/account/withdraw" element={<Deposit type="withdraw" />} />
             <Route path="/account/bets" element={<Bets />} />
-            <Route path="/account/verify" element={<div><h1 className="page-title">Verification</h1><div className="card">Upload ID and proof of address to verify your account.</div></div>} />
-            <Route path="/account/settings" element={<More />} />
+            <Route path="/account/verify" element={<Verification />} />
+            <Route path="/account/settings" element={<More settings />} />
             <Route path="/vip" element={<Vip />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/favorites" element={<Favorites />} />

@@ -71,6 +71,10 @@ export function AppProvider({ children }) {
       }
     }
     boot()
+    const { data: authListener } = supabase?.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setAuthMode('update-password')
+    }) || {}
+    return () => authListener?.subscription.unsubscribe()
   }, [])
 
   const addBet = (bet) => {
@@ -97,6 +101,22 @@ export function AppProvider({ children }) {
     const { data, error } = await client.auth.signInWithPassword({ email, password: payload.password })
     if (error) throw new Error(error.message)
     await hydrateAccount(data.session.access_token, { email: data.user.email, phone: payload.phone })
+    setAuthMode(null)
+  }
+
+  const requestPasswordReset = async (email) => {
+    const client = assertSupabase()
+    const address = email?.trim()
+    if (!address) throw new Error('Enter your account e-mail first.')
+    const { error } = await client.auth.resetPasswordForEmail(address, { redirectTo: window.location.origin })
+    if (error) throw new Error(error.message)
+  }
+
+  const updatePassword = async (password) => {
+    const client = assertSupabase()
+    if (!password || password.length < 10) throw new Error('Password must be at least 10 characters.')
+    const { error } = await client.auth.updateUser({ password })
+    if (error) throw new Error(error.message)
     setAuthMode(null)
   }
 
@@ -205,6 +225,8 @@ export function AppProvider({ children }) {
       user,
       token,
       login,
+      requestPasswordReset,
+      updatePassword,
       register,
       loginWithGoogle,
       logout,
