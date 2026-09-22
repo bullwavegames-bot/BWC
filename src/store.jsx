@@ -22,7 +22,7 @@ export function AppProvider({ children }) {
   const [language, setLanguage] = useState('EN')
   const [langOpen, setLangOpen] = useState(false)
   const [oddsFormat, setOddsFormat] = useState('decimal')
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState(() => (typeof localStorage !== 'undefined' && localStorage.getItem('bwc_theme') === 'light' ? 'light' : 'dark'))
 
   const applySession = (nextToken, nextUser) => {
     setToken(nextToken)
@@ -46,6 +46,11 @@ export function AppProvider({ children }) {
       return null
     }
   }
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('bwc_theme', theme)
+  }, [theme])
 
   useEffect(() => {
     api('/api/games')

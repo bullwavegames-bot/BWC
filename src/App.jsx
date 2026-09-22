@@ -124,6 +124,8 @@ function Icon({ name, size = 18 }) {
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
     chevron: <path d="m9 5 7 7-7 7" />,
     help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+    moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z" />,
   }
   return <svg viewBox="0 0 24 24" {...s}>{paths[name] || paths.star}</svg>
 }
@@ -170,15 +172,18 @@ function LanguagePicker({ embedded = false }) {
 }
 
 function Header() {
-  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user } = useApp()
+  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, theme, setTheme } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const light = theme === 'light'
   return (
     <header className="header">
       <button className="icon-btn mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
       <NavLink to="/" className="logo" aria-label="Bullwave Club home">
-        <span className="logo-emblem" aria-hidden="true" />
-        <span className="logo-wordmark" aria-hidden="true" />
-        <span className="logo-wave" aria-hidden="true" />
+        <img
+          className="logo-img"
+          src={`${import.meta.env.BASE_URL}images/brand/${light ? 'bullwave-header-light.png' : 'bullwave-header.png'}?v=4`}
+          alt="Bullwave Club"
+        />
       </NavLink>
       <nav className="top-nav">
         <NavLink to="/" end>Sports</NavLink>
@@ -191,6 +196,18 @@ function Header() {
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
         <button className="icon-btn notification-btn" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Icon name="bell" size={21} /><i /></button>
         {notificationsOpen && <div className="notifications-popover"><strong>Notifications</strong><p>You're all caught up.</p></div>}
+        <button
+          type="button"
+          className={`theme-toggle${light ? ' is-light' : ''}`}
+          onClick={() => setTheme(light ? 'dark' : 'light')}
+          aria-label={light ? 'Switch to dark theme' : 'Switch to light theme'}
+          aria-pressed={light}
+          title={light ? 'Dark theme' : 'Light theme'}
+        >
+          <span className="theme-toggle-knob" aria-hidden="true" />
+          <Icon name="moon" size={13} />
+          <Icon name="sun" size={13} />
+        </button>
         <LanguagePicker />
         {loggedIn ? (
           <NavLink to="/account" className="btn btn-ghost">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
