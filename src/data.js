@@ -225,8 +225,10 @@ export const promotions = [
 
 export const faqs = [
   { q: 'How do I create an account?', a: 'Tap Sign up, enter your phone number, set a password, and confirm the SMS code.' },
-  { q: 'How do I make a deposit?', a: 'Open My Account → Deposit and choose UPI, net banking, wallet, or crypto.' },
-  { q: 'How long do withdrawals take?', a: 'Most UPI withdrawals are processed within minutes after verification.' },
+  { q: 'How do I make a deposit?', a: 'Open My Account → Deposit, pick UPI, net banking, wallet or crypto, then enter an amount of at least ₹100.' },
+  { q: 'How long do withdrawals take?', a: 'UPI is usually minutes after KYC. Bank transfers can take up to 24 hours. Crypto typically settles within 30 minutes of network confirmation.' },
+  { q: 'Can I withdraw bonus money?', a: 'No. Bonus funds stay locked until wagering is complete. Only cash winnings in your available balance can be withdrawn.' },
+  { q: 'Why do you need KYC?', a: 'Indian payment rules require name, PAN and a matching bank/UPI account before the first withdrawal. It also protects your wallet from unauthorized cashouts.' },
   { q: 'What odds formats are available?', a: 'Decimal, fractional, and American formats can be switched in the menu.' },
   { q: 'Is there a welcome bonus?', a: 'Yes. New players can claim a Live Casino welcome bonus of 100% up to ₹50,000.' },
 ]

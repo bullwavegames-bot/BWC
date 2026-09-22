@@ -1299,6 +1299,7 @@ img { max-width: 100%; }
   gap: 10px;
 }
 .pay {
+  appearance: none;
   background: var(--card);
   border-radius: 12px;
   padding: 18px 10px;
@@ -1388,10 +1389,38 @@ a.feature-card:hover { transform: translateY(-4px); border-color: rgba(97,214,17
 .content-section-title h2 { max-width: 100%; overflow-wrap: anywhere; }
 .game-tile { overflow: hidden; }
 .game-tile span { white-space: normal; line-height: 1.2; }
-.wallet-card { position: relative; overflow: hidden; max-width: 600px; min-height: 176px; margin-bottom: 16px; padding: 23px; border: 1px solid rgba(97,214,176,.32); background: radial-gradient(circle at 100% 0, rgba(97,214,176,.21), transparent 45%), linear-gradient(130deg, #173247, #142233); box-shadow: 0 15px 35px rgba(0,0,0,.2); }
+.wallet-card { position: relative; overflow: hidden; max-width: 720px; min-height: 176px; margin-bottom: 16px; padding: 23px; border: 1px solid rgba(97,214,176,.32); background: radial-gradient(circle at 100% 0, rgba(97,214,176,.21), transparent 45%), linear-gradient(130deg, #173247, #142233); box-shadow: 0 15px 35px rgba(0,0,0,.2); }
 .wallet-top { display: flex; justify-content: space-between; align-items: center; color: var(--mint); }
+.wallet-kyc { color: #ffd18a; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .wallet-balance { margin: 7px 0; font-size: clamp(29px, 4vw, 40px); font-weight: 900; letter-spacing: -.04em; }
 .wallet-user { color: var(--muted); font-size: 12px; }
+.wallet-split { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 14px; }
+.wallet-split div { padding: 10px 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(0,0,0,.16); }
+.wallet-split span { display: block; color: #9eb0bc; font-size: 11px; }
+.wallet-split b { display: block; margin-top: 4px; font-size: 14px; }
+.wallet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wallet-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 22px; }
+.wallet-fact { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--slate); }
+.wallet-fact strong { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--mint); }
+.wallet-fact span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.wallet-notes { max-width: 760px; margin: 0 0 22px; padding-left: 18px; color: var(--muted); line-height: 1.55; }
+.wallet-notes li { margin: 0 0 8px; }
+.wallet-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.wallet-summary { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 12px 0 14px; padding: 12px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.wallet-summary b { color: var(--white); text-align: right; }
+.wallet-legal { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.wallet-method-note { max-width: 760px; margin: 10px 0 4px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.wallet-tx-list { display: grid; gap: 8px; max-width: 720px; margin-bottom: 22px; }
+.wallet-tx { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--slate); }
+.wallet-tx small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.wallet-tx .is-in { color: #69f0dc; }
+.wallet-tx .is-out { color: #f16f78; }
+.wallet-empty-tx { color: var(--muted); margin: 0 0 22px; }
+.pay { border: 1px solid rgba(97,214,176,.12); background: linear-gradient(140deg, #1d3040, #172534); color: inherit; cursor: pointer; }
+.pay small { color: var(--muted); font-size: 10px; }
+.pay.on { border-color: var(--mint); box-shadow: 0 0 0 1px var(--mint); }
+.hint.is-ok { color: #69f0dc; }
+.hint.is-bad { color: #f16f78; }
 .account-tile { display: flex; align-items: center; gap: 13px; position: relative; border: 1px solid rgba(97,214,176,.12); background: linear-gradient(140deg, #1d3040, #172534); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
 a.account-tile:hover { transform: translateY(-3px); border-color: rgba(97,214,176,.48); box-shadow: 0 13px 24px rgba(0,0,0,.2); }
 .account-tile strong { font-size: 14px; }
@@ -1440,6 +1469,8 @@ a.account-tile:hover { transform: translateY(-3px); border-color: rgba(97,214,17
   .page-intro-emblem svg { width: 30px; height: 30px; }
   .page-intro-stats { flex-wrap: wrap; }
   .tier-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wallet-facts { grid-template-columns: 1fr 1fr; }
+  .wallet-split { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .page-intro { padding: 20px; }
@@ -1800,7 +1831,20 @@ html[data-theme="light"] .app,
 html[data-theme="light"] .shell,
 html[data-theme="light"] .main { background: #fff; color: #102033; }
 html[data-theme="light"] .header { background: #fff; border-bottom: 1px solid #e4e9ef; box-shadow: 0 1px 2px rgba(16,43,77,.03); }
-html[data-theme="light"] .header .logo { background: transparent; }
+html[data-theme="light"] .wallet-card { color: #fff; }
+html[data-theme="light"] .wallet-split span { color: #c5d6e2; }
+html[data-theme="light"] .wallet-fact { background: #fff; border-color: #e2e8ef; }
+html[data-theme="light"] .wallet-fact strong { color: #1a6d9c; }
+html[data-theme="light"] .wallet-fact span,
+html[data-theme="light"] .wallet-notes,
+html[data-theme="light"] .wallet-method-note,
+html[data-theme="light"] .wallet-legal,
+html[data-theme="light"] .wallet-empty-tx { color: #5d6d74; }
+html[data-theme="light"] .wallet-tx { background: #fff; border-color: #e2e8ef; }
+html[data-theme="light"] .wallet-summary b { color: #102033; }
+html[data-theme="light"] .pay { background: #fff; border-color: #e2e8ef; color: #102033; }
+html[data-theme="light"] .pay.on { border-color: #102e53; box-shadow: 0 0 0 1px #102e53; }
+html[data-theme="light"] .payment-shell { background: #fff; border-color: #e2e8ef; }
 html[data-theme="light"] .logo-emblem { background-image: url('/images/brand/bullwave-mark.png'); }
 html[data-theme="light"] .top-nav a { color: #152235; }
 html[data-theme="light"] .top-nav a.active { color: #173858; background: #e7f0fa; }
@@ -1872,6 +1916,7 @@ html[data-theme="light"] {
 }
 
 html[data-theme="light"] .page-intro,
+html[data-theme="light"] .wallet-card,
 html[data-theme="light"] .featured-match,
 html[data-theme="light"] .home-hero,
 html[data-theme="light"] .live-feature-card,

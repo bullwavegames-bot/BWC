@@ -124,6 +124,7 @@ function Icon({ name, size = 18 }) {
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
     chevron: <path d="m9 5 7 7-7 7" />,
     help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
     moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z" />,
   }
@@ -1092,19 +1093,125 @@ function MatchPage() {
   )
 }
 
+function rupees(value) {
+  return `₹ ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function bonusCash(user) {
+  const n = Number(user?.bonus)
+  return Number.isFinite(n) ? n : 0
+}
+
+function loadWalletTx(userId) {
+  try {
+    const all = JSON.parse(localStorage.getItem('bwc_wallet_tx') || '[]')
+    return all.filter((t) => t.userId === userId)
+  } catch {
+    return []
+  }
+}
+
+function saveWalletTx(entry) {
+  try {
+    const all = JSON.parse(localStorage.getItem('bwc_wallet_tx') || '[]')
+    localStorage.setItem('bwc_wallet_tx', JSON.stringify([entry, ...all].slice(0, 40)))
+  } catch { /* ignore */ }
+}
+
+const PAY_METHODS = [
+  { id: 'upi', name: 'UPI', mark: 'UPI', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'GPay, PhonePe, BHIM or any UPI app. Use an ID in your own name.' },
+  { id: 'paytm', name: 'Paytm', mark: 'PT', time: '1–5 min', min: 100, max: 50000, fee: 'Free', note: 'Paytm wallet or Paytm UPI. Failed payments reverse automatically.' },
+  { id: 'phonepe', name: 'PhonePe', mark: 'Pe', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'PhonePe UPI. Keep the app open until you see Success.' },
+  { id: 'netbanking', name: 'Net banking', mark: 'NB', time: '5–30 min', min: 500, max: 200000, fee: 'Free', note: 'All major Indian banks. IMPS/NEFT may take longer on bank holidays.' },
+  { id: 'card', name: 'Debit card', mark: 'DC', time: '5–15 min', min: 500, max: 50000, fee: 'Free', note: 'Visa / Mastercard debit. Credit cards are not accepted.' },
+  { id: 'usdt', name: 'USDT', mark: '₮', time: '10–30 min', min: 800, max: 500000, fee: 'Network', note: 'TRC20 is cheapest. Send only USDT to the address shown after you confirm.' },
+  { id: 'btc', name: 'Bitcoin', mark: '₿', time: '30–60 min', min: 2000, max: 500000, fee: 'Network', note: 'Wait for 1 confirmation. Wrong-network sends cannot be recovered.' },
+  { id: 'eth', name: 'Ethereum', mark: 'Ξ', time: '10–20 min', min: 2000, max: 500000, fee: 'Network', note: 'ERC-20 only. Check gas before you send.' },
+]
+
+const WALLET_FACTS = [
+  { title: 'Min. deposit', body: '₹100 on UPI · ₹500 on bank/card' },
+  { title: 'Min. withdrawal', body: '₹200 cash. Bonus cannot be cashed out.' },
+  { title: 'Daily cashout cap', body: '₹2,00,000 until VIP Gold' },
+  { title: 'KYC', body: 'PAN + matching UPI/bank required before the first withdrawal' },
+  { title: 'Timing', body: 'UPI minutes · Bank up to 24h · Crypto after network confirm' },
+  { title: '18+ only', body: 'Play with money you can afford to lose. Set limits anytime.' },
+]
+
+function WalletActivity({ userId }) {
+  const [rows, setRows] = useState(() => loadWalletTx(userId))
+  useEffect(() => { setRows(loadWalletTx(userId)) }, [userId])
+  if (!rows.length) {
+    return <p className="wallet-empty-tx">No wallet activity yet. Deposits and withdrawals will show up here.</p>
+  }
+  return (
+    <div className="wallet-tx-list">
+      {rows.map((t) => (
+        <div key={t.id} className="wallet-tx">
+          <div>
+            <strong>{t.type === 'withdraw' ? 'Withdrawal' : 'Deposit'} · {t.method}</strong>
+            <small>{new Date(t.at).toLocaleString()} · {t.status}</small>
+          </div>
+          <b className={t.type === 'withdraw' ? 'is-out' : 'is-in'}>{t.type === 'withdraw' ? '−' : '+'}{rupees(t.amount)}</b>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Account() {
   const { user, loggedIn, setAuthMode, logout } = useApp()
+  const cash = Number(user?.balance || 0)
+  const bonus = bonusCash(user)
+  const bonusLabel = typeof user?.bonus === 'string' && user.bonus && !Number(user.bonus) ? user.bonus : null
   return (
     <div className="content-page">
-      <PageIntro eyebrow="MEMBER AREA" title="My Account" description="Your balance, bets and club settings together in one place." icon="shield" stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Balance', value: `₹${Number(user?.balance || 0).toFixed(2)}` }]} />
+      <PageIntro
+        eyebrow="WALLET"
+        title="My wallet"
+        description="Cash you can bet or withdraw, plus bonus funds, limits and the details every member should know before moving money."
+        icon="shield"
+        stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Available', value: rupees(cash) }]}
+      />
       <div className="card wallet-card">
-        <div className="wallet-top"><span className="eyebrow">AVAILABLE BALANCE</span><Icon name="shield" size={24} /></div>
-        <div className="wallet-balance">₹ {Number(user?.balance || 0).toFixed(2)}</div>
-        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to manage your account'}</div>
-        {loggedIn
-          ? <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={logout}>Log out</button>
-          : <button className="btn btn-yellow" style={{ marginTop: 8 }} onClick={() => setAuthMode('login')}>Log in</button>}
+        <div className="wallet-top"><span className="eyebrow">AVAILABLE CASH</span><span className="wallet-kyc">{loggedIn ? 'KYC pending' : 'Sign in'}</span></div>
+        <div className="wallet-balance">{rupees(cash)}</div>
+        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to deposit, withdraw and track activity'}</div>
+        <div className="wallet-split">
+          <div><span>Cash</span><b>{rupees(cash)}</b></div>
+          <div><span>Bonus</span><b>{bonusLabel || rupees(bonus)}</b></div>
+          <div><span>Withdrawable</span><b>{rupees(cash)}</b></div>
+        </div>
+        <div className="wallet-actions">
+          {loggedIn ? (
+            <>
+              <NavLink to="/account/deposit" className="btn btn-yellow">Deposit</NavLink>
+              <NavLink to="/account/withdraw" className="btn btn-ghost">Withdraw</NavLink>
+              <button className="btn btn-ghost" onClick={logout}>Log out</button>
+            </>
+          ) : <button className="btn btn-yellow" onClick={() => setAuthMode('login')}>Log in to open wallet</button>}
+        </div>
       </div>
+      <div className="wallet-facts">
+        {WALLET_FACTS.map((f) => (
+          <div key={f.title} className="wallet-fact"><strong>{f.title}</strong><span>{f.body}</span></div>
+        ))}
+      </div>
+      <div className="content-section-title"><h2>Know before you pay</h2><span>Club wallet rules</span></div>
+      <ul className="wallet-notes">
+        <li>Only cash in Available can be withdrawn. Welcome and reload bonuses stay locked until wagering is done.</li>
+        <li>The name on your UPI, bank or crypto account must match your Bullwave Club KYC name.</li>
+        <li>Never share SMS OTPs, UPI PINs or wallet QR codes. Club staff will not ask for them.</li>
+        <li>Winnings may be subject to tax under Indian law. Keep deposit and cashout records for your own filing.</li>
+        <li>If a payment fails, wait for the bank reversal (usually 1–3 working days) before paying again.</li>
+        <li>You must be 18+. Use deposit limits and take a break from Settings if play stops being fun.</li>
+      </ul>
+      {loggedIn && (
+        <>
+          <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
+          <WalletActivity userId={user?.id} />
+        </>
+      )}
       <div className="content-section-title"><h2>Quick access</h2><span>Manage your club account</span></div>
       <div className="account-grid">
         {accountLinks.map((l) => (
@@ -1119,39 +1226,142 @@ function Account() {
 }
 
 function Deposit({ type }) {
-  const { moveMoney, setAuthMode, loggedIn } = useApp()
-  const [amount, setAmount] = useState('500')
+  const { moveMoney, setAuthMode, loggedIn, user } = useApp()
+  const withdrawing = type === 'withdraw'
+  const [method, setMethod] = useState('upi')
+  const [amount, setAmount] = useState(withdrawing ? '200' : '500')
+  const [destination, setDestination] = useState('')
   const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [tick, setTick] = useState(0)
+  const pay = PAY_METHODS.find((p) => p.id === method) || PAY_METHODS[0]
+  const cash = Number(user?.balance || 0)
+  const value = Number(amount)
+  const min = withdrawing ? 200 : pay.min
+  const overMax = Number.isFinite(value) && value > pay.max
+  const underMin = Number.isFinite(value) && value > 0 && value < min
+  const overCash = withdrawing && Number.isFinite(value) && value > cash
+  const quick = withdrawing ? [200, 500, 1000, 2000, 5000] : [100, 500, 1000, 2000, 5000, 10000]
+
+  const submit = async () => {
+    setMessage('')
+    if (!loggedIn) {
+      setAuthMode('login')
+      return
+    }
+    if (!Number.isFinite(value) || value <= 0) {
+      setMessage('Enter a valid amount.')
+      return
+    }
+    if (underMin) {
+      setMessage(`Minimum ${withdrawing ? 'withdrawal' : 'deposit'} is ${rupees(min)}.`)
+      return
+    }
+    if (overMax) {
+      setMessage(`This method allows up to ${rupees(pay.max)} per transfer.`)
+      return
+    }
+    if (overCash) {
+      setMessage('You can only withdraw available cash, not bonus.')
+      return
+    }
+    if (withdrawing && !destination.trim()) {
+      setMessage('Add the UPI ID or account where we should send the money.')
+      return
+    }
+    setBusy(true)
+    try {
+      await moveMoney(withdrawing ? 'withdraw' : 'deposit', value, { method: pay.id, destination: destination.trim() })
+      saveWalletTx({
+        id: `${Date.now()}`,
+        userId: user?.id,
+        type: withdrawing ? 'withdraw' : 'deposit',
+        method: pay.name,
+        amount: value,
+        status: withdrawing ? 'In review' : 'Credited',
+        at: new Date().toISOString(),
+      })
+      setMessage(withdrawing ? `Withdrawal of ${rupees(value)} sent for review. ${pay.time}.` : `${rupees(value)} added via ${pay.name}.`)
+      setTick((n) => n + 1)
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="content-page">
-      <PageIntro eyebrow="WALLET" title={type === 'withdraw' ? 'Withdraw' : 'Deposit'} description={type === 'withdraw' ? 'Review the amount before requesting a withdrawal.' : 'Choose an amount to add to your club wallet.'} icon={type === 'withdraw' ? 'minus' : 'plus'} action={{ to: '/account', label: 'Back to account' }} />
-      <div className="content-section-title"><h2>Payment methods</h2><span>Available options</span></div>
+      <PageIntro
+        eyebrow="WALLET"
+        title={withdrawing ? 'Withdraw' : 'Deposit'}
+        description={withdrawing ? 'Cash out available balance to a method in your own name. Bonus funds cannot be withdrawn.' : 'Add cash to your club wallet. Pick a method, check the limits, then confirm the amount.'}
+        icon={withdrawing ? 'minus' : 'plus'}
+        action={{ to: '/account', label: 'Back to wallet' }}
+        stats={[{ label: 'Available', value: rupees(cash) }, { label: 'Method', value: pay.time }]}
+      />
+      <div className="content-section-title"><h2>Payment method</h2><span>Time · limits · fee</span></div>
       <div className="pay-grid">
-        {['UPI', 'Paytm', 'PhonePe', 'NetBanking', 'USDT', 'BTC', 'ETH', 'Card'].map((p) => (
-          <div key={p} className="pay"><span className="pay-mark">{p.slice(0, 2)}</span><strong>{p}</strong></div>
+        {PAY_METHODS.map((p) => (
+          <button key={p.id} type="button" className={`pay ${method === p.id ? 'on' : ''}`} onClick={() => setMethod(p.id)}>
+            <span className="pay-mark">{p.mark}</span>
+            <strong>{p.name}</strong>
+            <small>{p.time} · {p.fee}</small>
+          </button>
         ))}
       </div>
+      <p className="wallet-method-note">{pay.note} Min {rupees(withdrawing ? 200 : pay.min)} · Max {rupees(pay.max)}.</p>
       <div className="payment-shell">
         <div className="content-section-title"><h2>Enter amount</h2><span>INR</span></div>
-        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min="1" inputMode="decimal" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-        {message && <p className="hint">{message}</p>}
-        <button
-          className="btn btn-yellow btn-block"
-          onClick={async () => {
-            setMessage('')
-            if (!loggedIn) {
-              setAuthMode('login')
-              return
-            }
-            try {
-              await moveMoney(type === 'withdraw' ? 'withdraw' : 'deposit', Number(amount))
-              setMessage(type === 'withdraw' ? 'Withdrawal requested' : 'Deposit added')
-            } catch (err) {
-              setMessage(err.message)
-            }
-          }}
-        >{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</button>
+        <div className="wallet-quick">
+          {quick.map((n) => (
+            <button key={n} type="button" className={`chip ${Number(amount) === n ? 'on' : ''}`} onClick={() => setAmount(String(n))}>{rupees(n).replace('.00', '')}</button>
+          ))}
+        </div>
+        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min={min} max={pay.max} inputMode="decimal" placeholder={String(min)} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        {withdrawing && (
+          <div className="field">
+            <label>{method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'UPI ID' : method === 'netbanking' || method === 'card' ? 'Account / IFSC' : 'Wallet address'}</label>
+            <input className="input" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'name@upi' : method === 'netbanking' || method === 'card' ? 'Account number and IFSC' : `${pay.name} address`} />
+          </div>
+        )}
+        <div className="wallet-summary">
+          <span>You {withdrawing ? 'receive' : 'pay'}</span><b>{Number.isFinite(value) && value > 0 ? rupees(value) : '—'}</b>
+          <span>Fee</span><b>{pay.fee}</b>
+          <span>{withdrawing ? 'ETA' : 'Credited'}</span><b>{pay.time}</b>
+        </div>
+        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add /i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
+        <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>
+          {busy ? 'Please wait…' : withdrawing ? 'Request withdrawal' : 'Deposit now'}
+        </button>
+        <p className="wallet-legal">By continuing you confirm you are 18+, the payment account is yours, and you have read the wallet notes below.</p>
       </div>
+      <div className="content-section-title"><h2>Need to know</h2><span>{withdrawing ? 'Cashout' : 'Top-up'}</span></div>
+      <ul className="wallet-notes">
+        {withdrawing ? (
+          <>
+            <li>Complete verification first. Unverified cashouts are held.</li>
+            <li>Bonus and un-wagered free bets are not paid out.</li>
+            <li>Send only to an account in the same name as your KYC. Third-party accounts are rejected.</li>
+            <li>UPI is usually minutes. Bank and crypto wait for clearing / network confirmations.</li>
+            <li>Daily cap is ₹2,00,000. Split larger cashouts or move up VIP for a higher limit.</li>
+          </>
+        ) : (
+          <>
+            <li>Minimum {rupees(pay.min)} on {pay.name}. Pending bank or crypto payments can take the times listed above.</li>
+            <li>A failed UPI still holds money at the bank for a short time — wait for the reverse before retrying.</li>
+            <li>Crypto: copy the address from the next screen only. Wrong chain or token cannot be refunded.</li>
+            <li>Deposits are for play on Bullwave Club. Chargebacks may freeze the wallet.</li>
+            <li>Keep the payment screenshot until the balance updates.</li>
+          </>
+        )}
+      </ul>
+      {loggedIn && (
+        <>
+          <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
+          <WalletActivity key={tick} userId={user?.id} />
+        </>
+      )}
     </div>
   )
 }

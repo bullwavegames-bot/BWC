@@ -203,20 +203,27 @@ export function AppProvider({ children }) {
     }
   }
 
-  const moveMoney = async (type, amount) => {
+  const moveMoney = async (type, amount, extra = {}) => {
     if (!token) {
       setAuthMode('login')
       throw new Error('Log in first')
     }
     if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid amount')
-    try {
-      const path = type === 'withdraw' ? '/api/payments/cashout' : '/api/payments/create-deposit'
-      const data = await api(path, { method: 'POST', token, body: { amount } })
-      await hydrateAccount(token, user)
-      return data
-    } catch (err) {
-      throw new Error(err.message || 'Wallet moves go through Bullwave Club billing.')
+    const paths = type === 'withdraw'
+      ? ['/api/wallet/withdraw', '/api/payments/cashout']
+      : ['/api/wallet/deposit', '/api/payments/create-deposit']
+    let lastErr
+    for (const path of paths) {
+      try {
+        const data = await api(path, { method: 'POST', token, body: { amount, ...extra } })
+        await hydrateAccount(token, user)
+        return data
+      } catch (err) {
+        lastErr = err
+        if (!/not found|404/i.test(String(err.message))) break
+      }
     }
+    throw new Error(lastErr?.message || 'Wallet moves go through Bullwave Club billing.')
   }
 
   const value = useMemo(
