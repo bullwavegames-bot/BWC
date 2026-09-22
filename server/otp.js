@@ -1,4 +1,5 @@
 import { createHash, randomInt } from 'node:crypto'
+import { isTenDigitPhone } from '../src/authRules.js'
 
 const challenges = new Map()
 const TTL_MS = 10 * 60 * 1000
@@ -51,6 +52,11 @@ function saveChallenge(phone, code) {
 export async function sendOtp(rawPhone) {
   const cfg = otpConfig()
   const phone = normalizePhone(rawPhone)
+  if (!isTenDigitPhone(rawPhone)) {
+    const err = new Error('Enter a 10-digit mobile number.')
+    err.status = 400
+    throw err
+  }
   if (!/^\d{10,15}$/.test(phone)) {
     const err = new Error('Enter a valid mobile number with country code.')
     err.status = 400

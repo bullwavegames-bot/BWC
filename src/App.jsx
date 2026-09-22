@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
+import { isStrongPassword, PASSWORD_HINT } from './authRules.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
 import GameIcon, { getGameIconKind } from './GameIcon.jsx'
 
@@ -369,7 +370,7 @@ function AuthModal() {
     setAuthError('')
     setOtpHint('')
     try {
-      if (!/^\d{10,15}$/.test(fullPhone.replace(/\D/g, ''))) throw new Error('Enter a valid mobile number for the selected country.')
+      if (phone.replace(/\D/g, '').length !== 10) throw new Error('Enter a 10-digit mobile number.')
       const data = await sendOtp(fullPhone)
       setOtpSent(true)
       setOtpLength(Number(data.length) === 6 ? 6 : 4)
@@ -408,9 +409,18 @@ function AuthModal() {
     setAuthError('')
     try {
       if (isLogin) {
-        if (loginTab === 'Phone') return await loginWithPhone({ phone: fullPhone, otp })
+        if (loginTab === 'Phone') {
+          if (phone.replace(/\D/g, '').length !== 10) throw new Error('Enter a 10-digit mobile number.')
+          return await loginWithPhone({ phone: fullPhone, otp })
+        }
         await login({ method: 'email', email, password })
       } else {
+        if (signupTab === 'Phone' && phone.replace(/\D/g, '').length !== 10) {
+          throw new Error('Enter a 10-digit mobile number.')
+        }
+        if (!isStrongPassword(password)) {
+          throw new Error(`Password must be ${PASSWORD_HINT}.`)
+        }
         await register({
           method: signupTab === 'E-mail' ? 'email' : 'phone',
           phone: signupTab === 'Phone' ? fullPhone : '',
@@ -460,7 +470,7 @@ function AuthModal() {
       </button>
       <label className="float-field">
         <span>Phone number</span>
-        <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="Mobile number" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 12)); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }} />
+        <input className="input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} placeholder="10-digit mobile number" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp('') }} />
       </label>
       {countryOpen && (
         <div className="country-menu">
@@ -515,8 +525,8 @@ function AuthModal() {
           <div className="recovery-panel">
             <p>Choose a new password for your Bullwave Club account.</p>
             <label className="auth-label" htmlFor="new-password">New password</label>
-            <input id="new-password" className="input" type="password" autoComplete="new-password" placeholder="At least 10 characters" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveNewPassword() }} />
-            <button className="btn btn-yellow btn-block" type="button" disabled={busy || password.length < 10} onClick={saveNewPassword}>{busy ? 'Saving…' : 'Save new password'}</button>
+            <input id="new-password" className="input" type="password" autoComplete="new-password" placeholder={PASSWORD_HINT} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveNewPassword() }} />
+            <button className="btn btn-yellow btn-block" type="button" disabled={busy || !isStrongPassword(password)} onClick={saveNewPassword}>{busy ? 'Saving…' : 'Save new password'}</button>
           </div>
         ) : isLogin ? (
           <>
@@ -544,7 +554,7 @@ function AuthModal() {
                   {otpSent ? (
                     <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== otpLength} onClick={confirmOtp}>{busy ? 'Checking…' : 'Log in'}</button>
                   ) : (
-                    <button className="btn btn-yellow" type="button" disabled={busy || !phone} onClick={requestOtp}>{busy ? 'Sending…' : 'Send OTP'}</button>
+                    <button className="btn btn-yellow" type="button" disabled={busy || phone.replace(/\D/g, '').length !== 10} onClick={requestOtp}>{busy ? 'Sending…' : 'Send OTP'}</button>
                   )}
                 </div>
                 {otpSent && <button className="otp-resend" type="button" disabled={busy || resendSeconds > 0} onClick={requestOtp}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Send a new code'}</button>}
@@ -612,7 +622,7 @@ function AuthModal() {
                   {otpSent && !phoneVerified ? (
                     <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== otpLength} onClick={confirmOtp}>Verify</button>
                   ) : (
-                    <button className="btn btn-yellow" type="button" disabled={busy || !phone} onClick={requestOtp}>{otpSent ? 'Resend' : 'Send OTP'}</button>
+                    <button className="btn btn-yellow" type="button" disabled={busy || phone.replace(/\D/g, '').length !== 10} onClick={requestOtp}>{otpSent ? 'Resend' : 'Send OTP'}</button>
                   )}
                 </div>
                 {otpHint && <p className="hint" style={{ color: phoneVerified ? 'var(--mint)' : undefined }}>{otpHint}</p>}
@@ -627,7 +637,7 @@ function AuthModal() {
               <input className="input" type={showPass ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label="Show password">👁</button>
             </div>
-            <p className="hint">• at least 10 characters</p>
+            <p className="hint">• {PASSWORD_HINT}</p>
 
             <button className="promo-toggle" type="button" onClick={() => setPromoOpen((v) => !v)}>
               <span>▣ I Have a Promo Code</span>
@@ -642,7 +652,7 @@ function AuthModal() {
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
             </label>
 
-            <button className="btn btn-yellow btn-block" disabled={!accepted || busy || (signupTab === 'Phone' && !phoneVerified)} onClick={submit}>
+            <button className="btn btn-yellow btn-block" disabled={!accepted || busy || !isStrongPassword(password) || (signupTab === 'Phone' && !phoneVerified)} onClick={submit}>
               {busy ? 'Please wait…' : signupTab === 'Phone' && !phoneVerified ? 'Verify phone to continue' : 'Create account'}
             </button>
             <div className="switch-auth">

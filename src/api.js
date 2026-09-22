@@ -1,7 +1,15 @@
-const CLUB_ORIGIN = import.meta.env.VITE_API_URL || 'https://bullwavegames.onrender.com'
-const onLocalHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
-const BASE = onLocalHost ? '' : CLUB_ORIGIN
-const OTP_BASE = onLocalHost ? '' : (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN)
+const CLUB_ORIGIN = (import.meta.env.VITE_API_URL || 'https://bwc-wgbu.onrender.com').replace(/\/$/, '')
+const OTP_BASE = (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN).replace(/\/$/, '')
+const BASE = CLUB_ORIGIN
+
+function fail(res, data, fallback) {
+  const msg = data.error || data.message || data.msg
+  if (msg && msg !== 'Not Found') return new Error(msg)
+  if (res.status === 404) {
+    return new Error('This API has no OTP route. Confirm the app is using https://bwc-wgbu.onrender.com and restart Vite.')
+  }
+  return new Error(fallback)
+}
 
 export async function sendOtp(phone) {
   const res = await fetch(`${OTP_BASE}/api/otp/send`, {
@@ -10,7 +18,7 @@ export async function sendOtp(phone) {
     body: JSON.stringify({ phone }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || data.message || 'Could not send OTP')
+  if (!res.ok) throw fail(res, data, 'Could not send OTP')
   return data
 }
 
@@ -21,7 +29,7 @@ export async function verifyOtp(phone, otp) {
     body: JSON.stringify({ phone, otp }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || data.message || 'Could not verify OTP')
+  if (!res.ok) throw fail(res, data, 'Could not verify OTP')
   return data
 }
 
@@ -32,7 +40,7 @@ export async function loginWithPhoneOtp(phone, otp) {
     body: JSON.stringify({ phone, otp }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || data.message || 'Could not log in with this OTP')
+  if (!res.ok) throw fail(res, data, 'Could not log in with this OTP')
   return data
 }
 

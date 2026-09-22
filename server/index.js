@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { consumePhoneVerification, normalizePhone, sendOtp, verifyOtp, isPhoneVerified } from './otp.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
+import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
 
 function loadEnvFile() {
   const dir = dirname(fileURLToPath(import.meta.url))
@@ -37,8 +38,8 @@ loadEnvFile()
 const app = express()
 const PORT = process.env.PORT || 4000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-bullwave-secret-change-me'
-const CORS_ORIGIN = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+const CORS_ORIGIN = (process.env.CORS_ORIGIN || process.env.CORS_ORIGINS)
+  ? (process.env.CORS_ORIGIN || process.env.CORS_ORIGINS).split(',').map((s) => s.trim())
   : true
 
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }))
@@ -190,8 +191,8 @@ app.post('/api/auth/otp-login', loginWithOtp)
 
 app.post('/api/auth/register', async (req, res) => {
   const { method = 'phone', phone, email, password, promoCode, bonus } = req.body || {}
-  if (!password || String(password).length < 4) {
-    return res.status(400).json({ error: 'Password must be at least 4 characters' })
+  if (!isStrongPassword(password)) {
+    return res.status(400).json({ error: passwordError(password) })
   }
   const cleanEmail = email?.trim().toLowerCase()
   const identifier = method === 'email' ? cleanEmail : normalizePhone(phone)
@@ -203,6 +204,9 @@ app.post('/api/auth/register', async (req, res) => {
   }
   if (method !== 'email' && cleanEmail && findUser({ email: cleanEmail })) {
     return res.status(409).json({ error: 'E-mail already registered' })
+  }
+  if (method !== 'email' && !isTenDigitPhone(phone)) {
+    return res.status(400).json({ error: 'Enter a 10-digit mobile number.' })
   }
   if (method !== 'email' && findUser({ phone: identifier })) {
     return res.status(409).json({ error: 'Phone number already registered' })
