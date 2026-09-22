@@ -193,11 +193,15 @@ app.post('/api/auth/register', async (req, res) => {
   if (!password || String(password).length < 4) {
     return res.status(400).json({ error: 'Password must be at least 4 characters' })
   }
-  const identifier = method === 'email' ? email?.trim() : normalizePhone(phone)
+  const cleanEmail = email?.trim().toLowerCase()
+  const identifier = method === 'email' ? cleanEmail : normalizePhone(phone)
   if (!identifier) {
     return res.status(400).json({ error: method === 'email' ? 'E-mail is required' : 'Phone number is required' })
   }
   if (method === 'email' && findUser({ email: identifier })) {
+    return res.status(409).json({ error: 'E-mail already registered' })
+  }
+  if (method !== 'email' && cleanEmail && findUser({ email: cleanEmail })) {
     return res.status(409).json({ error: 'E-mail already registered' })
   }
   if (method !== 'email' && findUser({ phone: identifier })) {
@@ -210,7 +214,7 @@ app.post('/api/auth/register', async (req, res) => {
   const user = {
     id: randomUUID(),
     phone: method === 'email' ? null : identifier,
-    email: method === 'email' ? identifier : null,
+    email: method === 'email' ? identifier : cleanEmail || null,
     accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
     passwordHash: await bcrypt.hash(password, 10),
     bonus: bonus || 'Welcome Casino 100%',
