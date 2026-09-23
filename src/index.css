@@ -2519,6 +2519,17 @@ html[data-theme="light"] .pdata-select { background: #f4f7fb; color: #142237; }
 .ticker-all { border-left: 1px solid var(--line); }
 .sidebar, .betslip { top: calc(var(--header-h) + var(--ticker-h)); height: calc(100vh - var(--header-h) - var(--ticker-h)); }
 
+@media (min-width: 901px) {
+  .sidebar {
+    position: relative;
+    top: auto;
+    align-self: stretch;
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+}
+
 .odd b { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
 .odd b i { font-size: 12px; font-style: normal; }
 .odd-up:not(.on) { border-color: color-mix(in srgb, #18a875 55%, var(--line)); animation: odd-flash-up 900ms ease-out; }
