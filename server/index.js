@@ -57,7 +57,7 @@ app.use((req, res, next) => {
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*')
   }
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key')
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS')
   res.setHeader('Vary', 'Origin')
   if (req.method === 'OPTIONS') return res.sendStatus(204)
@@ -144,11 +144,20 @@ function goneCreateDeposit(_req, res) {
   })
 }
 
+function incomingAdminKey(req) {
+  const header = String(req.headers['x-admin-key'] || '').trim()
+  if (header) return header
+  const auth = String(req.headers.authorization || '').trim()
+  if (/^Admin\s+/i.test(auth)) return auth.replace(/^Admin\s+/i, '').trim()
+  return ''
+}
+
 function admin(req, res, next) {
   const key = String(process.env.ADMIN_KEY || process.env.SUPER_ADMIN_KEY || '').trim()
-  if (!key) return res.status(503).json({ error: 'Set ADMIN_KEY on the server for Super Admin settle.' })
-  const got = String(req.headers['x-admin-key'] || '').trim()
-  if (got !== key) return res.status(401).json({ error: 'Admin key required' })
+  if (!key) return res.status(503).json({ error: 'Set ADMIN_KEY on the Render API service, then redeploy.' })
+  const got = incomingAdminKey(req)
+  if (!got) return res.status(401).json({ error: 'Paste the same ADMIN_KEY that is set on Render. It never reached the API.' })
+  if (got !== key) return res.status(401).json({ error: 'Admin key does not match the Render ADMIN_KEY.' })
   next()
 }
 

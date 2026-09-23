@@ -163,7 +163,11 @@ export function AdminDesk() {
   const [cashouts, setCashouts] = useState([])
   const [message, setMessage] = useState('')
 
-  const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-key': key })
+  const headers = () => ({
+    'Content-Type': 'application/json',
+    'x-admin-key': key,
+    Authorization: `Admin ${key}`,
+  })
 
   const saveKey = () => {
     sessionStorage.setItem('bwc_admin_key', key)

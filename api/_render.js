@@ -3,6 +3,8 @@ const RENDER_API = 'https://bwc-wgbu.onrender.com'
 export async function proxyRender(path, req) {
   const headers = { 'Content-Type': 'application/json' }
   if (req.headers.authorization) headers.Authorization = req.headers.authorization
+  const adminKey = req.headers['x-admin-key']
+  if (adminKey) headers['x-admin-key'] = adminKey
   const res = await fetch(`${RENDER_API}${path}`, {
     method: req.method,
     headers,
