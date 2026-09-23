@@ -334,6 +334,7 @@ img { max-width: 100%; }
 .mark-table-tennis { border-radius:50%; width:16px; height:16px; flex-basis:16px; background:radial-gradient(circle at 35% 30%,#6de2ff,#1887ae); }
 .mark-esports { background: linear-gradient(135deg,#7b56d9,#31bfe3); }
 .mark-hockey { background: linear-gradient(135deg,#b9d8ec,#557c99); }
+.mark-camel { background: linear-gradient(135deg,#e2a45a,#8a4e16); }
 
 .main {
   padding: 16px 18px 80px;
@@ -1509,7 +1510,7 @@ a.account-tile:hover { transform: translateY(-3px); border-color: rgba(97,214,17
   .header .logo { margin-right: 0; font-size: 16px; }
   .header .icon-btn { width: 32px; height: 32px; }
   .header-right { gap: 3px; min-width: 0; }
-  .header-right > .btn-ghost { display: none; }
+  .header-right > .btn-ghost { display: inline-flex; height: 32px; padding-inline: 8px; font-size: 12px; }
   .header-right > .btn-yellow { height: 32px; padding-inline: 10px; }
   .header-right .lang { padding-inline: 4px; }
   .header-right .country-flag-image { width: 20px; }
@@ -1694,7 +1695,7 @@ body { font-family: var(--font); background: var(--navy); }
 .reference-home .sport-filter a { flex: 1 0 auto; min-width: 100px; height: 55px; justify-content: center; gap: 13px; border-color: #2c3a3f; border-radius: 9px; font-size: 13px; font-weight: 500; padding: 0 12px; }
 .reference-home .sport-filter a.featured-sport { border-color: var(--mint); color: var(--mint); background: #102d2d; font-weight: 700; }
 .sport-filter-icon { display: grid; place-items: center; }
-.sport-cricket { color: #54e1df; }.sport-football { color: #e9eeee; }.sport-basketball { color: #fa784b; }.sport-tennis { color: #c5f334; }.sport-table-tennis { color: #bac6d8; }.sport-horse { color: #c6a1fa; }
+.sport-cricket { color: #54e1df; }.sport-football { color: #e9eeee; }.sport-basketball { color: #fa784b; }.sport-tennis { color: #c5f334; }.sport-table-tennis { color: #bac6d8; }.sport-horse { color: #c6a1fa; }.sport-camel { color: #e2a45a; }
 .sport-more { letter-spacing: 2px; font-weight: 800; }
 .home-content-grid { display: grid; grid-template-columns: minmax(0,2fr) minmax(290px,1fr); gap: 18px; margin-top: 24px; }
 .home-section-title { display: flex; align-items: center; gap: 13px; min-height: 34px; margin: 0 0 16px; font-size: 19px; font-weight: 800; }
@@ -1989,5 +1990,139 @@ html[data-theme="light"] .empty-state p { color: #173048; }
   html[data-theme="light"] .header .btn-yellow { background: #102e53; color: #fff; }
   html[data-theme="light"] .main { background: #fff; }
 }
+
+html, body { overflow-x: hidden; }
+.slip-close, .slip-backdrop, .mobile-dock { display: none; }
+
+@media (max-width: 1200px) {
+  .betslip {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: min(78dvh, 640px);
+    z-index: 70;
+    transform: translateY(110%);
+    transition: transform 220ms ease;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 18px 18px 0 0;
+    background: var(--navy);
+    box-shadow: 0 -16px 40px rgba(0,0,0,.35);
+  }
+  .betslip.is-open { transform: translateY(0); }
+  .slip-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgba(0,0,0,.45);
+  }
+  .slip-close {
+    display: grid;
+    margin-left: auto;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    place-items: center;
+  }
+  .betslip .slip-panel { overflow: auto; flex: 1; }
+  .slip-rewards { display: none; }
+}
+
+@media (max-width: 900px) {
+  :root { --header-h: 64px; }
+  .overlay { align-items: stretch; justify-items: start; padding: 0; }
+  .overlay.menu-overlay { place-items: stretch start; }
+  .menu-panel {
+    position: relative;
+    width: min(360px, 92vw);
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 8px;
+  }
+  .menu-auth {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+  }
+  .menu-auth .btn { flex: 1; }
+  .mobile-dock {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--navy);
+    border-top: 1px solid var(--line);
+  }
+  .mobile-dock a, .mobile-dock button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .mobile-dock a.active, .mobile-dock a:hover, .mobile-dock button:hover { color: var(--mint); }
+  .dock-slip { position: relative; }
+  .dock-slip i {
+    position: absolute;
+    top: 4px;
+    right: 18%;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 99px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 10px;
+    font-style: normal;
+    line-height: 16px;
+  }
+  .main { padding-bottom: 96px; }
+  .header { min-width: 0; overflow: visible; }
+  .header .logo-img { height: 36px; max-width: 148px; }
+  .header-right .lang { font-size: 0; gap: 0; padding: 6px; }
+  .header-right .lang img { font-size: 12px; }
+  .sport-filter, .filters, .wallet-quick { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .sport-filter a, .chip { flex: none; min-height: 44px; }
+  .odd, .pay { min-height: 48px; }
+  .wallet-facts { grid-template-columns: 1fr; }
+  .login-modal { width: 100%; max-height: 100dvh; border-radius: 16px 16px 0 0; }
+  .search-panel { top: var(--header-h); padding-bottom: 80px; }
+}
+
+@media (max-width: 560px) {
+  .match-grid, .pay-grid, .account-grid { grid-template-columns: 1fr; }
+  .header .btn-yellow, .header .btn-ghost { min-height: 36px; }
+  .live-feature-card { height: auto; min-height: 240px; }
+  .live-card-actions { flex-wrap: wrap; }
+}
+
+html[data-theme="light"] .mobile-dock { background: #fff; border-color: #e4e9ef; }
+html[data-theme="light"] .betslip { background: #fff; }
+
 
 

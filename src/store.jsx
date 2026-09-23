@@ -23,6 +23,7 @@ export function AppProvider({ children }) {
   const [langOpen, setLangOpen] = useState(false)
   const [oddsFormat, setOddsFormat] = useState('decimal')
   const [theme, setTheme] = useState(() => (typeof localStorage !== 'undefined' && localStorage.getItem('bwc_theme') === 'light' ? 'light' : 'dark'))
+  const [slipOpen, setSlipOpen] = useState(false)
 
   const applySession = (nextToken, nextUser) => {
     setToken(nextToken)
@@ -87,6 +88,7 @@ export function AppProvider({ children }) {
       if (exists) return prev.filter((b) => b.id !== bet.id)
       return [...prev, bet]
     })
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1200px)').matches) setSlipOpen(true)
   }
 
   const removeBet = (id) => setBetslip((prev) => prev.filter((b) => b.id !== id))
@@ -265,8 +267,10 @@ export function AppProvider({ children }) {
       setOddsFormat,
       theme,
       setTheme,
+      slipOpen,
+      setSlipOpen,
     }),
-    [betslip, favorites, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme],
+    [betslip, favorites, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme, slipOpen],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

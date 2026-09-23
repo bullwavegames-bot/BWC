@@ -112,6 +112,7 @@ function Icon({ name, size = 18 }) {
     tennis: <><circle cx="12" cy="12" r="9" /><path d="M5.7 5.7c3.2 2 4.7 4.1 5 6.5.3 2.5 2 4.5 5.6 6.1M18.3 5.7c-3.2 2-4.7 4.1-5 6.5-.3 2.5-2 4.5-5.6 6.1" /></>,
     table: <><path d="M4 14h16M5.5 14l-1 6M18.5 14l1 6M12 14v6M4 17h16" /><path d="M8.4 4.2a4 4 0 1 1-3.7 6.6A4 4 0 0 1 8.4 4.2Z" /><path d="m7 11 2 4" /><circle cx="17.8" cy="7" r="1.4" fill="currentColor" stroke="none" /></>,
     horse: <><path d="M5 19c.8-4.9 3.4-8 7.7-9.5L15 4l2.3 4.2 2.7 1.5-1.8 3.6-4.1.5-2.5 5.2Z" /><path d="m12.7 9.5 2.8 2.5M8.2 12.2l-3-1.7M8.5 19l-2.7 2M12.2 19l2.1 2M16.7 8.3l2-3.3" /><circle cx="17" cy="10.1" r=".7" fill="currentColor" stroke="none" /></>,
+    camel: <><path d="M4 18c1.2-5 3.2-8 7-9.2.4-3.2 1.8-6.2 4.8-7.2 2.2-.2 3.4 1.6 3.6 3.6 2.4-.4 4.6.8 6 2.8 2 .8 3.6 2.8 3.6 5.2V16h-3.2c-.4 2.2-2.2 3.8-4.4 3.8H7.2C5.4 19.8 4.2 19.2 4 18Z" /><path d="M9.2 10.4C7 11.4 5.8 13.6 5.4 16M15.4 9.2c2.2-.2 4.4 1.2 5.6 3.2" /><circle cx="18.2" cy="10.2" r=".7" fill="currentColor" stroke="none" /></>,
     ticket: <path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2z" />,
     plus: <path d="M12 5v14M5 12h14" />,
     minus: <path d="M5 12h14" />,
@@ -170,6 +171,13 @@ function LanguagePicker({ embedded = false }) {
       )}
     </div>
   )
+}
+
+function sportIcon(sport) {
+  if (sport === 'table-tennis' || sport === 'table') return 'table'
+  if (sport === 'camel-racing') return 'camel'
+  if (sport === 'horse-racing') return 'horse'
+  return sport || 'live'
 }
 
 function Header() {
@@ -266,15 +274,17 @@ function Sidebar() {
 }
 
 function Betslip() {
-  const { betslip, removeBet, placeBets, loggedIn, setAuthMode } = useApp()
+  const { betslip, removeBet, placeBets, loggedIn, setAuthMode, slipOpen, setSlipOpen } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
   const [mode, setMode] = useState('System')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
-    <aside className="betslip">
+    <>
+    {slipOpen && <div className="slip-backdrop" onClick={() => setSlipOpen(false)} />}
+    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`}>
       <div className="slip-panel">
-      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}</h3>
+      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}<button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button></h3>
       <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
       {betslip.length === 0 ? (
         <div className="slip-empty">
@@ -312,6 +322,7 @@ function Betslip() {
                 }
                 try {
                   await placeBets(Number(stake))
+                  setSlipOpen(false)
                 } catch (err) {
                   setSlipError(err.message)
                 }
@@ -325,6 +336,7 @@ function Betslip() {
       </div>
       <div className="slip-rewards"><span className="reward-crown" aria-hidden="true">♛</span><h3>Exclusive Rewards<br />for Members</h3><ul><li>Higher Odds</li><li>Early Access</li><li>Exclusive Promotions</li><li>Fast Withdrawals</li></ul><NavLink to="/vip">Join Now <span aria-hidden="true">→</span></NavLink></div>
     </aside>
+    </>
   )
 }
 
@@ -898,7 +910,7 @@ function Home() {
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
       </section>
       <nav className="sport-filter" aria-label="Browse by sport">
-        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
+        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
       <div className="home-content-grid">
@@ -911,7 +923,7 @@ function Home() {
             <div className="live-card-actions"><NavLink to={`/match/${featured.id}`}>Open Match Center <span aria-hidden="true">→</span></NavLink><NavLink to={`/match/${featured.id}`}>View Odds</NavLink></div>
           </article>}
         </section>
-        <section className="top-matches-panel"><div className="top-matches-head"><h2><Icon name="cal" size={20} /> Top Matches</h2><NavLink to="/live">View all live <span aria-hidden="true">→</span></NavLink></div><div className="day-tabs" role="tablist" aria-label="Match day">{['Today', 'Tomorrow', 'This Week'].map((day) => <button key={day} type="button" role="tab" aria-selected={matchDay === day} className={matchDay === day ? 'active' : ''} onClick={() => setMatchDay(day)}>{day}</button>)}</div><div className="top-match-list">{topMatches.length ? topMatches.map((m) => <NavLink to={`/match/${m.id}`} key={m.id} className="top-match-row"><span className={`top-match-icon sport-${m.sport}`}><Icon name={m.sport === 'table-tennis' ? 'table' : m.sport} size={19} /></span><span className="top-match-copy"><small>{m.live ? 'LIVE' : m.time}</small><strong>{m.home} vs {m.away}</strong>{!m.live && <em>{m.league.split('.').slice(-1)[0].trim()}</em>}</span>{m.live && <span className="top-match-score">{m.score?.[0]}{m.sport === 'cricket' ? ' (37.2)' : ''}</span>}<Icon name="chevron" size={15} /></NavLink>) : <p className="top-match-empty">No matches scheduled for this day.</p>}</div></section>
+        <section className="top-matches-panel"><div className="top-matches-head"><h2><Icon name="cal" size={20} /> Top Matches</h2><NavLink to="/live">View all live <span aria-hidden="true">→</span></NavLink></div><div className="day-tabs" role="tablist" aria-label="Match day">{['Today', 'Tomorrow', 'This Week'].map((day) => <button key={day} type="button" role="tab" aria-selected={matchDay === day} className={matchDay === day ? 'active' : ''} onClick={() => setMatchDay(day)}>{day}</button>)}</div><div className="top-match-list">{topMatches.length ? topMatches.map((m) => <NavLink to={`/match/${m.id}`} key={m.id} className="top-match-row"><span className={`top-match-icon sport-${m.sport}`}><Icon name={sportIcon(m.sport)} size={19} /></span><span className="top-match-copy"><small>{m.live ? 'LIVE' : m.time}</small><strong>{m.home} vs {m.away}</strong>{!m.live && <em>{m.league.split('.').slice(-1)[0].trim()}</em>}</span>{m.live && <span className="top-match-score">{m.score?.[0]}{m.sport === 'cricket' ? ' (37.2)' : ''}</span>}<Icon name="chevron" size={15} /></NavLink>) : <p className="top-match-empty">No matches scheduled for this day.</p>}</div></section>
       </div>
       <section className="popular-leagues"><h2 className="home-section-title"><span aria-hidden="true">🏆</span> Popular Leagues</h2><div className="popular-league-grid">{leagueCards.map((league) => <NavLink to={league.to} key={league.name} className="popular-league"><span className={`league-logo ${league.className}`}>{league.mark}</span><span><strong>{league.name}</strong><small>{league.sport}</small></span></NavLink>)}</div></section>
       <footer className="home-brand-strip"><span>SPORTS BRING US TOGETHER.<br /><b>BULLWAVE</b> KEEPS US AHEAD.</span><div className="strip-brand"><span className="logo-emblem" aria-hidden="true" /><strong>BULL<span>WAVE</span><small>CLUB</small></strong></div><p>SPORTS<br />PEOPLE<br />PASSION<br />PROGRESS</p></footer>
@@ -923,12 +935,13 @@ function Live() {
   const { catalogMatches: matches } = useApp()
   const live = matches.filter((m) => m.live)
   const [sport, setSport] = useState('All Live')
-  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === sport.toLowerCase().replaceAll(' ', '-'))
+  const liveKey = { 'Camel Riding': 'camel', 'Horse Racing': 'horse', 'Table Tennis': 'table-tennis' }
+  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === (liveKey[sport] || sport.toLowerCase().replaceAll(' ', '-')))
   return (
     <div className="content-page">
       <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
       <div className="filters">
-        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Table Tennis'].map((c) => (
+        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Horse Racing', 'Camel Riding'].map((c) => (
           <button key={c} type="button" className={`chip ${sport === c ? 'on' : ''}`} onClick={() => setSport(c)}>{c}</button>
         ))}
       </div>
@@ -1047,7 +1060,7 @@ function Sport() {
   useEffect(() => setView('All'), [name])
   return (
     <div className="content-page">
-      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={name === 'football' ? 'football' : name === 'basketball' ? 'basketball' : name === 'tennis' ? 'tennis' : name === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
+      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
       <div className="filters">
         {['All', 'Live', 'Upcoming'].map((c) => (
           <button key={c} type="button" className={`chip ${view === c ? 'on' : ''}`} onClick={() => setView(c)}>{c}</button>
@@ -1065,7 +1078,7 @@ function MatchPage() {
   const m = matches.find((x) => x.id === id) || matches[4]
   return (
     <div className="content-page">
-      <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={m.sport === 'football' ? 'football' : m.sport === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
+      <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={sportIcon(m.sport)} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
       <div className="card match-summary" style={{ marginBottom: 14 }}>
         <div className="event-meta">{m.league} · {m.time}{m.live ? ' LIVE' : ''}</div>
         <h1 style={{ margin: '8px 0 0' }}>{m.home} {m.score?.[0] || ''} — {m.score?.[1] || ''} {m.away}</h1>
@@ -1511,24 +1524,58 @@ function SearchOverlay() {
 }
 
 function MenuDrawer() {
-  const { menuOpen, setMenuOpen, setAuthMode } = useApp()
+  const { menuOpen, setMenuOpen, setAuthMode, loggedIn } = useApp()
   if (!menuOpen) return null
+  const close = () => setMenuOpen(false)
+  const sportsList = sports.filter((s) => !['promos', 'parlays', 'all-live', 'favorites'].includes(s.id))
   return (
-    <div className="overlay" onClick={() => setMenuOpen(false)}>
+    <div className="overlay menu-overlay" onClick={close}>
       <div className="menu-panel" onClick={(e) => e.stopPropagation()}>
-        <NavLink className="menu-item" to="/" onClick={() => setMenuOpen(false)}>Sport</NavLink>
-        <NavLink className="menu-item" to="/casino/live-casino" onClick={() => setMenuOpen(false)}>Casino</NavLink>
-        <NavLink className="menu-item" to="/promotions" onClick={() => setMenuOpen(false)}>Promotions</NavLink>
-        <NavLink className="menu-item" to="/vip" onClick={() => setMenuOpen(false)}>Bullwave Club VIP</NavLink>
-        <NavLink className="menu-item" to="/account" onClick={() => setMenuOpen(false)}>My Account</NavLink>
-        <NavLink className="menu-item" to="/more" onClick={() => setMenuOpen(false)}>More</NavLink>
-        <NavLink className="menu-item" to="/faq" onClick={() => setMenuOpen(false)}>FAQ</NavLink>
-        <div className="menu-item">
-          <button className="btn btn-ghost" onClick={() => { setMenuOpen(false); setAuthMode('login') }}>Log in</button>
-          <button className="btn btn-yellow" onClick={() => { setMenuOpen(false); setAuthMode('signup') }}>Sign up</button>
+        <div className="menu-head">
+          <strong>Browse</strong>
+          <button type="button" className="icon-btn" onClick={close} aria-label="Close menu"><Icon name="close" /></button>
+        </div>
+        <NavLink className="menu-item" to="/" onClick={close}>Home</NavLink>
+        <NavLink className="menu-item" to="/live" onClick={close}>Live</NavLink>
+        <NavLink className="menu-item" to="/upcoming" onClick={close}>Upcoming</NavLink>
+        {sportsList.map((s) => (
+          <NavLink key={s.id} className="menu-item" to={s.to} onClick={close}>{s.name}</NavLink>
+        ))}
+        <NavLink className="menu-item" to="/casino/live-casino" onClick={close}>Games</NavLink>
+        <NavLink className="menu-item" to="/promotions" onClick={close}>Promotions</NavLink>
+        <NavLink className="menu-item" to="/account" onClick={close}>Wallet</NavLink>
+        <NavLink className="menu-item" to="/account/bets" onClick={close}>My bets</NavLink>
+        <NavLink className="menu-item" to="/vip" onClick={close}>VIP</NavLink>
+        <NavLink className="menu-item" to="/faq" onClick={close}>Help</NavLink>
+        <div className="menu-auth">
+          {loggedIn ? (
+            <NavLink className="btn btn-yellow btn-block" to="/account" onClick={close}>My account</NavLink>
+          ) : (
+            <>
+              <button className="btn btn-ghost" onClick={() => { close(); setAuthMode('login') }}>Log in</button>
+              <button className="btn btn-yellow" onClick={() => { close(); setAuthMode('signup') }}>Sign up</button>
+            </>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+function MobileDock() {
+  const { betslip, setMenuOpen, setSlipOpen, setSearchOpen, loggedIn } = useApp()
+  return (
+    <nav className="mobile-dock" aria-label="Mobile navigation">
+      <NavLink to="/" end><Icon name="home" size={20} /><span>Home</span></NavLink>
+      <NavLink to="/live"><Icon name="live" size={20} /><span>Live</span></NavLink>
+      <button type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={20} /><span>Search</span></button>
+      <button type="button" className="dock-slip" onClick={() => setSlipOpen(true)}>
+        <Icon name="ticket" size={20} />
+        <span>Slip</span>
+        {betslip.length > 0 && <i>{betslip.length}</i>}
+      </button>
+      {loggedIn ? <NavLink to="/account"><Icon name="shield" size={20} /><span>Wallet</span></NavLink> : <button type="button" onClick={() => setMenuOpen(true)}><Icon name="menu" size={20} /><span>More</span></button>}
+    </nav>
   )
 }
 
@@ -1570,6 +1617,7 @@ export default function App() {
       <AuthModal />
       <SearchOverlay />
       <MenuDrawer />
+      <MobileDock />
     </div>
   )
 }
