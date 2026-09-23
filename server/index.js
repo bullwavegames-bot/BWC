@@ -427,9 +427,15 @@ app.post('/api/admin/login', async (req, res) => {
   if (attempt.count > 5) return res.status(429).json({ error: 'Too many admin sign-in attempts. Try again in 15 minutes.' })
   const adminId = String(process.env.ADMIN_ID || '').trim()
   const passwordHash = String(process.env.ADMIN_PASSWORD_HASH || '').trim()
-  if (!adminId || !passwordHash) return res.status(503).json({ error: 'Configure ADMIN_ID and ADMIN_PASSWORD_HASH on Render.' })
+  const plainPassword = String(process.env.ADMIN_PASSWORD || '').trim()
+  if (!adminId || (!passwordHash && !plainPassword)) {
+    return res.status(503).json({ error: 'Configure ADMIN_ID and ADMIN_PASSWORD or ADMIN_PASSWORD_HASH on Render.' })
+  }
   const idOk = String(req.body?.adminId || '').trim() === adminId
-  const passwordOk = await bcrypt.compare(String(req.body?.password || ''), passwordHash).catch(() => false)
+  const submitted = String(req.body?.password || '')
+  const passwordOk = passwordHash
+    ? await bcrypt.compare(submitted, passwordHash).catch(() => false)
+    : submitted === plainPassword
   if (!idOk || !passwordOk) return res.status(401).json({ error: 'Admin ID or password is incorrect.' })
   adminAttempts.delete(ip)
   writeAudit({ id: adminId, email: adminId }, 'admin-login', null, { ip })
