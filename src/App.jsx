@@ -424,16 +424,19 @@ function Sidebar() {
     <aside className="sidebar">
       <button className="sidebar-search" type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={16} /><span>Search sports</span></button>
       <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
-      {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => (
-        <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
-          <span className="dot" style={{ color: s.color || '#61D6B0' }}>
-            <Icon name={s.icon} size={18} />
-          </span>
-          <span className="side-label">{s.name}</span>
-          {s.live ? <span className="side-live">Live</span> : null}
-          <span className="side-count">{s.id === 'all-live' ? (liveCount || s.count) : catalogMatches.filter((match) => match.sport === s.id || match.sport === s.id.replace('-racing', '')).length}</span>
-        </NavLink>
-      ))}
+      {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => {
+        const count = s.id === 'all-live' ? (liveCount || s.count || 0) : catalogMatches.filter((match) => match.sport === s.id || match.sport === s.id.replace('-racing', '')).length
+        return (
+          <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
+            <span className="dot" style={{ color: s.color || '#61D6B0' }}>
+              <Icon name={s.icon} size={18} />
+            </span>
+            <span className="side-label">{s.name}</span>
+            {s.live ? <span className="side-live">Live</span> : null}
+            {count ? <span className="side-count">{count}</span> : null}
+          </NavLink>
+        )
+      })}
       <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <Icon name="chevron" size={16} /></button>
       {leaguesOpen && leagues.map((g) => (
         <div key={g.group} className="league-section">
