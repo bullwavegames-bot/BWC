@@ -1107,7 +1107,7 @@ function MatchPage() {
 }
 
 function rupees(value) {
-  return `₹ ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `₹\u00a0${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function bonusCash(user) {
