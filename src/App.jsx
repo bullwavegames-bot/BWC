@@ -112,6 +112,7 @@ function Icon({ name, size = 18 }) {
     tennis: <><circle cx="12" cy="12" r="9" /><path d="M5.7 5.7c3.2 2 4.7 4.1 5 6.5.3 2.5 2 4.5 5.6 6.1M18.3 5.7c-3.2 2-4.7 4.1-5 6.5-.3 2.5-2 4.5-5.6 6.1" /></>,
     table: <><path d="M4 14h16M5.5 14l-1 6M18.5 14l1 6M12 14v6M4 17h16" /><path d="M8.4 4.2a4 4 0 1 1-3.7 6.6A4 4 0 0 1 8.4 4.2Z" /><path d="m7 11 2 4" /><circle cx="17.8" cy="7" r="1.4" fill="currentColor" stroke="none" /></>,
     horse: <><path d="M5 19c.8-4.9 3.4-8 7.7-9.5L15 4l2.3 4.2 2.7 1.5-1.8 3.6-4.1.5-2.5 5.2Z" /><path d="m12.7 9.5 2.8 2.5M8.2 12.2l-3-1.7M8.5 19l-2.7 2M12.2 19l2.1 2M16.7 8.3l2-3.3" /><circle cx="17" cy="10.1" r=".7" fill="currentColor" stroke="none" /></>,
+    camel: <><path d="M4 18c1.2-5 3.2-8 7-9.2.4-3.2 1.8-6.2 4.8-7.2 2.2-.2 3.4 1.6 3.6 3.6 2.4-.4 4.6.8 6 2.8 2 .8 3.6 2.8 3.6 5.2V16h-3.2c-.4 2.2-2.2 3.8-4.4 3.8H7.2C5.4 19.8 4.2 19.2 4 18Z" /><path d="M9.2 10.4C7 11.4 5.8 13.6 5.4 16M15.4 9.2c2.2-.2 4.4 1.2 5.6 3.2" /><circle cx="18.2" cy="10.2" r=".7" fill="currentColor" stroke="none" /></>,
     ticket: <path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2z" />,
     plus: <path d="M12 5v14M5 12h14" />,
     minus: <path d="M5 12h14" />,
@@ -124,6 +125,9 @@ function Icon({ name, size = 18 }) {
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
     chevron: <path d="m9 5 7 7-7 7" />,
     help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+    moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z" />,
   }
   return <svg viewBox="0 0 24 24" {...s}>{paths[name] || paths.star}</svg>
 }
@@ -169,16 +173,26 @@ function LanguagePicker({ embedded = false }) {
   )
 }
 
+function sportIcon(sport) {
+  if (sport === 'table-tennis' || sport === 'table') return 'table'
+  if (sport === 'camel-racing') return 'camel'
+  if (sport === 'horse-racing') return 'horse'
+  return sport || 'live'
+}
+
 function Header() {
-  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user } = useApp()
+  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, theme, setTheme } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const light = theme === 'light'
   return (
     <header className="header">
       <button className="icon-btn mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
       <NavLink to="/" className="logo" aria-label="Bullwave Club home">
-        <span className="logo-emblem" aria-hidden="true" />
-        <span className="logo-wordmark" aria-hidden="true" />
-        <span className="logo-wave" aria-hidden="true" />
+        <img
+          className="logo-img"
+          src={`${import.meta.env.BASE_URL}images/brand/${light ? 'bullwave-header-light.png' : 'bullwave-header.png'}?v=4`}
+          alt="Bullwave Club"
+        />
       </NavLink>
       <nav className="top-nav">
         <NavLink to="/" end>Sports</NavLink>
@@ -191,6 +205,18 @@ function Header() {
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
         <button className="icon-btn notification-btn" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Icon name="bell" size={21} /><i /></button>
         {notificationsOpen && <div className="notifications-popover"><strong>Notifications</strong><p>You're all caught up.</p></div>}
+        <button
+          type="button"
+          className={`theme-toggle${light ? ' is-light' : ''}`}
+          onClick={() => setTheme(light ? 'dark' : 'light')}
+          aria-label={light ? 'Switch to dark theme' : 'Switch to light theme'}
+          aria-pressed={light}
+          title={light ? 'Dark theme' : 'Light theme'}
+        >
+          <span className="theme-toggle-knob" aria-hidden="true" />
+          <Icon name="moon" size={13} />
+          <Icon name="sun" size={13} />
+        </button>
         <LanguagePicker />
         {loggedIn ? (
           <NavLink to="/account" className="btn btn-ghost">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
@@ -248,27 +274,17 @@ function Sidebar() {
 }
 
 function Betslip() {
-  const { betslip, removeBet, placeBets, loggedIn, setAuthMode } = useApp()
+  const { betslip, removeBet, placeBets, loggedIn, setAuthMode, slipOpen, setSlipOpen } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
   const [mode, setMode] = useState('System')
-  const [mobileOpen, setMobileOpen] = useState(false)
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
     <>
-    <button className="mobile-betslip-trigger" type="button" onClick={() => setMobileOpen(true)} aria-label={`Open bet slip with ${betslip.length} selections`}>
-      <Icon name="ticket" size={20} />
-      <span>Bet Slip</span>
-      {betslip.length > 0 && <b>{betslip.length}</b>}
-    </button>
-    {mobileOpen && <button className="mobile-betslip-backdrop" type="button" aria-label="Close bet slip" onClick={() => setMobileOpen(false)} />}
-    <aside className={`betslip ${mobileOpen ? 'mobile-open' : ''}`} aria-label="Bet slip">
-      <div className="mobile-sheet-head">
-        <strong>Bet Slip</strong>
-        <button className="icon-btn" type="button" onClick={() => setMobileOpen(false)} aria-label="Close bet slip"><Icon name="close" /></button>
-      </div>
+    {slipOpen && <div className="slip-backdrop" onClick={() => setSlipOpen(false)} />}
+    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`}>
       <div className="slip-panel">
-      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}</h3>
+      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}<button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button></h3>
       <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
       {betslip.length === 0 ? (
         <div className="slip-empty">
@@ -306,6 +322,7 @@ function Betslip() {
                 }
                 try {
                   await placeBets(Number(stake))
+                  setSlipOpen(false)
                 } catch (err) {
                   setSlipError(err.message)
                 }
@@ -893,7 +910,7 @@ function Home() {
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
       </section>
       <nav className="sport-filter" aria-label="Browse by sport">
-        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
+        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
       <div className="home-content-grid">
@@ -906,7 +923,7 @@ function Home() {
             <div className="live-card-actions"><NavLink to={`/match/${featured.id}`}>Open Match Center <span aria-hidden="true">→</span></NavLink><NavLink to={`/match/${featured.id}`}>View Odds</NavLink></div>
           </article>}
         </section>
-        <section className="top-matches-panel"><div className="top-matches-head"><h2><Icon name="cal" size={20} /> Top Matches</h2><NavLink to="/live">View all live <span aria-hidden="true">→</span></NavLink></div><div className="day-tabs" role="tablist" aria-label="Match day">{['Today', 'Tomorrow', 'This Week'].map((day) => <button key={day} type="button" role="tab" aria-selected={matchDay === day} className={matchDay === day ? 'active' : ''} onClick={() => setMatchDay(day)}>{day}</button>)}</div><div className="top-match-list">{topMatches.length ? topMatches.map((m) => <NavLink to={`/match/${m.id}`} key={m.id} className="top-match-row"><span className={`top-match-icon sport-${m.sport}`}><Icon name={m.sport === 'table-tennis' ? 'table' : m.sport} size={19} /></span><span className="top-match-copy"><small>{m.live ? 'LIVE' : m.time}</small><strong>{m.home} vs {m.away}</strong>{!m.live && <em>{m.league.split('.').slice(-1)[0].trim()}</em>}</span>{m.live && <span className="top-match-score">{m.score?.[0]}{m.sport === 'cricket' ? ' (37.2)' : ''}</span>}<Icon name="chevron" size={15} /></NavLink>) : <p className="top-match-empty">No matches scheduled for this day.</p>}</div></section>
+        <section className="top-matches-panel"><div className="top-matches-head"><h2><Icon name="cal" size={20} /> Top Matches</h2><NavLink to="/live">View all live <span aria-hidden="true">→</span></NavLink></div><div className="day-tabs" role="tablist" aria-label="Match day">{['Today', 'Tomorrow', 'This Week'].map((day) => <button key={day} type="button" role="tab" aria-selected={matchDay === day} className={matchDay === day ? 'active' : ''} onClick={() => setMatchDay(day)}>{day}</button>)}</div><div className="top-match-list">{topMatches.length ? topMatches.map((m) => <NavLink to={`/match/${m.id}`} key={m.id} className="top-match-row"><span className={`top-match-icon sport-${m.sport}`}><Icon name={sportIcon(m.sport)} size={19} /></span><span className="top-match-copy"><small>{m.live ? 'LIVE' : m.time}</small><strong>{m.home} vs {m.away}</strong>{!m.live && <em>{m.league.split('.').slice(-1)[0].trim()}</em>}</span>{m.live && <span className="top-match-score">{m.score?.[0]}{m.sport === 'cricket' ? ' (37.2)' : ''}</span>}<Icon name="chevron" size={15} /></NavLink>) : <p className="top-match-empty">No matches scheduled for this day.</p>}</div></section>
       </div>
       <section className="popular-leagues"><h2 className="home-section-title"><span aria-hidden="true">🏆</span> Popular Leagues</h2><div className="popular-league-grid">{leagueCards.map((league) => <NavLink to={league.to} key={league.name} className="popular-league"><span className={`league-logo ${league.className}`}>{league.mark}</span><span><strong>{league.name}</strong><small>{league.sport}</small></span></NavLink>)}</div></section>
       <footer className="home-brand-strip"><span>SPORTS BRING US TOGETHER.<br /><b>BULLWAVE</b> KEEPS US AHEAD.</span><div className="strip-brand"><span className="logo-emblem" aria-hidden="true" /><strong>BULL<span>WAVE</span><small>CLUB</small></strong></div><p>SPORTS<br />PEOPLE<br />PASSION<br />PROGRESS</p></footer>
@@ -918,12 +935,13 @@ function Live() {
   const { catalogMatches: matches } = useApp()
   const live = matches.filter((m) => m.live)
   const [sport, setSport] = useState('All Live')
-  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === sport.toLowerCase().replaceAll(' ', '-'))
+  const liveKey = { 'Camel Riding': 'camel', 'Horse Racing': 'horse', 'Table Tennis': 'table-tennis' }
+  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === (liveKey[sport] || sport.toLowerCase().replaceAll(' ', '-')))
   return (
     <div className="content-page">
       <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
       <div className="filters">
-        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Table Tennis'].map((c) => (
+        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Horse Racing', 'Camel Riding'].map((c) => (
           <button key={c} type="button" className={`chip ${sport === c ? 'on' : ''}`} onClick={() => setSport(c)}>{c}</button>
         ))}
       </div>
@@ -1042,7 +1060,7 @@ function Sport() {
   useEffect(() => setView('All'), [name])
   return (
     <div className="content-page">
-      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={name === 'football' ? 'football' : name === 'basketball' ? 'basketball' : name === 'tennis' ? 'tennis' : name === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
+      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
       <div className="filters">
         {['All', 'Live', 'Upcoming'].map((c) => (
           <button key={c} type="button" className={`chip ${view === c ? 'on' : ''}`} onClick={() => setView(c)}>{c}</button>
@@ -1060,7 +1078,7 @@ function MatchPage() {
   const m = matches.find((x) => x.id === id) || matches[4]
   return (
     <div className="content-page">
-      <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={m.sport === 'football' ? 'football' : m.sport === 'cricket' ? 'cricket' : 'live'} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
+      <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={sportIcon(m.sport)} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
       <div className="card match-summary" style={{ marginBottom: 14 }}>
         <div className="event-meta">{m.league} · {m.time}{m.live ? ' LIVE' : ''}</div>
         <h1 style={{ margin: '8px 0 0' }}>{m.home} {m.score?.[0] || ''} — {m.score?.[1] || ''} {m.away}</h1>
@@ -1088,19 +1106,125 @@ function MatchPage() {
   )
 }
 
+function rupees(value) {
+  return `₹ ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function bonusCash(user) {
+  const n = Number(user?.bonus)
+  return Number.isFinite(n) ? n : 0
+}
+
+function loadWalletTx(userId) {
+  try {
+    const all = JSON.parse(localStorage.getItem('bwc_wallet_tx') || '[]')
+    return all.filter((t) => t.userId === userId)
+  } catch {
+    return []
+  }
+}
+
+function saveWalletTx(entry) {
+  try {
+    const all = JSON.parse(localStorage.getItem('bwc_wallet_tx') || '[]')
+    localStorage.setItem('bwc_wallet_tx', JSON.stringify([entry, ...all].slice(0, 40)))
+  } catch { /* ignore */ }
+}
+
+const PAY_METHODS = [
+  { id: 'upi', name: 'UPI', mark: 'UPI', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Paid through Razorpay test checkout. Use any UPI app in the test flow.' },
+  { id: 'paytm', name: 'Paytm', mark: 'PT', time: 'Instant', min: 100, max: 50000, fee: 'Free', note: 'Razorpay wallet/UPI test. Failed payments do not credit the club wallet.' },
+  { id: 'phonepe', name: 'PhonePe', mark: 'Pe', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Razorpay UPI test. Keep the checkout open until Success.' },
+  { id: 'netbanking', name: 'Net banking', mark: 'NB', time: 'Instant', min: 100, max: 200000, fee: 'Free', note: 'Razorpay net banking test. Success credits cash immediately after verify.' },
+  { id: 'card', name: 'Debit card', mark: 'DC', time: 'Instant', min: 100, max: 50000, fee: 'Free', note: 'Razorpay test card: 4111 1111 1111 1111 · any future expiry · CVV 123.' },
+  { id: 'usdt', name: 'USDT', mark: '₮', time: '—', min: 800, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
+  { id: 'btc', name: 'Bitcoin', mark: '₿', time: '—', min: 2000, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
+  { id: 'eth', name: 'Ethereum', mark: 'Ξ', time: '—', min: 2000, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
+]
+
+const WALLET_FACTS = [
+  { title: 'Min. deposit', body: '₹100 on UPI · ₹500 on bank/card' },
+  { title: 'Min. withdrawal', body: '₹200 cash. Bonus cannot be cashed out.' },
+  { title: 'Daily cashout cap', body: '₹2,00,000 until VIP Gold' },
+  { title: 'KYC', body: 'PAN + matching UPI/bank required before the first withdrawal' },
+  { title: 'Timing', body: 'UPI minutes · Bank up to 24h · Crypto after network confirm' },
+  { title: '18+ only', body: 'Play with money you can afford to lose. Set limits anytime.' },
+]
+
+function WalletActivity({ userId }) {
+  const [rows, setRows] = useState(() => loadWalletTx(userId))
+  useEffect(() => { setRows(loadWalletTx(userId)) }, [userId])
+  if (!rows.length) {
+    return <p className="wallet-empty-tx">No wallet activity yet. Deposits and withdrawals will show up here.</p>
+  }
+  return (
+    <div className="wallet-tx-list">
+      {rows.map((t) => (
+        <div key={t.id} className="wallet-tx">
+          <div>
+            <strong>{t.type === 'withdraw' ? 'Withdrawal' : 'Deposit'} · {t.method}</strong>
+            <small>{new Date(t.at).toLocaleString()} · {t.status}</small>
+          </div>
+          <b className={t.type === 'withdraw' ? 'is-out' : 'is-in'}>{t.type === 'withdraw' ? '−' : '+'}{rupees(t.amount)}</b>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Account() {
   const { user, loggedIn, setAuthMode, logout } = useApp()
+  const cash = Number(user?.balance || 0)
+  const bonus = bonusCash(user)
+  const bonusLabel = typeof user?.bonus === 'string' && user.bonus && !Number(user.bonus) ? user.bonus : null
   return (
     <div className="content-page">
-      <PageIntro eyebrow="MEMBER AREA" title="My Account" description="Your balance, bets and club settings together in one place." icon="shield" stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Balance', value: `₹${Number(user?.balance || 0).toFixed(2)}` }]} />
+      <PageIntro
+        eyebrow="WALLET"
+        title="My wallet"
+        description="Cash you can bet or withdraw, plus bonus funds, limits and the details every member should know before moving money."
+        icon="shield"
+        stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Available', value: rupees(cash) }]}
+      />
       <div className="card wallet-card">
-        <div className="wallet-top"><span className="eyebrow">AVAILABLE BALANCE</span><Icon name="shield" size={24} /></div>
-        <div className="wallet-balance">₹ {Number(user?.balance || 0).toFixed(2)}</div>
-        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to manage your account'}</div>
-        {loggedIn
-          ? <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={logout}>Log out</button>
-          : <button className="btn btn-yellow" style={{ marginTop: 8 }} onClick={() => setAuthMode('login')}>Log in</button>}
+        <div className="wallet-top"><span className="eyebrow">AVAILABLE CASH</span><span className="wallet-kyc">{loggedIn ? 'KYC pending' : 'Sign in'}</span></div>
+        <div className="wallet-balance">{rupees(cash)}</div>
+        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to deposit, withdraw and track activity'}</div>
+        <div className="wallet-split">
+          <div><span>Cash</span><b>{rupees(cash)}</b></div>
+          <div><span>Bonus</span><b>{bonusLabel || rupees(bonus)}</b></div>
+          <div><span>Withdrawable</span><b>{rupees(cash)}</b></div>
+        </div>
+        <div className="wallet-actions">
+          {loggedIn ? (
+            <>
+              <NavLink to="/account/deposit" className="btn btn-yellow">Deposit</NavLink>
+              <NavLink to="/account/withdraw" className="btn btn-ghost">Withdraw</NavLink>
+              <button className="btn btn-ghost" onClick={logout}>Log out</button>
+            </>
+          ) : <button className="btn btn-yellow" onClick={() => setAuthMode('login')}>Log in to open wallet</button>}
+        </div>
       </div>
+      <div className="wallet-facts">
+        {WALLET_FACTS.map((f) => (
+          <div key={f.title} className="wallet-fact"><strong>{f.title}</strong><span>{f.body}</span></div>
+        ))}
+      </div>
+      <div className="content-section-title"><h2>Know before you pay</h2><span>Club wallet rules</span></div>
+      <ul className="wallet-notes">
+        <li>Only cash in Available can be withdrawn. Welcome and reload bonuses stay locked until wagering is done.</li>
+        <li>The name on your UPI, bank or crypto account must match your Bullwave Club KYC name.</li>
+        <li>Never share SMS OTPs, UPI PINs or wallet QR codes. Club staff will not ask for them.</li>
+        <li>Winnings may be subject to tax under Indian law. Keep deposit and cashout records for your own filing.</li>
+        <li>If a payment fails, wait for the bank reversal (usually 1–3 working days) before paying again.</li>
+        <li>You must be 18+. Use deposit limits and take a break from Settings if play stops being fun.</li>
+      </ul>
+      {loggedIn && (
+        <>
+          <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
+          <WalletActivity userId={user?.id} />
+        </>
+      )}
       <div className="content-section-title"><h2>Quick access</h2><span>Manage your club account</span></div>
       <div className="account-grid">
         {accountLinks.map((l) => (
@@ -1114,40 +1238,203 @@ function Account() {
   )
 }
 
+function loadRazorpay() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Checkout only runs in the browser.'))
+  if (window.Razorpay) return Promise.resolve(window.Razorpay)
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = () => (window.Razorpay ? resolve(window.Razorpay) : reject(new Error('Razorpay failed to load.')))
+    script.onerror = () => reject(new Error('Could not load Razorpay Checkout.'))
+    document.body.appendChild(script)
+  })
+}
+
 function Deposit({ type }) {
-  const { moveMoney, setAuthMode, loggedIn } = useApp()
-  const [amount, setAmount] = useState('500')
+  const { moveMoney, startRazorpayDeposit, confirmRazorpayDeposit, setAuthMode, loggedIn, user } = useApp()
+  const withdrawing = type === 'withdraw'
+  const [method, setMethod] = useState('upi')
+  const [amount, setAmount] = useState(withdrawing ? '200' : '500')
+  const [destination, setDestination] = useState('')
   const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [tick, setTick] = useState(0)
+  const pay = PAY_METHODS.find((p) => p.id === method) || PAY_METHODS[0]
+  const cash = Number(user?.balance || 0)
+  const value = Number(amount)
+  const min = withdrawing ? 200 : pay.min
+  const overMax = Number.isFinite(value) && value > pay.max
+  const underMin = Number.isFinite(value) && value > 0 && value < min
+  const overCash = withdrawing && Number.isFinite(value) && value > cash
+  const quick = withdrawing ? [200, 500, 1000, 2000, 5000] : [100, 500, 1000, 2000, 5000, 10000]
+
+  const submit = async () => {
+    setMessage('')
+    if (!loggedIn) {
+      setAuthMode('login')
+      return
+    }
+    if (!Number.isFinite(value) || value <= 0) {
+      setMessage('Enter a valid amount.')
+      return
+    }
+    if (underMin) {
+      setMessage(`Minimum ${withdrawing ? 'withdrawal' : 'deposit'} is ${rupees(min)}.`)
+      return
+    }
+    if (overMax) {
+      setMessage(`This method allows up to ${rupees(pay.max)} per transfer.`)
+      return
+    }
+    if (overCash) {
+      setMessage('You can only withdraw available cash, not bonus.')
+      return
+    }
+    if (withdrawing && !destination.trim()) {
+      setMessage('Add the UPI ID or account where we should send the money.')
+      return
+    }
+    setBusy(true)
+    try {
+      if (withdrawing) {
+        await moveMoney('withdraw', value, { method: pay.id, destination: destination.trim() })
+        saveWalletTx({
+          id: `${Date.now()}`,
+          userId: user?.id,
+          type: 'withdraw',
+          method: pay.name,
+          amount: value,
+          status: 'In review',
+          at: new Date().toISOString(),
+        })
+        setMessage(`Withdrawal of ${rupees(value)} sent for review. ${pay.time}.`)
+        setTick((n) => n + 1)
+        return
+      }
+      if (pay.crypto) {
+        setMessage('Razorpay test checkout is INR only. Use UPI, card, PhonePe, Paytm or net banking.')
+        return
+      }
+      const Razorpay = await loadRazorpay()
+      const order = await startRazorpayDeposit(value, pay.id)
+      await new Promise((resolve, reject) => {
+        const checkout = new Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          name: 'Bullwave Club',
+          description: `Wallet deposit ${rupees(value)}`,
+          order_id: order.orderId,
+          prefill: {
+            name: 'Bullwave member',
+            email: user?.email || '',
+            contact: String(user?.phone || '').replace(/^\+91/, ''),
+          },
+          notes: { method: pay.id },
+          theme: { color: '#61D6B0' },
+          modal: { ondismiss: () => reject(new Error('Payment cancelled.')) },
+          handler: async (response) => {
+            try {
+              await confirmRazorpayDeposit(response)
+              saveWalletTx({
+                id: response.razorpay_payment_id || `${Date.now()}`,
+                userId: user?.id,
+                type: 'deposit',
+                method: `Razorpay · ${pay.name}`,
+                amount: value,
+                status: 'Credited',
+                at: new Date().toISOString(),
+              })
+              setMessage(`${rupees(value)} added via Razorpay (${pay.name}).`)
+              setTick((n) => n + 1)
+              resolve()
+            } catch (err) {
+              reject(err)
+            }
+          },
+        })
+        checkout.open()
+      })
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="content-page">
-      <PageIntro eyebrow="WALLET" title={type === 'withdraw' ? 'Withdraw' : 'Deposit'} description={type === 'withdraw' ? 'Review the amount before requesting a withdrawal.' : 'Choose an amount to add to your club wallet.'} icon={type === 'withdraw' ? 'minus' : 'plus'} action={{ to: '/account', label: 'Back to account' }} />
-      <div className="content-section-title"><h2>Payment methods</h2><span>Available options</span></div>
+      <PageIntro
+        eyebrow="WALLET"
+        title={withdrawing ? 'Withdraw' : 'Deposit'}
+        description={withdrawing ? 'Cash out available balance to a method in your own name. Bonus funds cannot be withdrawn.' : 'Add cash to your club wallet. Pick a method, check the limits, then confirm the amount.'}
+        icon={withdrawing ? 'minus' : 'plus'}
+        action={{ to: '/account', label: 'Back to wallet' }}
+        stats={[{ label: 'Available', value: rupees(cash) }, { label: 'Method', value: pay.time }]}
+      />
+      <div className="content-section-title"><h2>Payment method</h2><span>Time · limits · fee</span></div>
       <div className="pay-grid">
-        {['UPI', 'Paytm', 'PhonePe', 'NetBanking', 'USDT', 'BTC', 'ETH', 'Card'].map((p) => (
-          <div key={p} className="pay"><span className="pay-mark">{p.slice(0, 2)}</span><strong>{p}</strong></div>
+        {PAY_METHODS.map((p) => (
+          <button key={p.id} type="button" className={`pay ${method === p.id ? 'on' : ''}`} onClick={() => setMethod(p.id)}>
+            <span className="pay-mark">{p.mark}</span>
+            <strong>{p.name}</strong>
+            <small>{p.time} · {p.fee}</small>
+          </button>
         ))}
       </div>
+      <p className="wallet-method-note">{pay.note} Min {rupees(withdrawing ? 200 : pay.min)} · Max {rupees(pay.max)}.</p>
       <div className="payment-shell">
         <div className="content-section-title"><h2>Enter amount</h2><span>INR</span></div>
-        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min="1" inputMode="decimal" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-        {message && <p className="hint">{message}</p>}
-        <button
-          className="btn btn-yellow btn-block"
-          onClick={async () => {
-            setMessage('')
-            if (!loggedIn) {
-              setAuthMode('login')
-              return
-            }
-            try {
-              await moveMoney(type === 'withdraw' ? 'withdraw' : 'deposit', Number(amount))
-              setMessage(type === 'withdraw' ? 'Withdrawal requested' : 'Deposit added')
-            } catch (err) {
-              setMessage(err.message)
-            }
-          }}
-        >{type === 'withdraw' ? 'Withdraw' : 'Deposit'}</button>
+        <div className="wallet-quick">
+          {quick.map((n) => (
+            <button key={n} type="button" className={`chip ${Number(amount) === n ? 'on' : ''}`} onClick={() => setAmount(String(n))}>{rupees(n).replace('.00', '')}</button>
+          ))}
+        </div>
+        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min={min} max={pay.max} inputMode="decimal" placeholder={String(min)} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        {withdrawing && (
+          <div className="field">
+            <label>{method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'UPI ID' : method === 'netbanking' || method === 'card' ? 'Account / IFSC' : 'Wallet address'}</label>
+            <input className="input" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'name@upi' : method === 'netbanking' || method === 'card' ? 'Account number and IFSC' : `${pay.name} address`} />
+          </div>
+        )}
+        <div className="wallet-summary">
+          <span>You {withdrawing ? 'receive' : 'pay'}</span><b>{Number.isFinite(value) && value > 0 ? rupees(value) : '—'}</b>
+          <span>Fee</span><b>{pay.fee}</b>
+          <span>{withdrawing ? 'ETA' : 'Credited'}</span><b>{pay.time}</b>
+        </div>
+        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add /i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
+        <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>
+          {busy ? 'Please wait…' : withdrawing ? 'Request withdrawal' : 'Pay with Razorpay'}
+        </button>
+        <p className="wallet-legal">By continuing you confirm you are 18+, the payment account is yours, and you have read the wallet notes below.</p>
       </div>
+      <div className="content-section-title"><h2>Need to know</h2><span>{withdrawing ? 'Cashout' : 'Top-up'}</span></div>
+      <ul className="wallet-notes">
+        {withdrawing ? (
+          <>
+            <li>Complete verification first. Unverified cashouts are held.</li>
+            <li>Bonus and un-wagered free bets are not paid out.</li>
+            <li>Send only to an account in the same name as your KYC. Third-party accounts are rejected.</li>
+            <li>UPI is usually minutes. Bank and crypto wait for clearing / network confirmations.</li>
+            <li>Daily cap is ₹2,00,000. Split larger cashouts or move up VIP for a higher limit.</li>
+          </>
+        ) : (
+          <>
+            <li>INR deposits go through Razorpay test checkout. The wallet is credited only after the payment signature is verified.</li>
+            <li>Test card: 4111 1111 1111 1111, any future date, CVV 123. UPI/net banking follow Razorpay’s test screens.</li>
+            <li>Minimum {rupees(Math.max(100, pay.min))} on {pay.name}. Cancelled checkouts do not add cash.</li>
+            <li>Crypto is not collected by this Razorpay key. Use UPI or card while in test mode.</li>
+            <li>Keep the payment id from Checkout until the balance updates.</li>
+          </>
+        )}
+      </ul>
+      {loggedIn && (
+        <>
+          <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
+          <WalletActivity key={tick} userId={user?.id} />
+        </>
+      )}
     </div>
   )
 }
@@ -1297,27 +1584,58 @@ function SearchOverlay() {
 }
 
 function MenuDrawer() {
-  const { menuOpen, setMenuOpen, setAuthMode } = useApp()
+  const { menuOpen, setMenuOpen, setAuthMode, loggedIn } = useApp()
   if (!menuOpen) return null
+  const close = () => setMenuOpen(false)
+  const sportsList = sports.filter((s) => !['promos', 'parlays', 'all-live', 'favorites'].includes(s.id))
   return (
-    <div className="overlay" onClick={() => setMenuOpen(false)}>
+    <div className="overlay menu-overlay" onClick={close}>
       <div className="menu-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="mobile-drawer-head"><strong>Explore</strong><button className="icon-btn" type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu"><Icon name="close" /></button></div>
-        <NavLink className="menu-item" to="/" onClick={() => setMenuOpen(false)}><Icon name="home" />Home</NavLink>
-        <NavLink className="menu-item" to="/live" onClick={() => setMenuOpen(false)}><Icon name="live" />Live</NavLink>
-        {sports.filter((sport) => !['promos', 'parlays'].includes(sport.id)).map((sport) => <NavLink key={sport.id} className="menu-item" to={sport.to} onClick={() => setMenuOpen(false)}><Icon name={sport.icon} />{sport.name}</NavLink>)}
-        <NavLink className="menu-item" to="/casino/live-casino" onClick={() => setMenuOpen(false)}><Icon name="casino" />Games</NavLink>
-        <NavLink className="menu-item" to="/promotions" onClick={() => setMenuOpen(false)}>Promotions</NavLink>
-        <NavLink className="menu-item" to="/vip" onClick={() => setMenuOpen(false)}>Bullwave Club VIP</NavLink>
-        <NavLink className="menu-item" to="/account" onClick={() => setMenuOpen(false)}>My Account</NavLink>
-        <NavLink className="menu-item" to="/more" onClick={() => setMenuOpen(false)}>More</NavLink>
-        <NavLink className="menu-item" to="/faq" onClick={() => setMenuOpen(false)}>FAQ</NavLink>
-        <div className="menu-item">
-          <button className="btn btn-ghost" onClick={() => { setMenuOpen(false); setAuthMode('login') }}>Log in</button>
-          <button className="btn btn-yellow" onClick={() => { setMenuOpen(false); setAuthMode('signup') }}>Sign up</button>
+        <div className="menu-head">
+          <strong>Browse</strong>
+          <button type="button" className="icon-btn" onClick={close} aria-label="Close menu"><Icon name="close" /></button>
+        </div>
+        <NavLink className="menu-item" to="/" onClick={close}>Home</NavLink>
+        <NavLink className="menu-item" to="/live" onClick={close}>Live</NavLink>
+        <NavLink className="menu-item" to="/upcoming" onClick={close}>Upcoming</NavLink>
+        {sportsList.map((s) => (
+          <NavLink key={s.id} className="menu-item" to={s.to} onClick={close}>{s.name}</NavLink>
+        ))}
+        <NavLink className="menu-item" to="/casino/live-casino" onClick={close}>Games</NavLink>
+        <NavLink className="menu-item" to="/promotions" onClick={close}>Promotions</NavLink>
+        <NavLink className="menu-item" to="/account" onClick={close}>Wallet</NavLink>
+        <NavLink className="menu-item" to="/account/bets" onClick={close}>My bets</NavLink>
+        <NavLink className="menu-item" to="/vip" onClick={close}>VIP</NavLink>
+        <NavLink className="menu-item" to="/faq" onClick={close}>Help</NavLink>
+        <div className="menu-auth">
+          {loggedIn ? (
+            <NavLink className="btn btn-yellow btn-block" to="/account" onClick={close}>My account</NavLink>
+          ) : (
+            <>
+              <button className="btn btn-ghost" onClick={() => { close(); setAuthMode('login') }}>Log in</button>
+              <button className="btn btn-yellow" onClick={() => { close(); setAuthMode('signup') }}>Sign up</button>
+            </>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+function MobileDock() {
+  const { betslip, setMenuOpen, setSlipOpen, setSearchOpen, loggedIn } = useApp()
+  return (
+    <nav className="mobile-dock" aria-label="Mobile navigation">
+      <NavLink to="/" end><Icon name="home" size={20} /><span>Home</span></NavLink>
+      <NavLink to="/live"><Icon name="live" size={20} /><span>Live</span></NavLink>
+      <button type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={20} /><span>Search</span></button>
+      <button type="button" className="dock-slip" onClick={() => setSlipOpen(true)}>
+        <Icon name="ticket" size={20} />
+        <span>Slip</span>
+        {betslip.length > 0 && <i>{betslip.length}</i>}
+      </button>
+      {loggedIn ? <NavLink to="/account"><Icon name="shield" size={20} /><span>Wallet</span></NavLink> : <button type="button" onClick={() => setMenuOpen(true)}><Icon name="menu" size={20} /><span>More</span></button>}
+    </nav>
   )
 }
 
@@ -1359,6 +1677,7 @@ export default function App() {
       <AuthModal />
       <SearchOverlay />
       <MenuDrawer />
+      <MobileDock />
     </div>
   )
 }

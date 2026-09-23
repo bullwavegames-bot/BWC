@@ -66,9 +66,11 @@ export function mapAccount(data, extra = {}) {
     email: profile.email || extra.email || '',
     phone: profile.phone || extra.phone || '',
     username: profile.username || extra.username || '',
-    balance: Number(wallet.total ?? wallet.cash ?? extra.balance ?? 0),
-    bonus: Number(wallet.bonus ?? 0),
+    balance: Number(wallet.total ?? wallet.cash ?? profile.balance ?? extra.balance ?? 0),
+    bonus: wallet.bonus ?? profile.bonus ?? extra.bonus ?? 0,
     vipLevel: profile.vipLevel || 1,
+    accountNumber: profile.accountNumber || extra.accountNumber || '',
+    createdAt: profile.createdAt || extra.createdAt,
   }
 }
 

@@ -9,6 +9,7 @@ export const sports = [
   { id: 'tennis', name: 'Tennis', icon: 'tennis', image: '🎾', to: '/sport/tennis', color: '#61D6B0' },
   { id: 'table-tennis', name: 'Table Tennis', icon: 'table', image: '🏓', to: '/sport/table-tennis', color: '#43C7E8' },
   { id: 'horse', name: 'Horse Racing', icon: 'horse', image: '🏇', to: '/sport/horse-racing', color: '#A66ACB' },
+  { id: 'camel', name: 'Camel Riding', icon: 'camel', image: '🐪', to: '/sport/camel-racing', color: '#D5AA50' },
 ]
 
 export const leagues = [
@@ -28,10 +29,9 @@ export const leagues = [
     { name: 'EuroLeague', sub: 'Europe · Regular season', code: 'europe' },
     { name: 'WNBA', sub: 'USA · Regular season', code: 'basketball' },
   ]},
-  { group: 'OTHER', to: '/live', items: [
-    { name: 'Setka Cup', sub: 'Table Tennis', code: 'table-tennis' },
-    { name: 'Stake Ranked', sub: 'Counter-Strike', code: 'esports' },
-    { name: 'NHL', sub: 'Ice Hockey', code: 'hockey' },
+  { group: 'RACING', to: '/sport/camel-racing', items: [
+    { name: 'Desert Cup', sub: 'Camel Riding · Rajasthan', code: 'camel' },
+    { name: 'Night Sprint', sub: 'Camel Riding · Dubai', code: 'camel' },
   ]},
 ]
 
@@ -49,6 +49,7 @@ export const shortcuts = [
   { name: 'Cricket Roulette', image: 'roulette', to: '/casino/tv-games', color: '#F16F78' },
   { name: 'Setka Cup', image: 'table', to: '/sport/table-tennis', color: '#43C7E8' },
   { name: 'Horse Racing', image: 'horse', to: '/sport/horse-racing', color: '#A66ACB' },
+  { name: 'Camel Riding', image: 'camel', to: '/sport/camel-racing', color: '#D5AA50' },
   { name: 'BSKT Cup', image: 'cup', to: '/sport/basketball', color: '#D5AA50' },
   { name: 'VIP Club', image: 'vip', to: '/vip', color: '#D5AA50' },
 ]
@@ -172,6 +173,63 @@ export const matches = [
       { id: 't1-2', label: '2', odd: 1.92 },
     ],
   },
+  {
+    id: 'h1',
+    sport: 'horse',
+    league: 'Horse Racing. Mumbai. Monsoon Cup',
+    live: false,
+    time: 'TODAY, 16:40',
+    extra: '+48',
+    home: 'Silver Gale',
+    away: 'Night Charge',
+    markets: [
+      { id: 'h1-1', label: '1', odd: 2.35 },
+      { id: 'h1-2', label: '2', odd: 1.58 },
+    ],
+  },
+  {
+    id: 'cm1',
+    sport: 'camel',
+    league: 'Camel Riding. Rajasthan. Desert Cup',
+    live: true,
+    time: 'RACE 3',
+    extra: '+22',
+    home: 'Desert King',
+    away: 'Sand Storm',
+    score: ['1', '2'],
+    markets: [
+      { id: 'cm1-1', label: '1', odd: 2.18 },
+      { id: 'cm1-2', label: '2', odd: 1.67 },
+    ],
+  },
+  {
+    id: 'cm2',
+    sport: 'camel',
+    league: 'Camel Riding. Dubai. Night Sprint',
+    live: false,
+    time: 'TODAY, 21:15',
+    extra: '+18',
+    home: 'Dune Runner',
+    away: 'Oasis Flame',
+    markets: [
+      { id: 'cm2-1', label: '1', odd: 1.92 },
+      { id: 'cm2-2', label: '2', odd: 1.88 },
+    ],
+  },
+  {
+    id: 'cm3',
+    sport: 'camel',
+    league: 'Camel Riding. Bikaner. Heritage Cup',
+    live: false,
+    time: 'TOMORROW, 18:05',
+    extra: '+16',
+    home: 'Golden Hump',
+    away: 'Wind Rider',
+    markets: [
+      { id: 'cm3-1', label: '1', odd: 2.62 },
+      { id: 'cm3-2', label: '2', odd: 1.48 },
+    ],
+  },
 ]
 
 export const matchMarkets = [
@@ -225,8 +283,10 @@ export const promotions = [
 
 export const faqs = [
   { q: 'How do I create an account?', a: 'Tap Sign up, enter your phone number, set a password, and confirm the SMS code.' },
-  { q: 'How do I make a deposit?', a: 'Open My Account → Deposit and choose UPI, net banking, wallet, or crypto.' },
-  { q: 'How long do withdrawals take?', a: 'Most UPI withdrawals are processed within minutes after verification.' },
+  { q: 'How do I make a deposit?', a: 'Open My Account → Deposit, pick UPI, net banking, wallet or crypto, then enter an amount of at least ₹100.' },
+  { q: 'How long do withdrawals take?', a: 'UPI is usually minutes after KYC. Bank transfers can take up to 24 hours. Crypto typically settles within 30 minutes of network confirmation.' },
+  { q: 'Can I withdraw bonus money?', a: 'No. Bonus funds stay locked until wagering is complete. Only cash winnings in your available balance can be withdrawn.' },
+  { q: 'Why do you need KYC?', a: 'Indian payment rules require name, PAN and a matching bank/UPI account before the first withdrawal. It also protects your wallet from unauthorized cashouts.' },
   { q: 'What odds formats are available?', a: 'Decimal, fractional, and American formats can be switched in the menu.' },
   { q: 'Is there a welcome bonus?', a: 'Yes. New players can claim a Live Casino welcome bonus of 100% up to ₹50,000.' },
 ]

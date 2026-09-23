@@ -22,7 +22,8 @@ export function AppProvider({ children }) {
   const [language, setLanguage] = useState('EN')
   const [langOpen, setLangOpen] = useState(false)
   const [oddsFormat, setOddsFormat] = useState('decimal')
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState(() => (typeof localStorage !== 'undefined' && localStorage.getItem('bwc_theme') === 'light' ? 'light' : 'dark'))
+  const [slipOpen, setSlipOpen] = useState(false)
 
   const applySession = (nextToken, nextUser) => {
     setToken(nextToken)
@@ -46,6 +47,11 @@ export function AppProvider({ children }) {
       return null
     }
   }
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('bwc_theme', theme)
+  }, [theme])
 
   useEffect(() => {
     api('/api/games')
@@ -82,6 +88,7 @@ export function AppProvider({ children }) {
       if (exists) return prev.filter((b) => b.id !== bet.id)
       return [...prev, bet]
     })
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1200px)').matches) setSlipOpen(true)
   }
 
   const removeBet = (id) => setBetslip((prev) => prev.filter((b) => b.id !== id))
@@ -198,20 +205,43 @@ export function AppProvider({ children }) {
     }
   }
 
-  const moveMoney = async (type, amount) => {
+  const moveMoney = async (type, amount, extra = {}) => {
     if (!token) {
       setAuthMode('login')
       throw new Error('Log in first')
     }
     if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid amount')
-    try {
-      const path = type === 'withdraw' ? '/api/payments/cashout' : '/api/payments/create-deposit'
-      const data = await api(path, { method: 'POST', token, body: { amount } })
-      await hydrateAccount(token, user)
-      return data
-    } catch (err) {
-      throw new Error(err.message || 'Wallet moves go through Bullwave Club billing.')
+    const paths = type === 'withdraw'
+      ? ['/api/wallet/withdraw', '/api/payments/cashout']
+      : ['/api/wallet/deposit', '/api/payments/create-deposit']
+    let lastErr
+    for (const path of paths) {
+      try {
+        const data = await api(path, { method: 'POST', token, body: { amount, ...extra } })
+        await hydrateAccount(token, user)
+        return data
+      } catch (err) {
+        lastErr = err
+        if (!/not found|404/i.test(String(err.message))) break
+      }
     }
+    throw new Error(lastErr?.message || 'Wallet moves go through Bullwave Club billing.')
+  }
+
+  const startRazorpayDeposit = async (amount, method = 'upi') => {
+    if (!token) {
+      setAuthMode('login')
+      throw new Error('Log in first')
+    }
+    if (!Number.isFinite(amount) || amount < 100) throw new Error('Minimum Razorpay deposit is ₹100.')
+    return api('/api/payments/create-order', { method: 'POST', token, body: { amount, method } })
+  }
+
+  const confirmRazorpayDeposit = async (payload) => {
+    if (!token) throw new Error('Log in first')
+    const data = await api('/api/payments/verify', { method: 'POST', token, body: payload })
+    await hydrateAccount(token, user)
+    return data
   }
 
   const value = useMemo(
@@ -243,6 +273,8 @@ export function AppProvider({ children }) {
       logout,
       myBets,
       moveMoney,
+      startRazorpayDeposit,
+      confirmRazorpayDeposit,
       catalogMatches,
       clubGames,
       language,
@@ -253,8 +285,10 @@ export function AppProvider({ children }) {
       setOddsFormat,
       theme,
       setTheme,
+      slipOpen,
+      setSlipOpen,
     }),
-    [betslip, favorites, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme],
+    [betslip, favorites, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme, slipOpen],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
