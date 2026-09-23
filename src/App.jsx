@@ -3,6 +3,8 @@ import { NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
 import { AdminDesk, BillingPage, TelegramCashIn } from './BillingPages.jsx'
+import { PayLogo } from './PayLogo.jsx'
+import { ProfileAvatar, ProfileHub } from './ProfileHub.jsx'
 import { isStrongPassword, PASSWORD_HINT } from './authRules.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
 import GameIcon, { getGameIconKind } from './GameIcon.jsx'
@@ -220,7 +222,10 @@ function Header() {
         </button>
         <LanguagePicker />
         {loggedIn ? (
-          <NavLink to="/account" className="btn btn-ghost">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
+          <>
+            <NavLink to="/account" className="btn btn-ghost header-cash">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
+            <ProfileAvatar />
+          </>
         ) : (
           <button className="btn btn-ghost" onClick={() => setAuthMode('login')}>Log in</button>
         )}
@@ -1411,7 +1416,7 @@ function Deposit({ type }) {
       <div className="pay-grid">
         {PAY_METHODS.map((p) => (
           <button key={p.id} type="button" className={`pay ${method === p.id ? 'on' : ''}`} onClick={() => setMethod(p.id)}>
-            <span className="pay-mark">{p.mark}</span>
+            <span className={`pay-mark pay-mark-${p.id}`}><PayLogo id={p.id} /></span>
             <strong>{p.name}</strong>
             <small>{p.time} · {p.fee}</small>
           </button>
@@ -1696,6 +1701,7 @@ export default function App() {
             <Route path="/casino/tv-games" element={<Casino title="TV Games" cat="tv" />} />
             <Route path="/sport/:name" element={<Sport />} />
             <Route path="/match/:id" element={<MatchPage />} />
+            <Route path="/profile" element={<ProfileHub />} />
             <Route path="/account" element={<Account />} />
             <Route path="/account/deposit" element={<Deposit type="deposit" />} />
             <Route path="/account/withdraw" element={<Deposit type="withdraw" />} />
