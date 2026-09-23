@@ -1,7 +1,10 @@
 const CACHE_MS = 30 * 60 * 1000
-const CAPS = { instant: 80, slots: 160, virtual: 80, tv: 80, live: 80 }
+const CAPS = { instant: 80, slots: 160, virtual: 160, tv: 80, live: 80 }
 
-const VIRTUAL_RE = /\b(virtual|e-?football|e-?soccer|e-?cricket|e-?sport|greyhound|harness|kiron|golden race|leap gaming|virtual horse|virtual tennis|virtual basketball|virtual football|virtual cricket|esoccer)\b/i
+const VIRTUAL_PROVIDER_RE = /virtual|golden\s*race|kiron|leap|betradar|edge\s*gaming|instant\s*sport|sporting\s*solutions|tvbet|global\s*bet|sabasports|saba/i
+const VIRTUAL_RE = /\b(virtual\s*(sports?|football|soccer|cricket|tennis|basketball|hockey|baseball|horse|racing|golf|cycling|boxing)|e-?football|e-?soccer|e-?cricket|e-?sport|greyhound|harness|dashing derby|platinum hounds|goal premier|fans world cup|penalty|esoccer|v-?sports?)\b/i
+const SPORT_THEME_RE = /\b(football|soccer|cricket|tennis|basketball|hockey|baseball|rugby|golf|horse|greyhound|derby|ipl|premier league|champions league|world cup|formula|f1|motogp|stadium|penalty|goal|kabaddi|badminton|volleyball|snooker|darts|cycling|boxing|mma|wwe|nfl|nba|atp)\b/i
+const NOT_SPORT_RE = /\b(roulette|blackjack|baccarat|poker|bingo|keno|scratch)\b/i
 const TV_RE = /\b(keno|bingo|lottery|lotto|wheel|monopoly|crazy time|dream catcher|mega ball|lightning|deal or no deal|funky time|candy land|game show|tv game|xxxtreme|raffle|trivia|quiz|extra chilli|gold vault roulette|money time|sic bo)\b/i
 
 let cache = { at: 0, games: [] }
@@ -18,11 +21,20 @@ function haystack(item) {
   return [item?.title, item?.name, item?.provider, item?.category, item?.category_title].filter(Boolean).join(' ')
 }
 
+function isVirtualSport(item) {
+  const text = haystack(item)
+  const studio = `${item?.provider || ''} ${item?.category || ''} ${item?.category_title || ''}`
+  if (VIRTUAL_PROVIDER_RE.test(studio)) return true
+  if (VIRTUAL_RE.test(text)) return true
+  if (SPORT_THEME_RE.test(text) && !NOT_SPORT_RE.test(text)) return true
+  return false
+}
+
 function clubCat(item) {
   const type = String(item?.game_type || '').toLowerCase()
   const text = haystack(item)
-  if (VIRTUAL_RE.test(text)) return 'virtual'
   if (TV_RE.test(text) || (type === 'live' && /\b(show|wheel|baller|roulette)\b/i.test(text))) return 'tv'
+  if (isVirtualSport(item)) return 'virtual'
   if (type === 'crash') return 'instant'
   if (type === 'live') return 'live'
   if (type === 'slot') return 'slots'
@@ -79,16 +91,36 @@ async function listGames(query = '') {
   return Array.isArray(data.data) ? data.data : []
 }
 
+async function listCategories() {
+  try {
+    const data = await aggregatorFetch('/categories')
+    return Array.isArray(data.data) ? data.data : []
+  } catch {
+    return []
+  }
+}
+
 export async function getAggregatorLobby() {
   if (!aggregatorKey()) return []
   if (cache.games.length && Date.now() - cache.at < CACHE_MS) return cache.games
+  const categories = await listCategories()
+  const virtualCats = categories
+    .filter((item) => VIRTUAL_PROVIDER_RE.test(`${item?.name || ''} ${item?.slug || ''}`))
+    .slice(0, 8)
   const batches = await Promise.allSettled([
     listGames(),
     listGames('search=virtual'),
+    listGames('search=football'),
+    listGames('search=cricket'),
+    listGames('search=tennis'),
+    listGames('search=basketball'),
+    listGames('search=horse'),
+    listGames('search=soccer'),
     listGames('search=keno'),
     listGames('search=lightning'),
     listGames('search=bingo'),
     listGames('search=racing'),
+    ...virtualCats.map((item) => listGames(`category=${encodeURIComponent(item.slug || item.name)}`)),
   ])
   const byId = new Map()
   for (const batch of batches) {

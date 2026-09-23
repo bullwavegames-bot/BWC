@@ -1535,7 +1535,7 @@ function Casino({ title, cat }) {
   const { clubGames, catalogLoading } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const items = catalog.filter((g) => g.cat === cat)
-  const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Explore digital sports and strategy games.', tv: 'Game shows and trivia in the Bullwave collection.' }
+  const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Football, cricket, tennis, racing and other sports titles in one lobby.', tv: 'Game shows, wheels, keno and trivia in the Bullwave collection.' }
   const categories = [{ label: 'Live Casino', to: '/casino/live-casino', cat: 'live' }, { label: 'Instant Games', to: '/casino/instant-games', cat: 'instant' }, { label: 'Slots', to: '/casino/slots', cat: 'slots' }, { label: 'Virtual Sport', to: '/casino/virtual-sports', cat: 'virtual' }, { label: 'TV Games', to: '/casino/tv-games', cat: 'tv' }]
   return (
     <div className="content-page">
