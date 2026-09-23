@@ -21,7 +21,7 @@
   --live: var(--coral);
   --green: var(--mint);
   --header-h: 56px;
-  --side-w: 272px;
+  --side-w: 300px;
   --slip-w: 280px;
   --radius: 12px;
   --font: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -292,8 +292,6 @@ img { max-width: 100%; }
 .side-label {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
 }
@@ -1608,7 +1606,7 @@ a.account-tile:hover { transform: translateY(-2px); border-color: rgba(97,214,17
 }
 body { font-size: 14px; }
 .header { height: 64px; padding-inline: 22px; }
-:root { --header-h: 64px; --side-w: 272px; }
+:root { --header-h: 64px; --side-w: 300px; }
 .logo { display: inline-flex; align-items: center; color: var(--white); font-style: normal; transform: none; letter-spacing: 0; }
 .logo { width: auto; height: 52px; padding: 0; flex: none; background: transparent; overflow: visible; }
 .logo-img { display: block; height: 48px; width: auto; max-width: none; object-fit: contain; }
@@ -1679,7 +1677,7 @@ body { font-size: 14px; }
 @media (max-width: 560px) { .header { padding-inline: 8px; } .header .logo { width: auto; height: 36px; padding: 0; } .logo-img { height: 34px; } .logo-emblem { width: 37px; height: 31px; } .main { padding: 12px 12px 70px; } .featured-match { padding: 17px 16px; min-height: 0; } .featured-copy h1 { font-size: 26px; } .featured-score { font-size: 25px; } .sport-filter { padding-top: 12px; } .rewards-feature { min-height: 145px; padding: 18px; } }
 
 /* Reference dashboard */
-:root { --navy: #0c1517; --slate: #101a1d; --raised: #172529; --mint: #69f0dc; --cyan: #23afdf; --white: #f5f8f9; --muted: #a7b1b9; --line: #29383c; --header-h: 80px; --side-w: 272px; --slip-w: 338px; --font: Inter, system-ui, sans-serif; }
+:root { --navy: #0c1517; --slate: #101a1d; --raised: #172529; --mint: #69f0dc; --cyan: #23afdf; --white: #f5f8f9; --muted: #a7b1b9; --line: #29383c; --header-h: 80px; --side-w: 300px; --slip-w: 338px; --font: Inter, system-ui, sans-serif; }
 body { font-family: var(--font); background: var(--navy); }
 .app { background: var(--navy); }
 .header { height: var(--header-h); padding: 0 34px 0 38px; gap: 0; background: linear-gradient(95deg,#0c191b,#0e1619 65%,#0a1619); border-color: #334144; }
