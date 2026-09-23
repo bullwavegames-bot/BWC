@@ -2871,3 +2871,8 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .ops-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .ops-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .ops-cols p { margin: 6px 0; color: var(--muted); }
+.ops-login { display: grid; place-items: center; min-height: calc(100dvh - var(--header-h) - var(--ticker-h) - 80px); }
+.ops-login .payment-shell { width: min(430px, 100%); }
+.ops-login .payment-shell > small { display: block; margin-top: 12px; color: var(--muted); text-align: center; }
+.ops-staff { display: inline-flex; align-items: center; gap: 9px; }
+.ops-staff button { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--muted); font-size: 9px; font-weight: 800; }

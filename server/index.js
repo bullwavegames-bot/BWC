@@ -77,6 +77,7 @@ app.use(express.json())
 app.set('trust proxy', 1)
 
 const users = new Map()
+const adminAttempts = new Map()
 const usedPlayerIds = new Set()
 let playerSeq = 100000000
 
@@ -181,6 +182,20 @@ function jwtUserFromReq(req) {
 }
 
 function admin(req, res, next) {
+  const adminId = String(process.env.ADMIN_ID || '').trim()
+  const authHeader = String(req.headers.authorization || '')
+  if (adminId && authHeader.startsWith('Bearer ')) {
+    try {
+      const payload = jwt.verify(authHeader.slice(7), JWT_SECRET)
+      if (payload.role === 'admin' && payload.adminId === adminId) {
+        req.adminUser = { id: adminId, email: adminId }
+        return next()
+      }
+    } catch {
+      return res.status(401).json({ error: 'Admin session expired. Sign in again.' })
+    }
+  }
+  if (adminId) return res.status(401).json({ error: 'Admin sign-in required.' })
   const bearerUser = jwtUserFromReq(req)
   if (bearerUser && isSuperAdminUser(bearerUser) && !accountBlockReason(bearerUser)) {
     req.adminUser = bearerUser
@@ -402,11 +417,30 @@ app.post('/api/presence', auth, (req, res) => {
   res.json({ ok: true, presence: row })
 })
 
+app.post('/api/admin/login', async (req, res) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown'
+  const now = Date.now()
+  const current = adminAttempts.get(ip)
+  const attempt = !current || now - current.startedAt > 15 * 60 * 1000 ? { startedAt: now, count: 0 } : current
+  attempt.count += 1
+  adminAttempts.set(ip, attempt)
+  if (attempt.count > 5) return res.status(429).json({ error: 'Too many admin sign-in attempts. Try again in 15 minutes.' })
+  const adminId = String(process.env.ADMIN_ID || '').trim()
+  const passwordHash = String(process.env.ADMIN_PASSWORD_HASH || '').trim()
+  if (!adminId || !passwordHash) return res.status(503).json({ error: 'Configure ADMIN_ID and ADMIN_PASSWORD_HASH on Render.' })
+  const idOk = String(req.body?.adminId || '').trim() === adminId
+  const passwordOk = await bcrypt.compare(String(req.body?.password || ''), passwordHash).catch(() => false)
+  if (!idOk || !passwordOk) return res.status(401).json({ error: 'Admin ID or password is incorrect.' })
+  adminAttempts.delete(ip)
+  writeAudit({ id: adminId, email: adminId }, 'admin-login', null, { ip })
+  res.json({ token: jwt.sign({ role: 'admin', adminId }, JWT_SECRET, { expiresIn: '2h' }), admin: { id: adminId }, expiresIn: 7200 })
+})
+
 app.get('/api/admin/me', admin, (req, res) => {
   res.json({
     ok: true,
     staff: req.adminUser?.email || req.adminUser?.id,
-    via: req.adminUser?.id === 'admin-key' ? 'key' : 'allowlist',
+    via: req.adminUser?.id === String(process.env.ADMIN_ID || '').trim() ? 'admin-id' : req.adminUser?.id === 'admin-key' ? 'key' : 'allowlist',
   })
 })
 

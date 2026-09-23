@@ -18,16 +18,17 @@ function when(iso) {
 }
 
 export function SuperAdmin() {
-  const { loggedIn, token, user, setAuthMode } = useApp()
-  const [key, setKey] = useState(() => sessionStorage.getItem('bwc_admin_key') || '')
+  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('bwc_admin_token') || '')
+  const [adminId, setAdminId] = useState('')
+  const [adminPassword, setAdminPassword] = useState('')
+  const [signingIn, setSigningIn] = useState(false)
   const [staff, setStaff] = useState(null)
   const [gate, setGate] = useState('')
   const [message, setMessage] = useState('')
 
   const headers = () => ({
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(key.trim() ? { 'x-admin-key': key.trim(), Authorization: token ? `Bearer ${token}` : `Admin ${key.trim()}` } : {}),
+    Authorization: `Bearer ${adminToken}`,
   })
 
   const cleanError = (err) => {
@@ -42,7 +43,7 @@ export function SuperAdmin() {
     const res = await fetch(path, {
       method,
       headers: headers(),
-      body: method === 'GET' ? undefined : JSON.stringify({ ...(body || {}), ...(key.trim() ? { adminKey: key.trim() } : {}) }),
+      body: method === 'GET' ? undefined : JSON.stringify(body || {}),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(cleanError(data.error || `Request failed (${res.status})`))
@@ -62,35 +63,40 @@ export function SuperAdmin() {
   }
 
   useEffect(() => {
-    if (!loggedIn && !key.trim()) return
+    if (!adminToken) return
     call('/api/admin/me')
       .then((data) => { setStaff(data); setGate('') })
-      .catch((err) => { setStaff(null); setGate(err.message) })
-  }, [loggedIn, token, key])
+      .catch((err) => { sessionStorage.removeItem('bwc_admin_token'); setAdminToken(''); setStaff(null); setGate(err.message) })
+  }, [adminToken])
+
+  const adminLogin = async (event) => {
+    event.preventDefault()
+    setSigningIn(true)
+    setGate('')
+    try {
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, password: adminPassword }) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Admin sign-in failed')
+      sessionStorage.setItem('bwc_admin_token', data.token)
+      setAdminToken(data.token)
+      setAdminPassword('')
+    } catch (err) {
+      setGate(err.message)
+    } finally {
+      setSigningIn(false)
+    }
+  }
 
   const ctx = { call, download, message, setMessage, run: (fn) => fn().catch((err) => setMessage(err.message)) }
 
-  if (!loggedIn && !key.trim()) {
+  if (!adminToken) {
     return (
-      <div className="ops">
-        <h1>Super Admin</h1>
-        <p className="ops-lead">Staff console for people listed in SUPER_ADMIN_EMAILS or SUPER_ADMIN_USER_IDS. It is not a player wallet. Ordinary accounts cannot open it.</p>
-        <button type="button" className="btn btn-yellow" onClick={() => setAuthMode('login')}>Staff log in</button>
-      </div>
+      <div className="ops ops-login"><form className="payment-shell" onSubmit={adminLogin}><p className="ops-kicker">Restricted access</p><h1>Super Admin</h1><p className="ops-lead">Sign in with the single administrator identity configured on Render.</p><div className="field"><label>Admin ID</label><input className="input" autoComplete="username" value={adminId} onChange={(event) => setAdminId(event.target.value)} /></div><div className="field"><label>Password</label><input className="input" type="password" autoComplete="current-password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} /></div>{gate && <p className="hint is-bad" role="alert">{gate}</p>}<button className="btn btn-yellow btn-block" disabled={signingIn || !adminId || !adminPassword}>{signingIn ? 'Signing in…' : 'Sign in securely'}</button><small>Session expires after two hours. Credentials are not stored in the browser.</small></form></div>
     )
   }
 
   if (!staff) {
-    return (
-      <div className="ops">
-        <h1>Super Admin</h1>
-        <p className="ops-lead">Sign in as allowlisted staff. ADMIN_KEY still works as a fallback for settle if the allowlist is not set.</p>
-        {gate && <p className="hint is-bad">{gate}</p>}
-        <div className="field"><label>ADMIN_KEY fallback</label><input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" /></div>
-        <button type="button" className="btn btn-ghost" onClick={() => { sessionStorage.setItem('bwc_admin_key', key.trim()); setGate('') }}>Save key on this device</button>
-        {loggedIn && <p className="hint">Signed in as {user?.email || user?.phone}. This account is not Super Admin unless it is on the Render allowlist.</p>}
-      </div>
-    )
+    return <div className="ops ops-login"><div className="payment-shell"><h1>Opening Super Admin</h1><p className="ops-lead">Validating the secure session…</p></div></div>
   }
 
   return (
@@ -100,7 +106,7 @@ export function SuperAdmin() {
           <p className="ops-kicker">Staff console</p>
           <h1>Super Admin</h1>
         </div>
-        <span className="ops-staff">{staff.staff} · {staff.via}</span>
+        <div className="ops-staff">{staff.staff} · {staff.via}<button type="button" onClick={() => { sessionStorage.removeItem('bwc_admin_token'); setAdminToken(''); setStaff(null) }}>Sign out</button></div>
       </div>
       <p className="ops-lead">Watch the club, find a player, move cash by hand, and freeze abuse. One Super Admin cannot stop, ban, or delete another Super Admin.</p>
       <nav className="ops-nav">
