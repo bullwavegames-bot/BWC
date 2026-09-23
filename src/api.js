@@ -78,6 +78,7 @@ export function mapAccount(data, extra = {}) {
     username: profile.username || extra.username || '',
     balance: Number(wallet.total ?? wallet.cash ?? profile.balance ?? extra.balance ?? 0),
     bonus: wallet.bonus ?? profile.bonus ?? extra.bonus ?? 0,
+    bonusCoins: Number(wallet.bonusCash ?? profile.bonusCoins ?? extra.bonusCoins ?? 0),
     vipLevel: profile.vipLevel || 1,
     accountNumber: profile.accountNumber || extra.accountNumber || '',
     createdAt: profile.createdAt || extra.createdAt,

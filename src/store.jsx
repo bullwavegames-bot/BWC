@@ -213,7 +213,7 @@ export function AppProvider({ children }) {
     if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid amount')
     const paths = type === 'withdraw'
       ? ['/api/wallet/withdraw', '/api/payments/cashout']
-      : ['/api/wallet/deposit', '/api/payments/create-deposit']
+      : ['/api/payments/create-order']
     let lastErr
     for (const path of paths) {
       try {

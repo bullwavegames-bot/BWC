@@ -7,6 +7,17 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { consumePhoneVerification, normalizePhone, sendOtp, verifyOtp, isPhoneVerified } from './otp.js'
 import { createDepositOrder, razorpayPublicConfig, verifyDepositPayment } from './razorpay.js'
+import {
+  buildReceiptPdf,
+  cashouts,
+  coinsForRupees,
+  markCashoutPaid,
+  publicBillingConfig,
+  receipts,
+  rejectCashout,
+  requestCashout,
+  settleBill,
+} from './billing.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
 import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
 
@@ -77,16 +88,48 @@ function limitOtpRequests(req, res, next) {
 }
 
 function publicUser(user) {
+  const cash = Number(user.balance || 0)
+  const bonusCoins = Number(user.bonusCoins || 0)
   return {
     id: user.id,
     phone: user.phone || null,
     email: user.email || null,
+    username: user.username || null,
     accountNumber: user.accountNumber,
     bonus: user.bonus,
+    bonusCoins,
     promoCode: user.promoCode || null,
-    balance: user.balance,
+    balance: cash,
+    cash,
     createdAt: user.createdAt,
   }
+}
+
+function goneCreateDeposit(_req, res) {
+  return res.status(410).json({
+    error: 'Razorpay checkout cannot mint coins. Pay the Telegram UPI QR, send proof, and wait for Super Admin to Settle bill on a unique UTR.',
+  })
+}
+
+function admin(req, res, next) {
+  const key = String(process.env.ADMIN_KEY || process.env.SUPER_ADMIN_KEY || '').trim()
+  if (!key) return res.status(503).json({ error: 'Set ADMIN_KEY on the server for Super Admin settle.' })
+  const got = String(req.headers['x-admin-key'] || '').trim()
+  if (got !== key) return res.status(401).json({ error: 'Admin key required' })
+  next()
+}
+
+function findUsers(q) {
+  const needle = String(q || '').trim().toLowerCase()
+  const list = [...users.values()]
+  if (!needle) return list.slice(0, 40)
+  return list.filter((u) => (
+    u.id.toLowerCase().includes(needle)
+    || String(u.accountNumber || '').toLowerCase().includes(needle)
+    || String(u.phone || '').includes(needle)
+    || String(u.email || '').toLowerCase().includes(needle)
+    || String(u.username || '').toLowerCase().includes(needle)
+  )).slice(0, 40)
 }
 
 function sign(user) {
@@ -182,6 +225,7 @@ async function loginWithOtp(req, res) {
         accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
         passwordHash: null,
         bonus: 'Welcome Casino 100%',
+        bonusCoins: 0,
         promoCode: null,
         balance: 0,
         createdAt: new Date().toISOString(),
@@ -231,8 +275,9 @@ app.post('/api/auth/register', async (req, res) => {
     accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
     passwordHash: await bcrypt.hash(password, 10),
     bonus: bonus || 'Welcome Casino 100%',
+    bonusCoins: 0,
     promoCode: promoCode || null,
-    balance: 1000,
+    balance: 0,
     createdAt: new Date().toISOString(),
   }
   users.set(user.id, user)
@@ -263,8 +308,14 @@ app.get('/api/me/bets', auth, (req, res) => {
 })
 
 app.get('/api/payments/config', (_req, res) => {
-  res.json(razorpayPublicConfig())
+  res.json({ ...razorpayPublicConfig(), billing: publicBillingConfig() })
 })
+
+app.get('/api/billing/config', (_req, res) => {
+  res.json(publicBillingConfig())
+})
+
+app.post('/api/payments/create-deposit', goneCreateDeposit)
 
 app.post('/api/payments/create-order', auth, async (req, res) => {
   try {
@@ -293,14 +344,106 @@ app.post('/api/wallet/deposit', auth, async (req, res) => {
   }
 })
 
-app.post('/api/wallet/withdraw', auth, (req, res) => {
-  const amount = Number(req.body?.amount)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return res.status(400).json({ error: 'Enter a valid amount' })
+function handleCashout(req, res) {
+  try {
+    const rupees = Number(req.body?.amount)
+    const coins = Number(req.body?.coins)
+    const row = requestCashout(req.user, {
+      coins: Number.isFinite(coins) && coins > 0 ? coins : 0,
+      rupees,
+      destination: req.body?.destination || req.body?.upi || req.body?.account,
+      method: req.body?.method || 'upi',
+    })
+    res.status(201).json({
+      cashout: row,
+      user: publicUser(req.user),
+      message: 'Cash locked. Settlement is within 12 hours. Staff pay outside the site.',
+    })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not request cash-out' })
   }
-  if (amount > req.user.balance) return res.status(400).json({ error: 'Insufficient balance' })
-  req.user.balance = Number((req.user.balance - amount).toFixed(2))
-  res.json({ user: publicUser(req.user) })
+}
+
+app.post('/api/wallet/withdraw', auth, handleCashout)
+app.post('/api/payments/cashout', auth, handleCashout)
+
+app.get('/api/billing/me', auth, (req, res) => {
+  res.json({
+    receipts: receipts.filter((r) => r.userId === req.user.id),
+    cashouts: cashouts.filter((c) => c.userId === req.user.id),
+    user: publicUser(req.user),
+  })
+})
+
+app.get('/api/billing/receipts/:id.pdf', auth, (req, res) => {
+  const receipt = receipts.find((r) => r.id === req.params.id && r.userId === req.user.id)
+  if (!receipt) return res.status(404).json({ error: 'Receipt not found' })
+  const pdf = buildReceiptPdf(receipt)
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${receipt.id}.pdf"`)
+  res.send(pdf)
+})
+
+app.get('/api/admin/players', admin, (req, res) => {
+  res.json({
+    players: findUsers(req.query.q).map((u) => publicUser(u)),
+  })
+})
+
+app.get('/api/admin/players/:id', admin, (req, res) => {
+  const user = users.get(req.params.id) || findUser({ accountNumber: req.params.id })
+  if (!user) return res.status(404).json({ error: 'Player not found' })
+  res.json({
+    user: publicUser(user),
+    receipts: receipts.filter((r) => r.userId === user.id),
+    cashouts: cashouts.filter((c) => c.userId === user.id),
+  })
+})
+
+app.post('/api/admin/settle-bill', admin, (req, res) => {
+  try {
+    const user = users.get(req.body?.userId) || findUser({ accountNumber: req.body?.uid || req.body?.accountNumber })
+    if (!user) return res.status(404).json({ error: 'Player not found' })
+    const rupees = Number(req.body?.rupees ?? req.body?.amount)
+    const coins = Number(req.body?.coins) > 0 ? Number(req.body.coins) : coinsForRupees(rupees)
+    const receipt = settleBill(user, { rupees, coins, utr: req.body?.utr })
+    res.status(201).json({ receipt, user: publicUser(user) })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not settle bill' })
+  }
+})
+
+app.get('/api/admin/cashouts', admin, (_req, res) => {
+  res.json({ cashouts: [...cashouts].reverse() })
+})
+
+app.post('/api/admin/cashouts/:id/paid', admin, (req, res) => {
+  try {
+    const row = markCashoutPaid(req.params.id, req.body?.utr)
+    res.json({ cashout: row })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not mark paid' })
+  }
+})
+
+app.post('/api/admin/cashouts/:id/reject', admin, (req, res) => {
+  try {
+    const row = cashouts.find((c) => c.id === req.params.id)
+    const user = row ? users.get(row.userId) : null
+    const result = rejectCashout(req.params.id, req.body?.reason, user)
+    res.json({ cashout: result, user: user ? publicUser(user) : null })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not reject cash-out' })
+  }
+})
+
+app.get('/api/admin/receipts/:id.pdf', admin, (req, res) => {
+  const receipt = receipts.find((r) => r.id === req.params.id)
+  if (!receipt) return res.status(404).json({ error: 'Receipt not found' })
+  const pdf = buildReceiptPdf(receipt)
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${receipt.id}.pdf"`)
+  res.send(pdf)
 })
 
 function placeBet(req, res) {

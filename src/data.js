@@ -322,11 +322,12 @@ export const languages = [
 ]
 
 export const accountLinks = [
-  { name: 'Deposit', to: '/account/deposit', icon: 'plus' },
-  { name: 'Withdraw', to: '/account/withdraw', icon: 'minus' },
-  { name: 'My bets', to: '/account/bets', icon: 'ticket' },
-  { name: 'Bonuses', to: '/promotions', icon: 'gift' },
-  { name: 'Verification', to: '/account/verify', icon: 'shield' },
-  { name: 'Settings', to: '/account/settings', icon: 'gear' },
-  { name: 'Responsible gaming', to: '/faq', icon: 'heart' },
+  { name: 'Deposit', to: '/account/deposit', icon: 'plus', hint: 'Add cash' },
+  { name: 'Withdraw', to: '/account/withdraw', icon: 'minus', hint: 'Cash out' },
+  { name: 'My bets', to: '/account/bets', icon: 'ticket', hint: 'Open and settled' },
+  { name: 'Bonuses', to: '/promotions', icon: 'gift', hint: 'Offers and codes' },
+  { name: 'Verification', to: '/account/verify', icon: 'shield', hint: 'Account details' },
+  { name: 'Settings', to: '/account/settings', icon: 'gear', hint: 'Theme and security' },
+  { name: 'Safer play', to: '/faq', icon: 'heart', hint: 'Limits and breaks' },
+  { name: 'Billing', to: '/account/billing', icon: 'ticket', hint: 'Receipts and UTR' },
 ]

@@ -1,0 +1,214 @@
+import { randomUUID } from 'node:crypto'
+
+export const COINS_PER_RUPEE = 10
+export const PACKS = [
+  { id: 'p49', rupees: 49, coins: 500 },
+  { id: 'p99', rupees: 99, coins: 1200 },
+  { id: 'p199', rupees: 199, coins: 3000 },
+]
+
+export const depositUtrs = new Map()
+export const payoutUtrs = new Map()
+export const receipts = []
+export const cashouts = []
+
+export function telegramChannel() {
+  return String(process.env.TELEGRAM_CHANNEL_URL || 'https://t.me/bullwaveclub').trim()
+}
+
+export function cashoutPayoutsEnabled() {
+  return String(process.env.CASHOUT_PAYOUTS_ENABLED || 'false').toLowerCase() === 'true'
+}
+
+export function normalizeUtr(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+export function coinsForRupees(rupees) {
+  const pack = PACKS.find((p) => p.rupees === Number(rupees))
+  if (pack) return pack.coins
+  return Math.round(Number(rupees) * COINS_PER_RUPEE)
+}
+
+export function publicBillingConfig() {
+  return {
+    packs: PACKS,
+    coinsPerRupee: COINS_PER_RUPEE,
+    telegramChannel: telegramChannel(),
+    cashoutHours: 12,
+    cashoutPayoutsEnabled: cashoutPayoutsEnabled(),
+    createDeposit: 'gone',
+  }
+}
+
+export function buildReceiptPdf(receipt) {
+  const lines = [
+    'BULLWAVE CLUB',
+    'Cash-in receipt',
+    '',
+    `Receipt: ${receipt.id}`,
+    `UID: ${receipt.accountNumber}`,
+    `Player: ${receipt.username || receipt.email || receipt.phone || '—'}`,
+    `Paid: INR ${receipt.rupees}`,
+    `Credited: ${receipt.coins} cash BullCoins`,
+    `UTR: ${receipt.utr}`,
+    `Settled: ${receipt.createdAt}`,
+    '',
+    'This UTR cannot credit twice.',
+  ]
+  const escape = (s) => String(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
+  let stream = 'BT /F1 12 Tf 50 760 Td\n'
+  lines.forEach((line, i) => {
+    if (i) stream += '0 -18 Td\n'
+    stream += `(${escape(line)}) Tj\n`
+  })
+  stream += 'ET'
+  const objects = [
+    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj',
+    `4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`,
+    '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
+  ]
+  let pdf = '%PDF-1.4\n'
+  const offsets = [0]
+  for (const obj of objects) {
+    offsets.push(Buffer.byteLength(pdf, 'utf8'))
+    pdf += `${obj}\n`
+  }
+  const xref = Buffer.byteLength(pdf, 'utf8')
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  for (let i = 1; i < offsets.length; i += 1) {
+    pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`
+  }
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+  return Buffer.from(pdf, 'utf8')
+}
+
+export function settleBill(user, { rupees, coins, utr }) {
+  const paid = Number(rupees)
+  const credit = Number(coins)
+  const key = normalizeUtr(utr)
+  if (!Number.isFinite(paid) || paid <= 0) {
+    const err = new Error('Enter the INR amount paid.')
+    err.status = 400
+    throw err
+  }
+  if (!Number.isFinite(credit) || credit <= 0) {
+    const err = new Error('Enter cash BullCoins to credit.')
+    err.status = 400
+    throw err
+  }
+  if (key.length < 8) {
+    const err = new Error('Enter the bank/UPI UTR from the player proof.')
+    err.status = 400
+    throw err
+  }
+  if (depositUtrs.has(key)) {
+    const err = new Error('This UTR already settled a cash-in. Replay does not pay twice.')
+    err.status = 409
+    throw err
+  }
+  user.balance = Number((Number(user.balance || 0) + credit).toFixed(2))
+  const receipt = {
+    id: `BWC-${randomUUID().slice(0, 8).toUpperCase()}`,
+    userId: user.id,
+    accountNumber: user.accountNumber,
+    username: user.username || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    rupees: paid,
+    coins: credit,
+    utr: key,
+    createdAt: new Date().toISOString(),
+  }
+  depositUtrs.set(key, receipt.id)
+  receipts.push(receipt)
+  return receipt
+}
+
+export function requestCashout(user, { coins, rupees, destination, method }) {
+  const amount = Number(coins > 0 ? coins : Number(rupees) * COINS_PER_RUPEE)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    const err = new Error('Enter cash BullCoins to withdraw.')
+    err.status = 400
+    throw err
+  }
+  if (amount > Number(user.balance || 0)) {
+    const err = new Error('Only cash BullCoins can leave. Bonus/promo cannot be withdrawn.')
+    err.status = 400
+    throw err
+  }
+  const dest = String(destination || '').trim()
+  if (dest.length < 4) {
+    const err = new Error('Add UPI ID or bank account details.')
+    err.status = 400
+    throw err
+  }
+  user.balance = Number((Number(user.balance || 0) - amount).toFixed(2))
+  const row = {
+    id: randomUUID(),
+    userId: user.id,
+    accountNumber: user.accountNumber,
+    coins: amount,
+    rupees: Number((amount / COINS_PER_RUPEE).toFixed(2)),
+    destination: dest,
+    method: method || 'upi',
+    status: 'PENDING',
+    payoutUtr: null,
+    createdAt: new Date().toISOString(),
+    settledAt: null,
+    note: 'Settlement within 12 hours. Staff pay outside the site.',
+  }
+  cashouts.push(row)
+  return row
+}
+
+export function markCashoutPaid(id, utr) {
+  const row = cashouts.find((c) => c.id === id)
+  if (!row) {
+    const err = new Error('Cash-out not found.')
+    err.status = 404
+    throw err
+  }
+  if (row.status !== 'PENDING') {
+    const err = new Error('This cash-out is already closed.')
+    err.status = 409
+    throw err
+  }
+  const key = normalizeUtr(utr)
+  if (key.length < 8) {
+    const err = new Error('Enter the unique payout UTR.')
+    err.status = 400
+    throw err
+  }
+  if (payoutUtrs.has(key)) {
+    const err = new Error('This payout UTR already settled a cash-out.')
+    err.status = 409
+    throw err
+  }
+  payoutUtrs.set(key, row.id)
+  row.status = 'PAID'
+  row.payoutUtr = key
+  row.settledAt = new Date().toISOString()
+  return row
+}
+
+export function rejectCashout(id, reason, user) {
+  const row = cashouts.find((c) => c.id === id)
+  if (!row) {
+    const err = new Error('Cash-out not found.')
+    err.status = 404
+    throw err
+  }
+  if (row.status !== 'PENDING') {
+    const err = new Error('This cash-out is already closed.')
+    err.status = 409
+    throw err
+  }
+  row.status = 'REJECTED'
+  row.note = reason || 'Rejected by Super Admin'
+  row.settledAt = new Date().toISOString()
+  if (user) user.balance = Number((Number(user.balance || 0) + row.coins).toFixed(2))
+  return row
+}

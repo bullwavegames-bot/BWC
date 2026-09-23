@@ -25,3 +25,9 @@ services:
         value: "4"
       - key: OTP_TEST_ENABLED
         value: "false"
+      - key: CASHOUT_PAYOUTS_ENABLED
+        value: "false"
+      - key: ADMIN_KEY
+        sync: false
+      - key: TELEGRAM_CHANNEL_URL
+        sync: false

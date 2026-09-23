@@ -83,6 +83,7 @@ export function verifyDepositPayment(user, payload = {}) {
     return { already: true, amount: pending.amount, paymentId }
   }
   pending.paid = true
-  user.balance = Number((Number(user.balance || 0) + pending.amount).toFixed(2))
-  return { already: false, amount: pending.amount, paymentId }
+  const coins = Math.round(Number(pending.amount) * 10)
+  user.balance = Number((Number(user.balance || 0) + coins).toFixed(2))
+  return { already: false, amount: pending.amount, coins, paymentId }
 }

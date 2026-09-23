@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
+import { AdminDesk, BillingPage, TelegramCashIn } from './BillingPages.jsx'
 import { isStrongPassword, PASSWORD_HINT } from './authRules.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
 import GameIcon, { getGameIconKind } from './GameIcon.jsx'
@@ -1110,9 +1111,15 @@ function rupees(value) {
   return `₹\u00a0${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
+function bullcoins(value) {
+  return `${Number(value || 0).toLocaleString('en-IN')} BC`
+}
+
 function bonusCash(user) {
-  const n = Number(user?.bonus)
-  return Number.isFinite(n) ? n : 0
+  const n = Number(user?.bonusCoins)
+  if (Number.isFinite(n) && n > 0) return n
+  const legacy = Number(user?.bonus)
+  return Number.isFinite(legacy) ? legacy : 0
 }
 
 function formatWalletPhone(phone) {
@@ -1150,6 +1157,7 @@ function saveWalletTx(entry) {
 }
 
 const PAY_METHODS = [
+  { id: 'telegram', name: 'Telegram UPI', mark: 'TG', time: 'Manual', min: 49, max: 200000, fee: 'Free', manual: true, note: 'Cash-in is manual UPI. Pay the official Telegram QR, send screenshot + UTR + UID. Super Admin Settle bill credits cash BullCoins once per UTR.' },
   { id: 'upi', name: 'UPI', mark: 'UPI', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Paid through Razorpay test checkout. Use any UPI app in the test flow.' },
   { id: 'paytm', name: 'Paytm', mark: 'PT', time: 'Instant', min: 100, max: 50000, fee: 'Free', note: 'Razorpay wallet/UPI test. Failed payments do not credit the club wallet.' },
   { id: 'phonepe', name: 'PhonePe', mark: 'Pe', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Razorpay UPI test. Keep the checkout open until Success.' },
@@ -1202,20 +1210,20 @@ function Account() {
         title="My wallet"
         description="Cash you can bet or withdraw, plus bonus funds, limits and the details every member should know before moving money."
         icon="shield"
-        stats={[{ label: 'Status', value: loggedIn ? 'Active' : 'Guest' }, { label: 'Available', value: rupees(cash) }]}
+        stats={[{ label: 'Status', value: loggedIn ? 'Active' : 'Guest' }, { label: 'Cash', value: bullcoins(cash) }]}
       />
       <div className="card wallet-card">
         <div className="wallet-top">
-          <span className="eyebrow">AVAILABLE CASH</span>
+          <span className="eyebrow">CASH BULLCOINS</span>
           <span className={`wallet-status ${loggedIn ? 'is-active' : ''}`}>{loggedIn ? 'Active' : 'Sign in'}</span>
         </div>
-        <div className="wallet-balance">{rupees(cash)}</div>
+        <div className="wallet-balance">{bullcoins(cash)}</div>
         <div className="wallet-user">{loggedIn ? walletIdentity(user) || 'Member account' : 'Sign in to deposit, withdraw and track activity'}</div>
         {bonusLabel ? <div className="wallet-promo">{bonusLabel}</div> : null}
         <div className="wallet-split">
-          <div><span>Cash</span><b>{rupees(cash)}</b></div>
-          <div><span>Bonus</span><b>{rupees(bonus)}</b></div>
-          <div><span>Withdrawable</span><b>{rupees(cash)}</b></div>
+          <div><span>Cash</span><b>{bullcoins(cash)}</b></div>
+          <div><span>Bonus</span><b>{bullcoins(bonus)}</b></div>
+          <div><span>Withdrawable</span><b>{bullcoins(cash)}</b></div>
         </div>
         <div className="wallet-actions">
           {loggedIn ? (
@@ -1251,8 +1259,12 @@ function Account() {
       <div className="account-grid">
         {accountLinks.map((l) => (
           <NavLink key={l.name} to={l.to} className="account-tile">
-            <span className="feature-icon"><Icon name={l.icon} size={23} /></span>
-            <strong>{l.name}</strong><span className="account-tile-arrow" aria-hidden="true">↗</span>
+            <span className="feature-icon"><Icon name={l.icon} size={18} /></span>
+            <span className="account-tile-copy">
+              <strong>{l.name}</strong>
+              {l.hint ? <small>{l.hint}</small> : null}
+            </span>
+            <span className="account-tile-arrow" aria-hidden="true"><Icon name="chevron" size={16} /></span>
           </NavLink>
         ))}
       </div>
@@ -1274,9 +1286,9 @@ function loadRazorpay() {
 }
 
 function Deposit({ type }) {
-  const { moveMoney, startRazorpayDeposit, confirmRazorpayDeposit, setAuthMode, loggedIn, user } = useApp()
+  const { moveMoney, startRazorpayDeposit, confirmRazorpayDeposit, token, setAuthMode, loggedIn, user } = useApp()
   const withdrawing = type === 'withdraw'
-  const [method, setMethod] = useState('upi')
+  const [method, setMethod] = useState(withdrawing ? 'upi' : 'telegram')
   const [amount, setAmount] = useState(withdrawing ? '200' : '500')
   const [destination, setDestination] = useState('')
   const [message, setMessage] = useState('')
@@ -1302,7 +1314,7 @@ function Deposit({ type }) {
       return
     }
     if (underMin) {
-      setMessage(`Minimum ${withdrawing ? 'withdrawal' : 'deposit'} is ${rupees(min)}.`)
+      setMessage(`Minimum ${withdrawing ? 'withdrawal' : 'deposit'} is ${withdrawing ? bullcoins(min) : rupees(min)}.`)
       return
     }
     if (overMax) {
@@ -1320,18 +1332,22 @@ function Deposit({ type }) {
     setBusy(true)
     try {
       if (withdrawing) {
-        await moveMoney('withdraw', value, { method: pay.id, destination: destination.trim() })
+        await moveMoney('withdraw', value, { method: pay.id, destination: destination.trim(), coins: value })
         saveWalletTx({
           id: `${Date.now()}`,
           userId: user?.id,
           type: 'withdraw',
           method: pay.name,
-          amount: value,
-          status: 'In review',
+          amount: value / 10,
+          status: 'PENDING · 12 hours',
           at: new Date().toISOString(),
         })
-        setMessage(`Withdrawal of ${rupees(value)} sent for review. ${pay.time}.`)
+        setMessage(`${bullcoins(value)} locked. Staff pay outside the site within 12 hours. Bonus coins cannot leave.`)
         setTick((n) => n + 1)
+        return
+      }
+      if (pay.manual) {
+        setMessage('This is not in-app checkout. Pay the Telegram QR, send proof, and wait for Settle bill.')
         return
       }
       if (pay.crypto) {
@@ -1390,10 +1406,10 @@ function Deposit({ type }) {
       <PageIntro
         eyebrow="WALLET"
         title={withdrawing ? 'Withdraw' : 'Deposit'}
-        description={withdrawing ? 'Cash out available balance to a method in your own name. Bonus funds cannot be withdrawn.' : 'Add cash to your club wallet. Pick a method, check the limits, then confirm the amount.'}
+        description={withdrawing ? 'Only cash BullCoins can leave. Coins lock immediately as PENDING. Staff pay outside the site within 12 hours.' : 'Telegram UPI is manual. Razorpay remains available as a separate method and does not mint via create-deposit.'}
         icon={withdrawing ? 'minus' : 'plus'}
         action={{ to: '/account', label: 'Back to wallet' }}
-        stats={[{ label: 'Available', value: rupees(cash) }, { label: 'Method', value: pay.time }]}
+        stats={[{ label: 'Cash', value: bullcoins(cash) }, { label: 'Method', value: pay.time }]}
       />
       <div className="content-section-title"><h2>Payment method</h2><span>Time · limits · fee</span></div>
       <div className="pay-grid">
@@ -1405,49 +1421,53 @@ function Deposit({ type }) {
           </button>
         ))}
       </div>
-      <p className="wallet-method-note">{pay.note} Min {rupees(withdrawing ? 200 : pay.min)} · Max {rupees(pay.max)}.</p>
+      <p className="wallet-method-note">{pay.note} Min {withdrawing ? bullcoins(200) : rupees(pay.min)} · Max {rupees(pay.max)}.</p>
+      {!withdrawing && pay.manual ? (
+        <TelegramCashIn user={user} token={token} />
+      ) : (
       <div className="payment-shell">
-        <div className="content-section-title"><h2>Enter amount</h2><span>INR</span></div>
+        <div className="content-section-title"><h2>Enter amount</h2><span>{withdrawing ? 'Cash BullCoins' : 'INR'}</span></div>
         <div className="wallet-quick">
           {quick.map((n) => (
-            <button key={n} type="button" className={`chip ${Number(amount) === n ? 'on' : ''}`} onClick={() => setAmount(String(n))}>{rupees(n).replace('.00', '')}</button>
+            <button key={n} type="button" className={`chip ${Number(amount) === n ? 'on' : ''}`} onClick={() => setAmount(String(n))}>{withdrawing ? bullcoins(n) : rupees(n).replace('.00', '')}</button>
           ))}
         </div>
-        <div className="field"><label>Amount, ₹</label><input className="input" type="number" min={min} max={pay.max} inputMode="decimal" placeholder={String(min)} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        <div className="field"><label>{withdrawing ? 'Cash BullCoins' : 'Amount, ₹'}</label><input className="input" type="number" min={min} max={pay.max} inputMode="decimal" placeholder={String(min)} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         {withdrawing && (
           <div className="field">
-            <label>{method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'UPI ID' : method === 'netbanking' || method === 'card' ? 'Account / IFSC' : 'Wallet address'}</label>
-            <input className="input" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={method === 'upi' || method === 'paytm' || method === 'phonepe' ? 'name@upi' : method === 'netbanking' || method === 'card' ? 'Account number and IFSC' : `${pay.name} address`} />
+            <label>{method === 'upi' || method === 'paytm' || method === 'phonepe' || method === 'telegram' ? 'UPI ID' : method === 'netbanking' || method === 'card' ? 'Account / IFSC' : 'Wallet address'}</label>
+            <input className="input" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={method === 'upi' || method === 'paytm' || method === 'phonepe' || method === 'telegram' ? 'name@upi' : method === 'netbanking' || method === 'card' ? 'Account number and IFSC' : `${pay.name} address`} />
           </div>
         )}
         <div className="wallet-summary">
-          <span>You {withdrawing ? 'receive' : 'pay'}</span><b>{Number.isFinite(value) && value > 0 ? rupees(value) : '—'}</b>
+          <span>You {withdrawing ? 'lock now' : 'pay'}</span><b>{Number.isFinite(value) && value > 0 ? (withdrawing ? bullcoins(value) : rupees(value)) : '—'}</b>
           <span>Fee</span><b>{pay.fee}</b>
-          <span>{withdrawing ? 'ETA' : 'Credited'}</span><b>{pay.time}</b>
+          <span>{withdrawing ? 'ETA' : 'Credited'}</span><b>{withdrawing ? '12 hours' : pay.time}</b>
         </div>
-        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add /i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
+        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add |locked|not in-app/i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
         <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>
-          {busy ? 'Please wait…' : withdrawing ? 'Request withdrawal' : 'Pay with Razorpay'}
+          {busy ? 'Please wait…' : withdrawing ? 'Lock cash-out' : 'Pay with Razorpay'}
         </button>
         <p className="wallet-legal">By continuing you confirm you are 18+, the payment account is yours, and you have read the wallet notes below.</p>
       </div>
+      )}
       <div className="content-section-title"><h2>Need to know</h2><span>{withdrawing ? 'Cashout' : 'Top-up'}</span></div>
       <ul className="wallet-notes">
         {withdrawing ? (
           <>
-            <li>Complete verification first. Unverified cashouts are held.</li>
-            <li>Bonus and un-wagered free bets are not paid out.</li>
-            <li>Send only to an account in the same name as your KYC. Third-party accounts are rejected.</li>
-            <li>UPI is usually minutes. Bank and crypto wait for clearing / network confirmations.</li>
-            <li>Daily cap is ₹2,00,000. Split larger cashouts or move up VIP for a higher limit.</li>
+            <li>Only cash BullCoins are deducted. Bonus/promo coins cannot leave.</li>
+            <li>Coins lock immediately as PENDING. Auto RazorpayX payout is off.</li>
+            <li>Staff pay UPI/bank outside the site, then Super Admin marks PAID with a unique payout UTR.</li>
+            <li>Settlement is within 12 hours. Same payout UTR cannot close two cash-outs.</li>
+            <li>Rejected cash-outs return the locked coins to cash.</li>
           </>
         ) : (
           <>
-            <li>INR deposits go through Razorpay test checkout. The wallet is credited only after the payment signature is verified.</li>
-            <li>Test card: 4111 1111 1111 1111, any future date, CVV 123. UPI/net banking follow Razorpay’s test screens.</li>
-            <li>Minimum {rupees(Math.max(100, pay.min))} on {pay.name}. Cancelled checkouts do not add cash.</li>
-            <li>Crypto is not collected by this Razorpay key. Use UPI or card while in test mode.</li>
-            <li>Keep the payment id from Checkout until the balance updates.</li>
+            <li>Telegram UPI is manual. The site does not auto-credit from the channel QR.</li>
+            <li>Send screenshot, UTR, username and UID in Telegram. Super Admin Settle bill credits cash BullCoins once per UTR.</li>
+            <li>POST /api/payments/create-deposit is gone (410). Razorpay checkout cannot mint coins that way.</li>
+            <li>Other methods still open Razorpay Checkout. Verified INR is converted at 10 BullCoins = ₹1.</li>
+            <li>Receipts live under Billing as a PDF after settle.</li>
           </>
         )}
       </ul>
@@ -1683,9 +1703,11 @@ export default function App() {
             <Route path="/account" element={<Account />} />
             <Route path="/account/deposit" element={<Deposit type="deposit" />} />
             <Route path="/account/withdraw" element={<Deposit type="withdraw" />} />
+            <Route path="/account/billing" element={<BillingPage />} />
             <Route path="/account/bets" element={<Bets />} />
             <Route path="/account/verify" element={<Verification />} />
             <Route path="/account/settings" element={<More settings />} />
+            <Route path="/ops" element={<AdminDesk />} />
             <Route path="/vip" element={<Vip />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/favorites" element={<Favorites />} />
