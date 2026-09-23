@@ -1784,6 +1784,7 @@ body { background: #fff; color: #102033; }
 .live-feature-card { color: #fff; }
 .live-feature-card .live-team > span, .live-feature-card .live-center-score span { color: #dce6ec; }
 .live-feature-card .live-lead { color: #fff; }
+.live-feature-card .live-card-actions a:first-child { color: #fff; }
 .top-matches-panel { background: #fff; border-color: #e2e8ef; }.top-matches-head h2 { color: #142b48; }.top-matches-head a { color: #4780ae; }
 .day-tabs { background: #f2f5f9; }.day-tabs button { color: #59697b; }.day-tabs button.active { color: #fff; background: #102e53; }
 .top-match-row { border-color: #e3e8ed; }.top-match-copy small { color: #6b7887; }.top-match-copy strong { color: #17273b; }.top-match-copy em { color: #718091; }.top-match-score { color: #3da18f; }.top-match-row > svg { color: #91a1b1; }
@@ -1806,4 +1807,197 @@ body { background: #fff; color: #102033; }
   .header .logo { width: 167px; gap: 2px; overflow: visible; }
   .header .logo-emblem { width: 37px; height: 31px; background-image: url('/images/brand/bullwave-emblem.png'); background-size: contain; background-position: center; background-repeat: no-repeat; }
   .header .logo-wordmark { width: 119px; height: 26px; background-size: 132px 132px; background-position: -7px -84px; }
+}
+
+/* Mobile application shell */
+.mobile-betslip-trigger,
+.mobile-betslip-backdrop,
+.mobile-sheet-head { display: none; }
+
+@media (max-width: 900px) {
+  :root { --header-h: 64px; }
+  html { overflow-x: hidden; }
+  body { overflow-x: hidden; }
+  body, button, input, select { -webkit-tap-highlight-color: transparent; }
+  button, a, input, select { touch-action: manipulation; }
+
+  .header {
+    height: var(--header-h);
+    padding: 0 12px;
+    gap: 7px;
+  }
+  .mobile-menu { display: grid; flex: 0 0 40px; width: 40px; height: 40px; margin: 0; }
+  .header .logo { flex: 0 1 190px; width: 190px; min-width: 0; }
+  .header-right { margin-left: auto; min-width: 0; }
+  .header-search { flex: 0 0 40px; width: 40px; height: 40px; padding: 0; }
+  .header-right .icon-btn { width: 40px; height: 40px; }
+  .lang-menu { position: fixed; top: calc(var(--header-h) + 6px); right: 8px; left: 8px; width: auto; max-height: calc(100dvh - var(--header-h) - 14px); }
+  .notifications-popover { position: fixed; top: calc(var(--header-h) + 8px); right: 10px; left: 10px; width: auto; }
+
+  .shell { display: block; min-height: calc(100dvh - var(--header-h)); }
+  .main { width: 100%; max-width: 100%; padding: 16px 16px 94px; overflow: hidden; }
+  .content-page { overflow: visible; }
+
+  .overlay { align-items: stretch; justify-items: start; padding: 0; }
+  .overlay:has(.modal) { align-items: center; justify-items: center; padding: 10px; }
+  .menu-panel {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    width: min(88vw, 380px);
+    height: 100dvh;
+    padding: max(10px, env(safe-area-inset-top)) 10px calc(24px + env(safe-area-inset-bottom));
+    border-radius: 0 14px 14px 0;
+    box-shadow: 18px 0 60px rgba(0,0,0,.28);
+  }
+  .mobile-drawer-head, .mobile-sheet-head { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 2px 10px 10px 16px; }
+  .mobile-drawer-head strong { font-size: 18px; }
+  .menu-item { justify-content: flex-start; gap: 13px; min-height: 48px; border-radius: 8px; }
+  .menu-item svg { flex: 0 0 20px; }
+  .menu-item.active { background: #e7f0fa; color: #173858; font-weight: 750; }
+  .menu-item:last-child { gap: 8px; }
+
+  .mobile-betslip-trigger {
+    position: fixed;
+    z-index: 45;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 126px;
+    height: 48px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 24px;
+    background: #102e53;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(16,46,83,.32);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .mobile-betslip-trigger b { display: grid; place-items: center; min-width: 22px; height: 22px; margin-left: auto; border-radius: 50%; background: #fff; color: #102e53; font-size: 11px; }
+  .mobile-betslip-backdrop { position: fixed; z-index: 64; inset: 0; display: block; border: 0; background: rgba(8,19,31,.58); }
+  .betslip {
+    position: fixed;
+    z-index: 65;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: block;
+    width: 100%;
+    height: min(82dvh, 720px);
+    padding: 0 12px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    border: 0;
+    border-radius: 18px 18px 0 0;
+    transform: translateY(105%);
+    transition: transform 220ms ease;
+    box-shadow: 0 -18px 60px rgba(0,0,0,.28);
+  }
+  .betslip.mobile-open { transform: translateY(0); }
+  .betslip .mobile-sheet-head { position: sticky; z-index: 2; top: 0; margin: 0 -12px; padding: 8px 12px 6px 18px; background: inherit; border-bottom: 1px solid #e2e8ef; }
+  .betslip .slip-panel { margin-top: 10px; }
+  .betslip .slip-empty { min-height: 250px; }
+  .betslip .slip-rewards { min-height: 220px; }
+
+  .quick-carousel, .game-carousel { margin-inline: -4px; }
+  .quick-arrow { display: none; }
+  .quick-row, .game-row { padding-inline: 4px 18px; scroll-padding-left: 4px; }
+  .sport-filter { margin-right: -16px; padding-right: 16px; scroll-snap-type: x proximity; }
+  .sport-filter a { min-height: 44px; scroll-snap-align: start; }
+  .section-head, .content-section-title { min-width: 0; }
+  .section-head h2, .content-section-title h2 { min-width: 0; }
+  .match-grid, .casino-row, .promo-grid, .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .event, .market-grid { min-width: 0; max-width: 100%; }
+  .odds button, .tabs button, .day-tabs button { min-height: 44px; }
+  .footer { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 650px) {
+  .header { padding-inline: 8px; }
+  .header .logo { flex-basis: 154px; width: 154px; }
+  .header .logo-wordmark { width: 108px; background-size: 122px 122px; background-position: -7px -77px; }
+  .header-right > .notification-btn, .header-right .lang-wrap { display: none; }
+  .header-right > .btn-yellow { min-width: 68px; min-height: 40px; padding-inline: 11px; }
+  .main { padding: 12px 12px 90px; }
+
+  .page-intro { gap: 16px; margin-bottom: 16px; padding: 20px 18px; border-radius: 12px; }
+  .page-intro h1 { font-size: 28px; line-height: 1.08; }
+  .page-intro p { font-size: 13px; }
+  .page-intro-detail { align-items: center; }
+  .page-intro-stats { flex: 1; justify-content: flex-start; }
+  .page-intro-stats div { flex: 1 1 74px; }
+
+  .home-hero { height: 220px; border-radius: 8px; background-position: 61% center; }
+  .hero-message { top: 41px; left: 16px; right: 14px; }
+  .hero-message h1 { max-width: 245px; white-space: normal; font-size: 30px; }
+  .hero-message a { min-height: 44px; margin-top: 16px; padding: 9px 16px; }
+  .reference-home .sport-filter { margin-right: -12px; }
+  .reference-home .sport-filter a { min-width: 104px; }
+  .live-feature-card { height: auto; min-height: 300px; padding-bottom: 14px; }
+  .live-card-top { height: auto; min-height: 56px; flex-wrap: wrap; padding-block: 10px; }
+  .live-card-league { flex: 1; }
+  .live-card-innings { width: 100%; margin-left: 0; padding-left: 2px; font-size: 10px; }
+  .live-scoreboard { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); min-height: 108px; }
+  .live-team strong { max-width: 110px; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+  .live-lead { width: calc(100% - 24px); max-width: none; padding-inline: 10px; text-align: center; }
+  .live-card-actions { margin-inline: 12px; }
+  .live-card-actions a { min-height: 44px; text-align: center; white-space: normal; }
+  .top-matches-panel { min-height: 0; }
+  .popular-league-grid { gap: 8px; }
+  .popular-league { height: auto; min-height: 68px; }
+  .home-brand-strip { flex-wrap: wrap; justify-content: center; min-height: 96px; }
+  .home-brand-strip p { width: 100%; padding: 0; border: 0; text-align: center; white-space: normal; }
+
+  .banner, .hero-slider { min-height: 330px; }
+  .hero-slide { padding: 20px 20px 48px; }
+  .hero-arrow { width: 40px; height: 48px; }
+  .banner h1 { font-size: 30px; line-height: 1; }
+  .promotions-head { align-items: flex-start; gap: 8px; }
+  .promo-main { grid-template-columns: 1fr; }
+  .promo-art { min-height: 150px; order: -1; }
+
+  .match-grid, .casino-row, .promo-grid, .feature-grid, .account-grid { grid-template-columns: 1fr; }
+  .tier-grid { grid-template-columns: 1fr; }
+  .match-card { min-height: 0; }
+  .odds { gap: 8px; }
+  .odd { min-width: 0; }
+  .market { padding: 12px; }
+  .market-head, .match-summary { gap: 8px; }
+  .game-spotlight { grid-template-columns: 1fr; }
+  .game-spotlight-art { height: 145px; }
+  .payment-shell { padding: 14px; }
+  .pay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .modal { width: 100%; max-height: calc(100dvh - 20px); border-radius: 12px; }
+  .login-modal { padding: 18px 16px 20px; }
+  .otp-row { flex-wrap: wrap; }
+  .otp-row .input { flex-basis: 170px; }
+  .otp-row .btn { flex: 1; }
+  .country-menu { position: fixed; z-index: 90; top: 12%; right: 12px; left: 12px; width: auto; max-height: 76dvh; }
+  .country-list { max-height: 58dvh; }
+  .search-panel { padding: 14px 12px; }
+  .search-panel > .btn { min-height: 44px; }
+  .footer-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+}
+
+@media (max-width: 380px) {
+  .header .logo { flex-basis: 118px; width: 118px; }
+  .header .logo-emblem { width: 31px; height: 29px; }
+  .header .logo-wordmark { width: 86px; height: 24px; background-size: 105px 105px; background-position: -6px -66px; }
+  .header-search { flex-basis: 36px; width: 36px; }
+  .header-right > .btn-yellow { min-width: 60px; padding-inline: 8px; font-size: 12px; }
+  .mobile-menu { flex-basis: 36px; width: 36px; }
+  .hero-message h1 { font-size: 27px; }
+  .live-team .country-flag-image { width: 40px; height: 40px; }
+  .live-center-score strong { font-size: 26px; }
+  .live-card-actions { flex-direction: column; }
+  .popular-league-grid { grid-template-columns: 1fr; }
+  .page-intro-stats div { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .betslip { transition: none; }
 }

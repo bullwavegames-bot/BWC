@@ -252,9 +252,21 @@ function Betslip() {
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
   const [mode, setMode] = useState('System')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   return (
-    <aside className="betslip">
+    <>
+    <button className="mobile-betslip-trigger" type="button" onClick={() => setMobileOpen(true)} aria-label={`Open bet slip with ${betslip.length} selections`}>
+      <Icon name="ticket" size={20} />
+      <span>Bet Slip</span>
+      {betslip.length > 0 && <b>{betslip.length}</b>}
+    </button>
+    {mobileOpen && <button className="mobile-betslip-backdrop" type="button" aria-label="Close bet slip" onClick={() => setMobileOpen(false)} />}
+    <aside className={`betslip ${mobileOpen ? 'mobile-open' : ''}`} aria-label="Bet slip">
+      <div className="mobile-sheet-head">
+        <strong>Bet Slip</strong>
+        <button className="icon-btn" type="button" onClick={() => setMobileOpen(false)} aria-label="Close bet slip"><Icon name="close" /></button>
+      </div>
       <div className="slip-panel">
       <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}</h3>
       <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
@@ -307,6 +319,7 @@ function Betslip() {
       </div>
       <div className="slip-rewards"><span className="reward-crown" aria-hidden="true">♛</span><h3>Exclusive Rewards<br />for Members</h3><ul><li>Higher Odds</li><li>Early Access</li><li>Exclusive Promotions</li><li>Fast Withdrawals</li></ul><NavLink to="/vip">Join Now <span aria-hidden="true">→</span></NavLink></div>
     </aside>
+    </>
   )
 }
 
@@ -1289,8 +1302,11 @@ function MenuDrawer() {
   return (
     <div className="overlay" onClick={() => setMenuOpen(false)}>
       <div className="menu-panel" onClick={(e) => e.stopPropagation()}>
-        <NavLink className="menu-item" to="/" onClick={() => setMenuOpen(false)}>Sport</NavLink>
-        <NavLink className="menu-item" to="/casino/live-casino" onClick={() => setMenuOpen(false)}>Casino</NavLink>
+        <div className="mobile-drawer-head"><strong>Explore</strong><button className="icon-btn" type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu"><Icon name="close" /></button></div>
+        <NavLink className="menu-item" to="/" onClick={() => setMenuOpen(false)}><Icon name="home" />Home</NavLink>
+        <NavLink className="menu-item" to="/live" onClick={() => setMenuOpen(false)}><Icon name="live" />Live</NavLink>
+        {sports.filter((sport) => !['promos', 'parlays'].includes(sport.id)).map((sport) => <NavLink key={sport.id} className="menu-item" to={sport.to} onClick={() => setMenuOpen(false)}><Icon name={sport.icon} />{sport.name}</NavLink>)}
+        <NavLink className="menu-item" to="/casino/live-casino" onClick={() => setMenuOpen(false)}><Icon name="casino" />Games</NavLink>
         <NavLink className="menu-item" to="/promotions" onClick={() => setMenuOpen(false)}>Promotions</NavLink>
         <NavLink className="menu-item" to="/vip" onClick={() => setMenuOpen(false)}>Bullwave Club VIP</NavLink>
         <NavLink className="menu-item" to="/account" onClick={() => setMenuOpen(false)}>My Account</NavLink>
