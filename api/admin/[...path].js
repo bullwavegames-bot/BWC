@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     body: req.body,
   }
 
-  if ((rest === 'players' || rest === '') && req.method === 'POST') {
+  if (rest === 'players' && req.method === 'POST') {
     const q = encodeURIComponent(String(req.body?.q || ''))
     forwarded.method = 'GET'
     forwarded.body = undefined

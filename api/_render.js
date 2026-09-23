@@ -1,3 +1,5 @@
+import jwt from 'jsonwebtoken'
+
 const RENDER_API = 'https://bwc-wgbu.onrender.com'
 
 export function readAdminKey(req) {
@@ -10,6 +12,21 @@ export function readAdminKey(req) {
   return ''
 }
 
+export function readAdminJwt(req) {
+  const auth = String(req.headers?.authorization || '')
+  if (!auth.startsWith('Bearer ')) return null
+  const secret = String(process.env.JWT_SECRET || '').trim()
+  const adminId = String(process.env.ADMIN_ID || '').trim()
+  if (!secret || !adminId) return null
+  try {
+    const payload = jwt.verify(auth.slice(7), secret)
+    if (payload.role === 'admin' && payload.adminId === adminId) return { id: adminId, email: adminId }
+  } catch {
+    return null
+  }
+  return null
+}
+
 export async function proxyRender(path, req) {
   const headers = { 'Content-Type': 'application/json' }
   const incomingAuth = String(req.headers?.authorization || '')
@@ -20,6 +37,11 @@ export async function proxyRender(path, req) {
     if (!incomingAuth || /^Admin\s+/i.test(incomingAuth)) {
       headers.Authorization = `Admin ${adminKey}`
     }
+  }
+  const envKey = String(process.env.ADMIN_KEY || process.env.SUPER_ADMIN_KEY || '').trim()
+  if (!headers['x-admin-key'] && envKey && (readAdminJwt(req) || String(path || '').startsWith('/api/admin/'))) {
+    const jwtStaff = readAdminJwt(req)
+    if (jwtStaff) headers['x-admin-key'] = envKey
   }
   const res = await fetch(`${RENDER_API}${path}`, {
     method: req.method || 'GET',
@@ -59,6 +81,8 @@ export function isAllowlistedProfile(user) {
 }
 
 export async function legacyAdminMe(req) {
+  const jwtStaff = readAdminJwt(req)
+  if (jwtStaff) return { status: 200, data: { ok: true, staff: jwtStaff.email, via: 'admin-id' } }
   const key = readAdminKey(req)
   if (key) {
     const probe = await proxyRender('/api/admin/players?q=', {

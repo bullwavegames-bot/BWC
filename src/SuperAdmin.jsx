@@ -34,7 +34,7 @@ export function SuperAdmin() {
   const cleanError = (err) => {
     const raw = String(err || '')
     if (/<!DOCTYPE|Cannot GET|Cannot POST/i.test(raw)) {
-      return 'The API has not picked up the Super Admin routes yet. Paste ADMIN_KEY, or wait for Render to finish deploying.'
+      return 'Admin login has not reached the API yet. After Vercel deploys, set ADMIN_ID, ADMIN_PASSWORD_HASH, JWT_SECRET, and ADMIN_KEY on Vercel and Render.'
     }
     return raw || 'Request failed'
   }
@@ -76,7 +76,7 @@ export function SuperAdmin() {
     try {
       const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, password: adminPassword }) })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Admin sign-in failed')
+      if (!res.ok) throw new Error(cleanError(data.error || 'Admin sign-in failed'))
       sessionStorage.setItem('bwc_admin_token', data.token)
       setAdminToken(data.token)
       setAdminPassword('')
