@@ -380,7 +380,7 @@ function Header() {
         <NavLink to="/" end>Exchange</NavLink>
         <NavLink to="/casino/live-casino">Live Casino</NavLink>
         <NavLink to="/casino/slots">Slots</NavLink>
-        <NavLink to="/casino/virtual-sports">Fantasy Games</NavLink>
+        <NavLink to="/casino/virtual-sports">Fantasy</NavLink>
         <NavLink to="/casino/tv-games">Lottery</NavLink>
         <NavLink to="/casino/instant-games">Crash</NavLink>
       </nav>
