@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { consumePhoneVerification, normalizePhone, sendOtp, verifyOtp, isPhoneVerified } from './otp.js'
+import { createDepositOrder, razorpayPublicConfig, verifyDepositPayment } from './razorpay.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
 import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
 
@@ -249,13 +250,39 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ user: publicUser(req.user) })
 })
 
-app.post('/api/wallet/deposit', auth, (req, res) => {
-  const amount = Number(req.body?.amount)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return res.status(400).json({ error: 'Enter a valid amount' })
+app.get('/api/me/bets', auth, (req, res) => {
+  res.json({ bets: bets.filter((b) => b.userId === req.user.id) })
+})
+
+app.get('/api/payments/config', (_req, res) => {
+  res.json(razorpayPublicConfig())
+})
+
+app.post('/api/payments/create-order', auth, async (req, res) => {
+  try {
+    const order = await createDepositOrder(req.user, req.body?.amount, req.body?.method)
+    res.json(order)
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not create Razorpay order' })
   }
-  req.user.balance = Number((req.user.balance + amount).toFixed(2))
-  res.json({ user: publicUser(req.user) })
+})
+
+app.post('/api/payments/verify', auth, (req, res) => {
+  try {
+    const result = verifyDepositPayment(req.user, req.body)
+    res.json({ user: publicUser(req.user), ...result })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not verify payment' })
+  }
+})
+
+app.post('/api/wallet/deposit', auth, async (req, res) => {
+  try {
+    const order = await createDepositOrder(req.user, req.body?.amount, req.body?.method)
+    res.json(order)
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not start deposit' })
+  }
 })
 
 app.post('/api/wallet/withdraw', auth, (req, res) => {
@@ -268,11 +295,7 @@ app.post('/api/wallet/withdraw', auth, (req, res) => {
   res.json({ user: publicUser(req.user) })
 })
 
-app.get('/api/bets', auth, (req, res) => {
-  res.json({ bets: bets.filter((b) => b.userId === req.user.id) })
-})
-
-app.post('/api/bets', auth, (req, res) => {
+function placeBet(req, res) {
   const selections = Array.isArray(req.body?.selections) ? req.body.selections : []
   const stake = Number(req.body?.stake)
   if (!selections.length) return res.status(400).json({ error: 'Add at least one selection' })
@@ -293,7 +316,14 @@ app.post('/api/bets', auth, (req, res) => {
   }
   bets.push(bet)
   res.status(201).json({ bet, user: publicUser(req.user) })
+}
+
+app.get('/api/bets', auth, (req, res) => {
+  res.json({ bets: bets.filter((b) => b.userId === req.user.id) })
 })
+
+app.post('/api/bets', auth, placeBet)
+app.post('/api/me/bets', auth, placeBet)
 
 app.listen(PORT, () => {
   console.log(`Bullwave Club API on port ${PORT}`)

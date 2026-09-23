@@ -228,6 +228,22 @@ export function AppProvider({ children }) {
     throw new Error(lastErr?.message || 'Wallet moves go through Bullwave Club billing.')
   }
 
+  const startRazorpayDeposit = async (amount, method = 'upi') => {
+    if (!token) {
+      setAuthMode('login')
+      throw new Error('Log in first')
+    }
+    if (!Number.isFinite(amount) || amount < 100) throw new Error('Minimum Razorpay deposit is ₹100.')
+    return api('/api/payments/create-order', { method: 'POST', token, body: { amount, method } })
+  }
+
+  const confirmRazorpayDeposit = async (payload) => {
+    if (!token) throw new Error('Log in first')
+    const data = await api('/api/payments/verify', { method: 'POST', token, body: payload })
+    await hydrateAccount(token, user)
+    return data
+  }
+
   const value = useMemo(
     () => ({
       betslip,
@@ -257,6 +273,8 @@ export function AppProvider({ children }) {
       logout,
       myBets,
       moveMoney,
+      startRazorpayDeposit,
+      confirmRazorpayDeposit,
       catalogMatches,
       clubGames,
       language,

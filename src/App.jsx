@@ -1132,14 +1132,14 @@ function saveWalletTx(entry) {
 }
 
 const PAY_METHODS = [
-  { id: 'upi', name: 'UPI', mark: 'UPI', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'GPay, PhonePe, BHIM or any UPI app. Use an ID in your own name.' },
-  { id: 'paytm', name: 'Paytm', mark: 'PT', time: '1–5 min', min: 100, max: 50000, fee: 'Free', note: 'Paytm wallet or Paytm UPI. Failed payments reverse automatically.' },
-  { id: 'phonepe', name: 'PhonePe', mark: 'Pe', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'PhonePe UPI. Keep the app open until you see Success.' },
-  { id: 'netbanking', name: 'Net banking', mark: 'NB', time: '5–30 min', min: 500, max: 200000, fee: 'Free', note: 'All major Indian banks. IMPS/NEFT may take longer on bank holidays.' },
-  { id: 'card', name: 'Debit card', mark: 'DC', time: '5–15 min', min: 500, max: 50000, fee: 'Free', note: 'Visa / Mastercard debit. Credit cards are not accepted.' },
-  { id: 'usdt', name: 'USDT', mark: '₮', time: '10–30 min', min: 800, max: 500000, fee: 'Network', note: 'TRC20 is cheapest. Send only USDT to the address shown after you confirm.' },
-  { id: 'btc', name: 'Bitcoin', mark: '₿', time: '30–60 min', min: 2000, max: 500000, fee: 'Network', note: 'Wait for 1 confirmation. Wrong-network sends cannot be recovered.' },
-  { id: 'eth', name: 'Ethereum', mark: 'Ξ', time: '10–20 min', min: 2000, max: 500000, fee: 'Network', note: 'ERC-20 only. Check gas before you send.' },
+  { id: 'upi', name: 'UPI', mark: 'UPI', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Paid through Razorpay test checkout. Use any UPI app in the test flow.' },
+  { id: 'paytm', name: 'Paytm', mark: 'PT', time: 'Instant', min: 100, max: 50000, fee: 'Free', note: 'Razorpay wallet/UPI test. Failed payments do not credit the club wallet.' },
+  { id: 'phonepe', name: 'PhonePe', mark: 'Pe', time: 'Instant', min: 100, max: 100000, fee: 'Free', note: 'Razorpay UPI test. Keep the checkout open until Success.' },
+  { id: 'netbanking', name: 'Net banking', mark: 'NB', time: 'Instant', min: 100, max: 200000, fee: 'Free', note: 'Razorpay net banking test. Success credits cash immediately after verify.' },
+  { id: 'card', name: 'Debit card', mark: 'DC', time: 'Instant', min: 100, max: 50000, fee: 'Free', note: 'Razorpay test card: 4111 1111 1111 1111 · any future expiry · CVV 123.' },
+  { id: 'usdt', name: 'USDT', mark: '₮', time: '—', min: 800, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
+  { id: 'btc', name: 'Bitcoin', mark: '₿', time: '—', min: 2000, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
+  { id: 'eth', name: 'Ethereum', mark: 'Ξ', time: '—', min: 2000, max: 500000, fee: 'Network', crypto: true, note: 'Crypto is not collected by Razorpay. Use UPI or card for test deposits.' },
 ]
 
 const WALLET_FACTS = [
@@ -1238,8 +1238,21 @@ function Account() {
   )
 }
 
+function loadRazorpay() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Checkout only runs in the browser.'))
+  if (window.Razorpay) return Promise.resolve(window.Razorpay)
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = () => (window.Razorpay ? resolve(window.Razorpay) : reject(new Error('Razorpay failed to load.')))
+    script.onerror = () => reject(new Error('Could not load Razorpay Checkout.'))
+    document.body.appendChild(script)
+  })
+}
+
 function Deposit({ type }) {
-  const { moveMoney, setAuthMode, loggedIn, user } = useApp()
+  const { moveMoney, startRazorpayDeposit, confirmRazorpayDeposit, setAuthMode, loggedIn, user } = useApp()
   const withdrawing = type === 'withdraw'
   const [method, setMethod] = useState('upi')
   const [amount, setAmount] = useState(withdrawing ? '200' : '500')
@@ -1284,18 +1297,65 @@ function Deposit({ type }) {
     }
     setBusy(true)
     try {
-      await moveMoney(withdrawing ? 'withdraw' : 'deposit', value, { method: pay.id, destination: destination.trim() })
-      saveWalletTx({
-        id: `${Date.now()}`,
-        userId: user?.id,
-        type: withdrawing ? 'withdraw' : 'deposit',
-        method: pay.name,
-        amount: value,
-        status: withdrawing ? 'In review' : 'Credited',
-        at: new Date().toISOString(),
+      if (withdrawing) {
+        await moveMoney('withdraw', value, { method: pay.id, destination: destination.trim() })
+        saveWalletTx({
+          id: `${Date.now()}`,
+          userId: user?.id,
+          type: 'withdraw',
+          method: pay.name,
+          amount: value,
+          status: 'In review',
+          at: new Date().toISOString(),
+        })
+        setMessage(`Withdrawal of ${rupees(value)} sent for review. ${pay.time}.`)
+        setTick((n) => n + 1)
+        return
+      }
+      if (pay.crypto) {
+        setMessage('Razorpay test checkout is INR only. Use UPI, card, PhonePe, Paytm or net banking.')
+        return
+      }
+      const Razorpay = await loadRazorpay()
+      const order = await startRazorpayDeposit(value, pay.id)
+      await new Promise((resolve, reject) => {
+        const checkout = new Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          name: 'Bullwave Club',
+          description: `Wallet deposit ${rupees(value)}`,
+          order_id: order.orderId,
+          prefill: {
+            name: 'Bullwave member',
+            email: user?.email || '',
+            contact: String(user?.phone || '').replace(/^\+91/, ''),
+          },
+          notes: { method: pay.id },
+          theme: { color: '#61D6B0' },
+          modal: { ondismiss: () => reject(new Error('Payment cancelled.')) },
+          handler: async (response) => {
+            try {
+              await confirmRazorpayDeposit(response)
+              saveWalletTx({
+                id: response.razorpay_payment_id || `${Date.now()}`,
+                userId: user?.id,
+                type: 'deposit',
+                method: `Razorpay · ${pay.name}`,
+                amount: value,
+                status: 'Credited',
+                at: new Date().toISOString(),
+              })
+              setMessage(`${rupees(value)} added via Razorpay (${pay.name}).`)
+              setTick((n) => n + 1)
+              resolve()
+            } catch (err) {
+              reject(err)
+            }
+          },
+        })
+        checkout.open()
       })
-      setMessage(withdrawing ? `Withdrawal of ${rupees(value)} sent for review. ${pay.time}.` : `${rupees(value)} added via ${pay.name}.`)
-      setTick((n) => n + 1)
     } catch (err) {
       setMessage(err.message)
     } finally {
@@ -1345,7 +1405,7 @@ function Deposit({ type }) {
         </div>
         {message && <p className={`hint ${/fail|error|invalid|only|minimum|add /i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
         <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>
-          {busy ? 'Please wait…' : withdrawing ? 'Request withdrawal' : 'Deposit now'}
+          {busy ? 'Please wait…' : withdrawing ? 'Request withdrawal' : 'Pay with Razorpay'}
         </button>
         <p className="wallet-legal">By continuing you confirm you are 18+, the payment account is yours, and you have read the wallet notes below.</p>
       </div>
@@ -1361,11 +1421,11 @@ function Deposit({ type }) {
           </>
         ) : (
           <>
-            <li>Minimum {rupees(pay.min)} on {pay.name}. Pending bank or crypto payments can take the times listed above.</li>
-            <li>A failed UPI still holds money at the bank for a short time — wait for the reverse before retrying.</li>
-            <li>Crypto: copy the address from the next screen only. Wrong chain or token cannot be refunded.</li>
-            <li>Deposits are for play on Bullwave Club. Chargebacks may freeze the wallet.</li>
-            <li>Keep the payment screenshot until the balance updates.</li>
+            <li>INR deposits go through Razorpay test checkout. The wallet is credited only after the payment signature is verified.</li>
+            <li>Test card: 4111 1111 1111 1111, any future date, CVV 123. UPI/net banking follow Razorpay’s test screens.</li>
+            <li>Minimum {rupees(Math.max(100, pay.min))} on {pay.name}. Cancelled checkouts do not add cash.</li>
+            <li>Crypto is not collected by this Razorpay key. Use UPI or card while in test mode.</li>
+            <li>Keep the payment id from Checkout until the balance updates.</li>
           </>
         )}
       </ul>
