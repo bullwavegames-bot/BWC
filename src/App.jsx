@@ -1255,6 +1255,42 @@ function HomeGameRail({ title, to, items }) {
   )
 }
 
+function HomeGameShowcase({ catalog, loading }) {
+  const categories = [
+    { id: 'slots', label: 'Slots', to: '/casino/slots' },
+    { id: 'live', label: 'Live Casino', to: '/casino/live-casino' },
+    { id: 'instant', label: 'Instant Games', to: '/casino/instant-games' },
+    { id: 'virtual', label: 'Virtual Sport', to: '/casino/virtual-sports' },
+    { id: 'tv', label: 'TV Games', to: '/casino/tv-games' },
+  ]
+  const [active, setActive] = useState('slots')
+  const current = categories.find((category) => category.id === active) || categories[0]
+  const items = catalog.filter((game) => game.cat === active).slice(0, 18)
+
+  return (
+    <section className="home-game-showcase" aria-labelledby="featured-games-title">
+      <div className="home-game-showcase-head">
+        <div><span className="eyebrow">PLAY IN DEMO MODE</span><h2 id="featured-games-title">Featured Games</h2></div>
+        <NavLink to={current.to}>View all <Icon name="chevron" size={15} /></NavLink>
+      </div>
+      <div className="home-game-tabs" role="tablist" aria-label="Game categories">
+        {categories.map((category) => <button key={category.id} type="button" role="tab" aria-selected={active === category.id} className={active === category.id ? 'active' : ''} onClick={() => setActive(category.id)}>{category.label}</button>)}
+      </div>
+      {loading ? <SkeletonGrid count={12} type="games" /> : items.length ? (
+        <div className="home-game-grid">
+          {items.map((game, index) => (
+            <NavLink key={game.id} to={casinoGameTo(game)} className="home-featured-game" aria-label={`Play ${game.name}`}>
+              <div className="home-featured-game-art"><GameArtwork game={game} /></div>
+              <span className="home-featured-game-copy"><strong>{game.name}</strong>{game.provider ? <small>{game.provider}</small> : <small>Play demo</small>}</span>
+              {index < 6 ? <span className="home-featured-badge">Featured</span> : null}
+            </NavLink>
+          ))}
+        </div>
+      ) : <EmptyState icon="casino" title="Games are loading" detail="Try another category while this collection is being updated." action={{ to: '/casino/slots', label: 'Browse games' }} />}
+    </section>
+  )
+}
+
 function HomeEventCard({ m }) {
   const { addBet, betslip } = useApp()
   const selected = (id) => betslip.some((b) => b.id === id)
@@ -1363,7 +1399,7 @@ function ClubHomeFooter() {
 }
 
 function Home() {
-  const { catalogMatches: matches, clubGames, favorites, recentMatches } = useApp()
+  const { catalogMatches: matches, clubGames, favorites, recentMatches, catalogLoading } = useApp()
   const featured = matches.find((m) => m.live) || matches[0]
   const [matchDay, setMatchDay] = useState('Today')
   const [campaign, setCampaign] = useState(0)
@@ -1408,6 +1444,7 @@ function Home() {
         {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
+      <HomeGameShowcase catalog={catalog} loading={catalogLoading} />
       <ExchangeTable matches={matches} title="Sports exchange" />
       <section className="personalized-home">
         <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
