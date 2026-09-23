@@ -1308,6 +1308,7 @@ function Home() {
   const { catalogMatches: matches, clubGames, favorites, recentMatches } = useApp()
   const featured = matches.find((m) => m.live) || matches[0]
   const [matchDay, setMatchDay] = useState('Today')
+  const [campaign, setCampaign] = useState(0)
   const todayMatches = [matches.find((m) => m.sport === 'cricket' && m.live), matches.find((m) => m.sport === 'football' && !m.live), matches.find((m) => m.sport === 'tennis'), matches.find((m) => m.sport === 'basketball')].filter(Boolean)
   const topMatches = matchDay === 'Today' ? (todayMatches.length ? todayMatches : matches.slice(0, 4)) : matchDay === 'Tomorrow' ? matches.filter((m) => /TOMORROW/.test(m.time)).slice(0, 4) : matches.slice(0, 4)
   const personalIds = [...recentMatches, ...favorites]
@@ -1327,11 +1328,22 @@ function Home() {
   const exclusiveGames = catalog.filter((g) => g.cat === 'live' || g.cat === 'instant').slice(0, 8)
   const virtualCricket = matches.filter((m) => m.sport === 'virtual-cricket')
   const footballRail = matches.filter((m) => m.sport === 'football').slice(0, 6)
+  const campaigns = [
+    { kicker: 'BIGGER GAMES. HIGHER THRILLS.', title: <>RIDE THE <span>WAVE</span></>, detail: 'Live sports. Real action. Bigger rewards.', cta: 'Explore Live Events', to: '/live', image: 'sports-exchange-v2.png', position: 'center' },
+    { kicker: 'RACING FROM DUBAI', title: <>DESERT <span>SPEED</span></>, detail: 'Professional camel racing and live exchange markets.', cta: 'Open Camel Racing', to: '/sport/camel-racing', image: 'camel-racing-dubai-v1.png', position: 'center' },
+    { kicker: 'LIVE CRICKET MARKETS', title: <>FOLLOW EVERY <span>BALL</span></>, detail: 'Scores, fixtures and markets in one focused view.', cta: 'View Cricket', to: '/sport/cricket', image: 'cricket-champion-v1.png', position: 'center 42%' },
+  ]
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+    const timer = window.setInterval(() => setCampaign((current) => (current + 1) % campaigns.length), 6500)
+    return () => window.clearInterval(timer)
+  }, [])
   return (
     <div className="home-desk reference-home">
-      <section className="home-hero" aria-label="Bullwave Club sports">
-        <div className="hero-message"><p>BIGGER GAMES. HIGHER THRILLS.</p><h1>RIDE THE <span>WAVE</span></h1><div>Live sports. Real action. Bigger rewards.</div><NavLink to="/live">Explore Live Events <span aria-hidden="true">→</span></NavLink></div>
+      <section className="home-hero" aria-label="Featured campaigns" aria-roledescription="carousel">
+        {campaigns.map((slide, index) => <article key={slide.image} className={`home-campaign-slide ${campaign === index ? 'is-active' : ''}`} aria-hidden={campaign !== index} style={{ backgroundImage: `linear-gradient(90deg,rgba(4,13,16,.9),rgba(4,13,16,.08) 66%),url('${import.meta.env.BASE_URL}images/hero/${slide.image}')`, backgroundPosition: slide.position }}><div className="hero-message"><p>{slide.kicker}</p><h1>{slide.title}</h1><div>{slide.detail}</div><NavLink to={slide.to} tabIndex={campaign === index ? 0 : -1}>{slide.cta} <span aria-hidden="true">→</span></NavLink></div></article>)}
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
+        <div className="home-campaign-controls"><button type="button" onClick={() => setCampaign((campaign - 1 + campaigns.length) % campaigns.length)} aria-label="Previous campaign"><span aria-hidden="true">‹</span></button><div>{campaigns.map((slide, index) => <button key={slide.image} type="button" className={campaign === index ? 'on' : ''} onClick={() => setCampaign(index)} aria-label={`Show campaign ${index + 1}`} aria-pressed={campaign === index} />)}</div><button type="button" onClick={() => setCampaign((campaign + 1) % campaigns.length)} aria-label="Next campaign"><span aria-hidden="true">›</span></button></div>
       </section>
       <nav className="sport-filter" aria-label="Browse by sport">
         {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}

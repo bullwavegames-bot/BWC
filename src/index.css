@@ -1714,7 +1714,14 @@ body { font-family: var(--font); background: var(--navy); }
 .side-club button { display: block; width: 100%; border: 0; background: var(--mint); border-radius: 7px; padding: 8px; color: #102020; font-weight: 800; font-size: 12px; }
 .main { padding: 21px 19px 0; background: #0b1517; }
 .reference-home { min-width: 0; }
-.home-hero { position: relative; height: 252px; overflow: hidden; border-radius: 9px; border: 1px solid #26363c; background: linear-gradient(90deg,rgba(4,13,16,.86),rgba(4,13,16,.06) 63%,rgba(3,11,13,.12)),url('/images/hero/sports-exchange-v2.png') center center / cover; }
+.home-hero { position: relative; height: 238px; overflow: hidden; border-radius: 5px; border: 1px solid #26363c; background: #081416; }
+.home-campaign-slide { position: absolute; inset: 0; background-size: cover; opacity: 0; visibility: hidden; transition: opacity 380ms ease; }
+.home-campaign-slide.is-active { opacity: 1; visibility: visible; }
+.home-campaign-controls { position: absolute; z-index: 4; right: 14px; bottom: 12px; display: flex; align-items: center; gap: 7px; }
+.home-campaign-controls > button { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.24); border-radius: 4px; background: rgba(7,18,20,.72); color: #fff; font-size: 19px; }
+.home-campaign-controls > div { display: flex; gap: 5px; }
+.home-campaign-controls > div button { width: 18px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: rgba(255,255,255,.4); }
+.home-campaign-controls > div button.on { background: var(--mint); }
 .hero-message { position: absolute; left: 34px; top: 53px; color: #fff; }
 .hero-message p { margin: 0 0 8px; font-size: 10px; font-weight: 700; letter-spacing: 3px; }
 .hero-message h1 { margin: 0 0 2px; font-size: clamp(32px,3.3vw,52px); line-height: 1.03; font-weight: 900; letter-spacing: 0; white-space: nowrap; }
@@ -3025,9 +3032,35 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .exchange-market-tabs button { flex: none; min-height: 30px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 9px; font-weight: 800; }
 .exchange-market-tabs button.on { border-color: var(--mint); color: var(--mint); }
 .exchange-market-drawer .exchange-expanded { border-bottom: 0; }
+.exchange-event:nth-of-type(odd) .exchange-row { background: rgba(255,255,255,.016); }
+.exchange-event:nth-of-type(even) .exchange-row { background: rgba(0,0,0,.08); }
+.reference-home .personalized-home { margin-top: 12px; padding: 11px 0; border-width: 1px 0; border-radius: 0; background: transparent; }
+.reference-home .personalized-head { margin-bottom: 8px; }
+.reference-home .personalized-head h2 { font-size: 17px; }
+.reference-home .personalized-match { padding: 8px; border-radius: 4px; background: transparent; }
+.reference-home .exchange { margin-block: 14px 16px; border-radius: 4px; }
+.reference-home .home-content-grid { gap: 10px; margin-top: 16px; }
+.reference-home .top-matches-panel, .reference-home .live-feature-card { border-radius: 4px; }
+.reference-home .popular-leagues { margin-top: 15px; }
+.reference-home .popular-league-grid { gap: 6px; }
+.reference-home .popular-league { height: 58px; border-radius: 4px; background: transparent; }
+.reference-home .home-brand-strip { display: none; }
+.reference-home .home-discover { margin-block: 16px 24px; gap: 18px; }
+.reference-home .home-rail { padding-top: 13px; border-top: 1px solid var(--line); }
+.reference-home .home-rail-head { margin-bottom: 8px; }
+.reference-home .home-rail-head h2 { font-size: 15px; }
+.reference-home .home-game-scroller, .reference-home .home-match-scroller { gap: 7px; }
+.reference-home .home-game-tile { flex-basis: 105px; min-width: 105px; }
+.reference-home .home-game-art { height: 78px; border-radius: 4px; }
+.reference-home .home-event-card { padding: 8px 9px 9px; border-radius: 4px; background: transparent; }
+.reference-home .home-event-teams { margin-block: 7px 9px; }
+.reference-home .home-event-odds .odd { min-height: 42px; }
+.reference-home .club-home-footer { padding-top: 16px; }
 html[data-theme="light"] .header-wallet, html[data-theme="light"] .account-menu, html[data-theme="light"] .reference-home > .quick-carousel { background: #fff; }
 html[data-theme="light"] .account-menu a, html[data-theme="light"] .account-menu button { color: #142237; }
 html[data-theme="light"] .exchange-market-drawer { background: #f5f8fa; }
+html[data-theme="light"] .exchange-event:nth-of-type(odd) .exchange-row { background: #fff; }
+html[data-theme="light"] .exchange-event:nth-of-type(even) .exchange-row { background: #f7f9fb; }
 .camel-racing-banner { position: relative; min-height: 210px; margin: 0 0 14px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(90deg,rgba(5,15,17,.88),rgba(5,15,17,.12) 62%),url('/images/hero/camel-racing-dubai-v1.png') center / cover; }
 .camel-racing-banner > div { position: absolute; top: 50%; left: clamp(18px,4vw,38px); width: min(380px,72%); transform: translateY(-50%); }
 .camel-racing-banner span { color: var(--mint); font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
@@ -3073,6 +3106,9 @@ html[data-theme="light"] .exchange-event-copy { color: #142237; }
   .announcement-strip > span svg { flex: none; }
   .reference-home > .quick-carousel { margin-inline: -12px; border-right: 0; border-left: 0; border-radius: 0; }
   .exchange-market-tabs { padding-left: 37px; }
+  .home-campaign-slide { background-position: 60% center !important; }
+  .home-campaign-controls { right: 9px; bottom: 8px; }
+  .home-campaign-controls > button { width: 36px; height: 36px; }
 }
 .ops-staff { display: inline-flex; align-items: center; gap: 9px; }
 .ops-staff button { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--muted); font-size: 9px; font-weight: 800; }
