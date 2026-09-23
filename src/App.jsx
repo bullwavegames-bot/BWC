@@ -1115,6 +1115,24 @@ function bonusCash(user) {
   return Number.isFinite(n) ? n : 0
 }
 
+function formatWalletPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '')
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`
+  }
+  if (digits.length === 10) return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`
+  return String(phone || '').trim()
+}
+
+function walletIdentity(user) {
+  const bits = [
+    formatWalletPhone(user?.phone),
+    user?.email,
+    user?.accountNumber ? `A/c ${user.accountNumber}` : '',
+  ].filter(Boolean)
+  return bits.join('  ·  ')
+}
+
 function loadWalletTx(userId) {
   try {
     const all = JSON.parse(localStorage.getItem('bwc_wallet_tx') || '[]')
@@ -1146,7 +1164,7 @@ const WALLET_FACTS = [
   { title: 'Min. deposit', body: '₹100 on UPI · ₹500 on bank/card' },
   { title: 'Min. withdrawal', body: '₹200 cash. Bonus cannot be cashed out.' },
   { title: 'Daily cashout cap', body: '₹2,00,000 until VIP Gold' },
-  { title: 'KYC', body: 'PAN + matching UPI/bank required before the first withdrawal' },
+  { title: 'First cashout', body: 'Name on UPI or bank must match the mobile number on this account' },
   { title: 'Timing', body: 'UPI minutes · Bank up to 24h · Crypto after network confirm' },
   { title: '18+ only', body: 'Play with money you can afford to lose. Set limits anytime.' },
 ]
@@ -1184,15 +1202,19 @@ function Account() {
         title="My wallet"
         description="Cash you can bet or withdraw, plus bonus funds, limits and the details every member should know before moving money."
         icon="shield"
-        stats={[{ label: 'Status', value: loggedIn ? 'Member' : 'Guest' }, { label: 'Available', value: rupees(cash) }]}
+        stats={[{ label: 'Status', value: loggedIn ? 'Active' : 'Guest' }, { label: 'Available', value: rupees(cash) }]}
       />
       <div className="card wallet-card">
-        <div className="wallet-top"><span className="eyebrow">AVAILABLE CASH</span><span className="wallet-kyc">{loggedIn ? 'KYC pending' : 'Sign in'}</span></div>
+        <div className="wallet-top">
+          <span className="eyebrow">AVAILABLE CASH</span>
+          <span className={`wallet-status ${loggedIn ? 'is-active' : ''}`}>{loggedIn ? 'Active' : 'Sign in'}</span>
+        </div>
         <div className="wallet-balance">{rupees(cash)}</div>
-        <div className="wallet-user">{loggedIn ? (user?.phone || user?.email || user?.accountNumber) : 'Sign in to deposit, withdraw and track activity'}</div>
+        <div className="wallet-user">{loggedIn ? walletIdentity(user) || 'Member account' : 'Sign in to deposit, withdraw and track activity'}</div>
+        {bonusLabel ? <div className="wallet-promo">{bonusLabel}</div> : null}
         <div className="wallet-split">
           <div><span>Cash</span><b>{rupees(cash)}</b></div>
-          <div><span>Bonus</span><b>{bonusLabel || rupees(bonus)}</b></div>
+          <div><span>Bonus</span><b>{rupees(bonus)}</b></div>
           <div><span>Withdrawable</span><b>{rupees(cash)}</b></div>
         </div>
         <div className="wallet-actions">
@@ -1200,9 +1222,9 @@ function Account() {
             <>
               <NavLink to="/account/deposit" className="btn btn-yellow">Deposit</NavLink>
               <NavLink to="/account/withdraw" className="btn btn-ghost">Withdraw</NavLink>
-              <button className="btn btn-ghost" onClick={logout}>Log out</button>
+              <button type="button" className="btn btn-ghost" onClick={logout}>Log out</button>
             </>
-          ) : <button className="btn btn-yellow" onClick={() => setAuthMode('login')}>Log in to open wallet</button>}
+          ) : <button type="button" className="btn btn-yellow" onClick={() => setAuthMode('login')}>Log in to open wallet</button>}
         </div>
       </div>
       <div className="wallet-facts">
@@ -1213,7 +1235,7 @@ function Account() {
       <div className="content-section-title"><h2>Know before you pay</h2><span>Club wallet rules</span></div>
       <ul className="wallet-notes">
         <li>Only cash in Available can be withdrawn. Welcome and reload bonuses stay locked until wagering is done.</li>
-        <li>The name on your UPI, bank or crypto account must match your Bullwave Club KYC name.</li>
+        <li>Send withdrawals only to a UPI or bank account in your name. Third-party accounts are rejected.</li>
         <li>Never share SMS OTPs, UPI PINs or wallet QR codes. Club staff will not ask for them.</li>
         <li>Winnings may be subject to tax under Indian law. Keep deposit and cashout records for your own filing.</li>
         <li>If a payment fails, wait for the bank reversal (usually 1–3 working days) before paying again.</li>
