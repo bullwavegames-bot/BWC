@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
 import { BillingPage, TelegramCashIn } from './BillingPages.jsx'
@@ -1152,6 +1152,26 @@ function ShortcutCarousel() {
   )
 }
 
+function FeaturedEventStrip() {
+  const items = [
+    { sport: 'tennis', label: 'Vukic v Jacquet', to: '/sport/tennis', tone: 'orange' },
+    { sport: 'table', label: 'Dulich v Melnik', to: '/sport/table-tennis', tone: 'pink' },
+    { sport: 'table', label: 'Pavel v Navedla', to: '/sport/table-tennis', tone: 'rose' },
+    { sport: 'motor', label: 'Dubai Grand Prix', to: '/sport/motor-sports', tone: 'violet' },
+  ]
+  return <nav className="featured-event-strip" aria-label="Featured fixtures">{items.map((item) => <NavLink key={item.label} to={item.to} className={`featured-event-tile tone-${item.tone}`}><Icon name={item.sport} size={22} /><span>{item.label}</span></NavLink>)}</nav>
+}
+
+function HomePromoRail() {
+  const { betslip, setSlipOpen } = useApp()
+  const ads = [
+    { image: 'casino-hero-v2.webp', title: 'Live Casino', to: '/casino/live-casino' },
+    { image: 'royal-v1.webp', title: 'Club Rewards', to: '/vip' },
+    { image: 'wheel-v1.webp', title: 'Weekly Offers', to: '/promotions' },
+  ]
+  return <aside className="home-promo-rail" aria-label="Featured promotions"><button type="button" className="promo-slip-trigger" onClick={() => setSlipOpen(true)}><Icon name="ticket" size={17} /><span>Bet Slip</span><b>{betslip.length}</b></button>{ads.map((ad) => <NavLink key={ad.title} to={ad.to} className="promo-rail-ad"><img src={`${import.meta.env.BASE_URL}images/promotions/${ad.image}`} alt="" /><span>{ad.title}<Icon name="chevron" size={14} /></span></NavLink>)}</aside>
+}
+
 function GameCarousel({ catalog }) {
   const { rowRef, edges, move } = useCarouselControls()
   return <nav className="game-carousel" aria-label="Browse games">
@@ -1340,6 +1360,7 @@ function Home() {
   }, [])
   return (
     <div className="home-desk reference-home">
+      <FeaturedEventStrip />
       <section className="home-hero" aria-label="Featured campaigns" aria-roledescription="carousel">
         {campaigns.map((slide, index) => <article key={slide.image} className={`home-campaign-slide ${campaign === index ? 'is-active' : ''}`} aria-hidden={campaign !== index} style={{ backgroundImage: `linear-gradient(90deg,rgba(4,13,16,.9),rgba(4,13,16,.08) 66%),url('${import.meta.env.BASE_URL}images/hero/${slide.image}')`, backgroundPosition: slide.position }}><div className="hero-message"><p>{slide.kicker}</p><h1>{slide.title}</h1><div>{slide.detail}</div><NavLink to={slide.to} tabIndex={campaign === index ? 0 : -1}>{slide.cta} <span aria-hidden="true">→</span></NavLink></div></article>)}
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
@@ -1349,12 +1370,11 @@ function Home() {
         {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
-      <ShortcutCarousel />
+      <ExchangeTable matches={matches} title="Sports exchange" />
       <section className="personalized-home">
         <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
         <div className="personalized-row">{forYou.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="personalized-match"><span className={`top-match-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={18} /></span><span><small>{match.live ? 'LIVE' : match.time}</small><strong>{match.home} vs {match.away}</strong><em>{match.league}</em></span><Icon name="chevron" size={15} /></NavLink>)}</div>
       </section>
-      <ExchangeTable matches={matches} title="Sports exchange" />
       <div className="home-content-grid">
         <section className="live-feature-area">
           <h2 className="home-section-title"><Icon name="zap" size={24} /> Featured Live</h2>
@@ -2210,8 +2230,10 @@ function MobileDock() {
 }
 
 export default function App() {
+  const location = useLocation()
+  const home = location.pathname === '/'
   return (
-    <div className="app">
+    <div className={`app ${home ? 'is-home' : ''}`}>
       <Header />
       <PresencePing />
       <LiveTicker />
@@ -2254,6 +2276,7 @@ export default function App() {
           </Routes>
           <Footer />
         </main>
+        {home && <HomePromoRail />}
         <Betslip />
       </div>
       <AuthModal />

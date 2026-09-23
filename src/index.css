@@ -2952,6 +2952,33 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .ops-login .payment-shell { width: min(430px, 100%); }
 .ops-login .payment-shell > small { display: block; margin-top: 12px; color: var(--muted); text-align: center; }
 
+/* Image-forward exchange home */
+.app.is-home .header { background: #117553; border-bottom-color: #26936f; }
+.app.is-home .top-nav { justify-content: center; }
+.app.is-home .top-nav a { color: #eefbf7; font-weight: 800; }
+.app.is-home .top-nav a.active { border-bottom: 2px solid #fff; border-radius: 0; background: transparent; }
+.app.is-home .main { padding: 8px 7px 0; }
+.featured-event-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; margin-bottom: 5px; }
+.featured-event-tile { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 51px; padding: 7px 12px; border-top: 3px solid rgba(255,255,255,.3); color: #fff; font-size: 12px; font-weight: 750; }
+.featured-event-tile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.featured-event-tile.tone-orange { background: #ec8a2f; }.featured-event-tile.tone-pink { background: #d93667; }.featured-event-tile.tone-rose { background: #c92f58; }.featured-event-tile.tone-violet { background: #8a5bbd; }
+.app.is-home .home-hero { height: 292px; border: 0; border-radius: 0; }
+.app.is-home .home-campaign-controls { bottom: 9px; }
+.app.is-home .sport-filter { gap: 0; padding-top: 5px; background: #293236; }
+.app.is-home .reference-home .sport-filter a { height: 49px; min-width: 118px; border: 0; border-right: 1px solid #3b474b; border-radius: 0; background: transparent; }
+.app.is-home .reference-home .sport-filter a.featured-sport { border-bottom: 3px solid var(--mint); background: #263e65; color: #fff; }
+.home-promo-rail { position: sticky; top: var(--header-h); height: calc(100vh - var(--header-h)); overflow-y: auto; border-left: 1px solid var(--line); background: #090f11; }
+.promo-slip-trigger { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 13px; border: 0; border-bottom: 1px solid var(--line); background: #172225; color: #fff; font-weight: 800; }
+.promo-slip-trigger b { display: grid; place-items: center; min-width: 22px; height: 22px; margin-left: auto; border-radius: 4px; background: var(--mint); color: #0b1e1c; font-size: 10px; }
+.promo-rail-ad { position: relative; display: block; min-height: 205px; overflow: hidden; border-bottom: 5px solid #090f11; background: #131c20; }
+.promo-rail-ad img { width: 100%; height: 205px; display: block; object-fit: cover; object-position: center; }
+.promo-rail-ad > span { position: absolute; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; align-items: center; padding: 9px 11px; background: rgba(5,12,14,.82); color: #fff; font-size: 10px; font-weight: 800; }
+.app.is-home > .shell > .betslip { display: none; }
+.app.is-home > .shell > .betslip.is-open { position: fixed; z-index: 70; top: var(--header-h); right: 0; bottom: 0; left: auto; display: flex; width: min(390px,100vw); height: calc(100dvh - var(--header-h)); flex-direction: column; overflow-y: auto; border-left: 1px solid var(--line); background: var(--navy); box-shadow: -18px 0 50px rgba(0,0,0,.42); }
+.app.is-home > .shell > .betslip.is-open .slip-close { display: grid; }
+.app.is-home > .shell > .betslip.is-open .slip-rewards { display: none; }
+.app.is-home > .shell > .betslip.is-open .slip-panel { overflow-y: auto; }
+
 /* Dense exchange sportsbook */
 .sidebar-search { display: flex; align-items: center; gap: 9px; width: calc(100% - 16px); min-height: 40px; margin: 0 8px 12px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; background: #0b1517; color: var(--muted); text-align: left; }
 .sidebar-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3071,7 +3098,12 @@ html[data-theme="light"] .exchange-search, html[data-theme="light"] .exchange-so
 html[data-theme="light"] .exchange-expanded { background: #f5f8fa; }
 html[data-theme="light"] .exchange-event-copy { color: #142237; }
 
+@media (max-width: 1200px) {
+  .home-promo-rail { display: none; }
+}
 @media (max-width: 900px) {
+  .featured-event-strip { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .featured-event-tile { flex: 0 0 190px; min-height: 48px; }
   .exchange-tools { grid-template-columns: minmax(0,1fr) auto; }
   .exchange-search { grid-column: 1 / -1; grid-row: 2; }
   .exchange-sort { justify-self: end; }
@@ -3092,6 +3124,11 @@ html[data-theme="light"] .exchange-event-copy { color: #142237; }
   .header-wallet > span:first-child { border-right: 0; }
 }
 @media (max-width: 520px) {
+  .app.is-home .main { padding-inline: 0; }
+  .app.is-home .reference-home > :not(.featured-event-strip):not(.home-hero):not(.sport-filter) { margin-right: 12px; margin-left: 12px; }
+  .app.is-home .home-hero { height: 235px; }
+  .featured-event-strip { margin: 0; }
+  .featured-event-tile { flex-basis: 165px; padding-inline: 10px; font-size: 10px; }
   .exchange { margin-inline: -12px; border-right: 0; border-left: 0; border-radius: 0; }
   .exchange-tools { padding: 10px 12px; }
   .exchange-sort > span { display: none; }
