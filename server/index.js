@@ -19,6 +19,7 @@ import {
   settleBill,
 } from './billing.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
+import { feedHealth, getLiveCatalog } from './feeds.js'
 import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
 import {
   accountBlockReason,
@@ -263,24 +264,40 @@ function findUser({ phone, email, accountNumber }) {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'bullwave-club', payments: true, time: new Date().toISOString() })
+  res.json({ ok: true, service: 'bullwave-club', payments: true, time: new Date().toISOString(), feeds: feedHealth() })
 })
 
-app.get('/api/catalog', (_req, res) => {
-  res.json({ matches, games, promotions, matchMarkets })
+app.get('/api/catalog', async (_req, res) => {
+  try {
+    const live = await getLiveCatalog()
+    res.json({ matches: live.matches, games, promotions, matchMarkets, feeds: live.feeds })
+  } catch {
+    res.json({ matches, games, promotions, matchMarkets, feeds: { fallback: 'club' } })
+  }
 })
 
-app.get('/api/matches', (req, res) => {
+app.get('/api/matches', async (req, res) => {
   const { sport, live } = req.query
   let list = matches
+  try {
+    list = (await getLiveCatalog()).matches
+  } catch {
+    list = matches
+  }
   if (sport) list = list.filter((m) => m.sport === sport)
   if (live === 'true') list = list.filter((m) => m.live)
   if (live === 'false') list = list.filter((m) => !m.live)
   res.json({ matches: list })
 })
 
-app.get('/api/matches/:id', (req, res) => {
-  const match = matches.find((m) => m.id === req.params.id)
+app.get('/api/matches/:id', async (req, res) => {
+  let list = matches
+  try {
+    list = (await getLiveCatalog()).matches
+  } catch {
+    list = matches
+  }
+  const match = list.find((m) => m.id === req.params.id)
   if (!match) return res.status(404).json({ error: 'Match not found' })
   res.json({ match, markets: matchMarkets })
 })

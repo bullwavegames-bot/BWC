@@ -1284,7 +1284,11 @@ function MatchPage() {
   const { addBet, betslip, catalogMatches: matches, catalogLoading, recordMatchView } = useApp()
   const [marketTab, setMarketTab] = useState('Popular')
   const m = matches.find((x) => x.id === id) || matches[4]
-  const visibleMarkets = matchMarkets.filter((market) => market.categories?.includes(marketTab))
+  const liveWinner = (m.markets || []).filter((mk) => mk.odd != null).map((mk) => ({ label: mk.label, odd: mk.odd }))
+  const visibleMarkets = [
+    ...(marketTab === 'Popular' && liveWinner.length ? [{ name: 'Match winner', categories: ['Popular'], rows: [liveWinner] }] : []),
+    ...matchMarkets.filter((market) => market.categories?.includes(marketTab)),
+  ]
   useEffect(() => {
     if (m?.id) recordMatchView(m.id)
   }, [m?.id])

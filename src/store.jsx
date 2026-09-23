@@ -69,7 +69,8 @@ export function AppProvider({ children }) {
     setCatalogLoading(true)
     setCatalogError('')
     try {
-      const data = await api('/api/games')
+      const data = await api('/api/catalog')
+      if (data.matches?.length) setCatalogMatches(data.matches)
       if (data.games?.length) setClubGames(data.games.map(mapClubGame))
     } catch {
       setCatalogError('Live catalogue unavailable. Showing saved markets.')
