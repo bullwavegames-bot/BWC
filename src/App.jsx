@@ -45,13 +45,17 @@ const gameIconTags = {
   rooms: 'MULTIPLAYER', rummy: 'CARDS',
 }
 
+function casinoLobbyFor(game) {
+  if (game?.cat === 'slots') return { to: '/casino/slots', label: 'Slots' }
+  if (game?.cat === 'virtual') return { to: '/casino/virtual-sports', label: 'Virtual Sport' }
+  if (game?.cat === 'tv') return { to: '/casino/tv-games', label: 'TV Games' }
+  if (game?.cat === 'live') return { to: '/casino/live-casino', label: 'Live Casino' }
+  return { to: '/casino/instant-games', label: 'Instant Games' }
+}
+
 function casinoGameTo(g) {
   if (g?.launchId) return `/casino/play/${g.launchId}`
-  if (g?.cat === 'live') return '/casino/live-casino'
-  if (g?.cat === 'slots') return '/casino/slots'
-  if (g?.cat === 'virtual') return '/casino/virtual-sports'
-  if (g?.cat === 'tv') return '/casino/tv-games'
-  return '/casino/instant-games'
+  return casinoLobbyFor(g).to
 }
 
 function GameArtwork({ game }) {
@@ -1561,13 +1565,13 @@ function PlayCasino() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const game = clubGames.find((item) => String(item.launchId) === String(id) || item.id === id || item.id === `bb-${id}`)
-  const lobby = game?.cat === 'slots' ? '/casino/slots' : '/casino/instant-games'
+  const lobby = casinoLobbyFor(game)
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError('')
     setFrame('')
-    api('/api/games/launch', { method: 'POST', body: { gameId: id, demo: true, returnUrl: window.location.origin + lobby }, token })
+    api('/api/games/launch', { method: 'POST', body: { gameId: id, demo: true, returnUrl: window.location.origin + lobby.to }, token })
       .then((data) => {
         if (!cancelled) setFrame(data.url)
       })
@@ -1578,16 +1582,16 @@ function PlayCasino() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [id, token, lobby])
+  }, [id, token, lobby.to])
   return (
     <div className="content-page play-casino">
       <div className="play-casino-bar">
-        <button type="button" className="chip" onClick={() => navigate(lobby)}>Back to {game?.cat === 'slots' ? 'Slots' : 'Instant Games'}</button>
+        <button type="button" className="chip" onClick={() => navigate(lobby.to)}>Back to {lobby.label}</button>
         <h1>{game?.name || 'Club game'}</h1>
         {game?.provider ? <span>{game.provider}</span> : null}
       </div>
       {loading ? <p className="hint">Opening the game table…</p> : null}
-      {error ? <EmptyState icon="casino" title="Game unavailable" detail={error} action={{ to: lobby, label: 'Browse games' }} /> : null}
+      {error ? <EmptyState icon="casino" title="Game unavailable" detail={error} action={{ to: lobby.to, label: 'Browse games' }} /> : null}
       {frame ? <iframe className="play-casino-frame" title={game?.name || 'Club game'} src={frame} allow="autoplay; fullscreen; payment" /> : null}
     </div>
   )
