@@ -64,9 +64,18 @@ export function SuperAdmin() {
 
   useEffect(() => {
     if (!adminToken) return
+    let active = true
+    const checkedToken = adminToken
     call('/api/admin/me')
-      .then((data) => { setStaff(data); setGate('') })
-      .catch((err) => { sessionStorage.removeItem('bwc_admin_token'); setAdminToken(''); setStaff(null); setGate(err.message) })
+      .then((data) => { if (active) { setStaff(data); setGate('') } })
+      .catch((err) => {
+        if (!active || sessionStorage.getItem('bwc_admin_token') !== checkedToken) return
+        sessionStorage.removeItem('bwc_admin_token')
+        setAdminToken('')
+        setStaff(null)
+        setGate(err.message)
+      })
+    return () => { active = false }
   }, [adminToken])
 
   const adminLogin = async (event) => {
