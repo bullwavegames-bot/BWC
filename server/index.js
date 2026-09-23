@@ -149,6 +149,8 @@ function incomingAdminKey(req) {
   if (header) return header
   const auth = String(req.headers.authorization || '').trim()
   if (/^Admin\s+/i.test(auth)) return auth.replace(/^Admin\s+/i, '').trim()
+  const bodyKey = req.body?.adminKey
+  if (bodyKey) return String(bodyKey).trim()
   return ''
 }
 
@@ -475,11 +477,14 @@ app.get('/api/billing/receipts/:id.pdf', auth, (req, res) => {
   res.send(pdf)
 })
 
-app.get('/api/admin/players', admin, (req, res) => {
+function listAdminPlayers(req, res) {
   res.json({
-    players: findUsers(req.query.q).map((u) => publicUser(u)),
+    players: findUsers(req.query.q || req.body?.q).map((u) => publicUser(u)),
   })
-})
+}
+
+app.get('/api/admin/players', admin, listAdminPlayers)
+app.post('/api/admin/players', admin, listAdminPlayers)
 
 app.get('/api/admin/players/:id', admin, (req, res) => {
   const user = users.get(req.params.id) || findUser({ accountNumber: req.params.id })

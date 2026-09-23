@@ -163,72 +163,65 @@ export function AdminDesk() {
   const [cashouts, setCashouts] = useState([])
   const [message, setMessage] = useState('')
 
-  const headers = () => ({
-    'Content-Type': 'application/json',
-    'x-admin-key': key,
-    Authorization: `Admin ${key}`,
-  })
+  const adminCall = async (path, { method = 'GET', body } = {}) => {
+    const adminKey = key.trim()
+    const res = await fetch(path, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': adminKey,
+        Authorization: `Admin ${adminKey}`,
+      },
+      body: method === 'GET' ? undefined : JSON.stringify({ ...body, adminKey }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || 'Admin request failed')
+    return data
+  }
 
   const saveKey = () => {
-    sessionStorage.setItem('bwc_admin_key', key)
+    sessionStorage.setItem('bwc_admin_key', key.trim())
     setMessage('Admin key stored in this browser tab only.')
   }
 
   const search = async () => {
-    const res = await fetch(`/api/admin/players?q=${encodeURIComponent(query)}`, { headers: headers() })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Admin search failed')
+    const data = await adminCall('/api/admin/players', { method: 'POST', body: { q: query.trim() } })
     setPlayers(data.players || [])
+    if (!(data.players || []).length) setMessage('No live players matched. They must have signed in since the last Render restart.')
   }
 
   const openPlayer = async (id) => {
-    const res = await fetch(`/api/admin/players/${id}`, { headers: headers() })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Player not found')
+    const data = await adminCall(`/api/admin/players/${id}`)
     setPicked(data)
   }
 
   const settle = async () => {
-    const res = await fetch('/api/admin/settle-bill', {
+    const data = await adminCall('/api/admin/settle-bill', {
       method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ userId: picked?.user?.id, rupees, credit, utr }),
+      body: { userId: picked?.user?.id, rupees, credit, utr: utr.trim() },
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Settle failed')
     setMessage(`Settled ${data.receipt.id}. Cash is now ${inr(data.user.balance)}.`)
     setUtr('')
     await openPlayer(picked.user.id)
   }
 
   const loadCashouts = async () => {
-    const res = await fetch('/api/admin/cashouts', { headers: headers() })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Cash-outs failed')
+    const data = await adminCall('/api/admin/cashouts')
     setCashouts(data.cashouts || [])
   }
 
   const markPaid = async (id) => {
-    const res = await fetch(`/api/admin/cashouts/${id}/paid`, {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ utr: payoutUtr }),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Could not mark PAID')
+    await adminCall(`/api/admin/cashouts/${id}/paid`, { method: 'POST', body: { utr: payoutUtr.trim() } })
     setMessage(`Cash-out ${id.slice(0, 8)} marked PAID.`)
     setPayoutUtr('')
     await loadCashouts()
   }
 
   const reject = async (id) => {
-    const res = await fetch(`/api/admin/cashouts/${id}/reject`, {
+    await adminCall(`/api/admin/cashouts/${id}/reject`, {
       method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ reason: 'Rejected by Super Admin' }),
+      body: { reason: 'Rejected by Super Admin' },
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Could not reject')
     setMessage('Cash-out rejected and cash returned.')
     await loadCashouts()
   }
@@ -247,7 +240,8 @@ export function AdminDesk() {
     <div className="content-page">
       <div className="content-section-title"><h2>Super Admin</h2><span>Settle bill · unique UTR</span></div>
       <div className="payment-shell">
-        <div className="field"><label>ADMIN_KEY</label><input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} /></div>
+        <div className="field"><label>ADMIN_KEY from Render</label><input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" /></div>
+        <p className="wallet-method-note">This must match the <b>ADMIN_KEY</b> env var on the Render API service <code>bwc-wgbu</code>. It is not the player login password.</p>
         <button type="button" className="btn btn-ghost" onClick={saveKey}>Save key on this device</button>
         <div className="field"><label>Find player (UID, phone, e-mail)</label><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
         <button type="button" className="btn btn-yellow" onClick={() => run(search)}>Search</button>
