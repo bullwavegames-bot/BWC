@@ -908,8 +908,8 @@ function MatchCard({ m }) {
           <div className="team"><span>{m.away}</span>{m.score && <span className="score">{m.score[1]}</span>}</div>
         </div>
       </NavLink>
-      {m.markets[0].odd == null ? (
-        <NavLink to={`/match/${m.id}`}><button className="odd-more">{m.markets[0].label}</button></NavLink>
+      {m.markets?.[0]?.odd == null ? (
+        <NavLink to={`/match/${m.id}`}><button className="odd-more">View markets</button></NavLink>
       ) : (
         <div className={`odds ${m.markets.length === 2 ? 'two' : ''}`}>
           {m.markets.map((mk) => (

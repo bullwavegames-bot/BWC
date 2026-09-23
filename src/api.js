@@ -106,10 +106,32 @@ export function clearSession() {
   localStorage.removeItem('bwc_user')
 }
 
+export function clubSessionToken(token) {
+  if (!token || token.split('.').length !== 3) return ''
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    if (payload.exp && payload.exp * 1000 < Date.now()) return ''
+    if (String(payload.iss || '').includes('supabase')) return ''
+    if (payload.role === 'authenticated' || payload.role === 'anon') return ''
+    if (!payload.id || payload.role === 'admin') return ''
+    return token
+  } catch {
+    return ''
+  }
+}
+
 export function loadSession() {
-  const token = localStorage.getItem('bwc_token')
+  const token = clubSessionToken(localStorage.getItem('bwc_token'))
   const raw = localStorage.getItem('bwc_user')
-  return { token, user: raw ? JSON.parse(raw) : null }
+  if (!token) {
+    localStorage.removeItem('bwc_token')
+    return { token: null, user: null }
+  }
+  try {
+    return { token, user: raw ? JSON.parse(raw) : null }
+  } catch {
+    return { token, user: null }
+  }
 }
 
 export function gameHue(slug = '') {

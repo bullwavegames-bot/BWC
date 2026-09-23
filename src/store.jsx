@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { api, clearSession, loadSession, loginWithPhoneOtp, mapAccount, mapClubGame, saveSession } from './api.js'
+import { api, clearSession, clubSessionToken, loadSession, loginWithPhoneOtp, mapAccount, mapClubGame, saveSession } from './api.js'
 import { matches as seedMatches } from './data.js'
 import { assertSupabase, supabase } from './supabase.js'
 import { isTenDigitPhone, passwordError } from './authRules.js'
@@ -51,11 +51,17 @@ export function AppProvider({ children }) {
   }
 
   const hydrateAccount = async (accessToken, extra = {}) => {
+    const token = clubSessionToken(accessToken)
+    if (!token) {
+      applySession(null, null)
+      setMyBets([])
+      return null
+    }
     try {
-      const data = await api('/api/me', { token: accessToken })
+      const data = await api('/api/me', { token })
       const mapped = mapAccount(data, extra)
-      applySession(accessToken, mapped)
-      const bets = await api('/api/me/bets', { token: accessToken }).catch(() => null)
+      applySession(token, mapped)
+      const bets = await api('/api/me/bets', { token }).catch(() => null)
       if (bets?.bets) setMyBets(bets.bets)
       return mapped
     } catch {
@@ -90,16 +96,7 @@ export function AppProvider({ children }) {
     const boot = async () => {
       const session = loadSession()
       if (session.token && session.user) {
-        const restored = await hydrateAccount(session.token, session.user)
-        if (restored) return
-      }
-      if (supabase) {
-        const { data } = await supabase.auth.getSession()
-        const access = data.session?.access_token
-        if (access) {
-          await hydrateAccount(access, { email: data.session.user?.email, phone: data.session.user?.phone })
-          return
-        }
+        await hydrateAccount(session.token, session.user)
       }
     }
     boot()

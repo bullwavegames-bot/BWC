@@ -85,7 +85,11 @@ export const matches = [
     away: 'Australia U-19',
     score: ['34/7', '222/6 (37.2)'],
     extras: ['341', '222'],
-    markets: [{ id: 'c1-more', label: '2 available outcomes', odd: null }],
+    extra: '+12',
+    markets: [
+      { id: 'c1-1', label: '1', odd: 1.82 },
+      { id: 'c1-2', label: '2', odd: 1.98 },
+    ],
   },
   {
     id: 'f1',
