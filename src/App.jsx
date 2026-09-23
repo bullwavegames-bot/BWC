@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
-import { AdminDesk, BillingPage, TelegramCashIn } from './BillingPages.jsx'
+import { BillingPage, TelegramCashIn } from './BillingPages.jsx'
+import { OpsHealth, PresencePing, SuperAdmin } from './SuperAdmin.jsx'
 import { PayLogo } from './PayLogo.jsx'
 import { PersonalData } from './PersonalData.jsx'
 import { ProfileAvatar, ProfileHub } from './ProfileHub.jsx'
@@ -1930,6 +1931,7 @@ export default function App() {
   return (
     <div className="app">
       <Header />
+      <PresencePing />
       <LiveTicker />
       <ConnectivityBanner />
       <CatalogNotice />
@@ -1957,7 +1959,8 @@ export default function App() {
             <Route path="/account/verify" element={<PersonalData />} />
             <Route path="/account/personal-data" element={<PersonalData />} />
             <Route path="/account/settings" element={<More settings />} />
-            <Route path="/ops" element={<AdminDesk />} />
+            <Route path="/ops/health" element={<OpsHealth />} />
+            <Route path="/ops/*" element={<SuperAdmin />} />
             <Route path="/vip" element={<Vip />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/favorites" element={<Favorites />} />

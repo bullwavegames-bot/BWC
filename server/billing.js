@@ -50,9 +50,12 @@ export function buildReceiptPdf(receipt) {
     `Paid: INR ${receipt.rupees}`,
     `Credited cash: INR ${receipt.credit}`,
     `UTR: ${receipt.utr}`,
+    `Taxable: INR ${receipt.taxable ?? receipt.rupees}`,
+    `GST ${receipt.gstRate || 18}%: INR ${receipt.gst ?? 0}`,
+    `Note: ${receipt.note || '—'}`,
     `Settled: ${receipt.createdAt}`,
     '',
-    'This UTR cannot credit twice.',
+    'GST cash-in bill. This UTR cannot credit twice.',
   ]
   const escape = (s) => String(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
   let stream = 'BT /F1 12 Tf 50 760 Td\n'
@@ -83,7 +86,7 @@ export function buildReceiptPdf(receipt) {
   return Buffer.from(pdf, 'utf8')
 }
 
-export function settleBill(user, { rupees, credit, utr }) {
+export function settleBill(user, { rupees, credit, utr, note, settledBy } = {}) {
   const paid = Number(rupees)
   const cash = Number(credit)
   const key = normalizeUtr(utr)
@@ -117,7 +120,12 @@ export function settleBill(user, { rupees, credit, utr }) {
     phone: user.phone || '',
     rupees: paid,
     credit: cash,
+    gstRate: 18,
+    gst: Number(((paid * 18) / 118).toFixed(2)),
+    taxable: Number((paid - ((paid * 18) / 118)).toFixed(2)),
     utr: key,
+    note: String(note || '').trim(),
+    settledBy: settledBy || '',
     createdAt: new Date().toISOString(),
   }
   depositUtrs.set(key, receipt.id)
@@ -151,6 +159,8 @@ export function requestCashout(user, { amount, destination, method }) {
     amount: cash,
     destination: dest,
     method: method || 'upi',
+    phone: user.phone || '',
+    email: user.email || '',
     status: 'PENDING',
     payoutUtr: null,
     createdAt: new Date().toISOString(),

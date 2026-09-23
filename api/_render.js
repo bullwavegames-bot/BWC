@@ -12,11 +12,14 @@ export function readAdminKey(req) {
 
 export async function proxyRender(path, req) {
   const headers = { 'Content-Type': 'application/json' }
-  if (req.headers.authorization) headers.Authorization = req.headers.authorization
+  const incomingAuth = String(req.headers.authorization || '')
+  if (incomingAuth) headers.Authorization = incomingAuth
   const adminKey = readAdminKey(req)
   if (adminKey) {
     headers['x-admin-key'] = adminKey
-    if (!headers.Authorization) headers.Authorization = `Admin ${adminKey}`
+    if (!incomingAuth || /^Admin\s+/i.test(incomingAuth)) {
+      headers.Authorization = `Admin ${adminKey}`
+    }
   }
   const res = await fetch(`${RENDER_API}${path}`, {
     method: req.method,

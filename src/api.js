@@ -89,6 +89,9 @@ export function mapAccount(data, extra = {}) {
     city: profile.city || extra.city || '',
     secretQuestion: profile.secretQuestion || extra.secretQuestion || '',
     secretAnswer: profile.secretAnswer || extra.secretAnswer || '',
+    stopped: Boolean(profile.stopped ?? extra.stopped),
+    banned: Boolean(profile.banned ?? extra.banned),
+    superAdmin: Boolean(profile.superAdmin ?? extra.superAdmin),
     createdAt: profile.createdAt || extra.createdAt,
   }
 }

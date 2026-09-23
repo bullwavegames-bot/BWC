@@ -20,6 +20,16 @@ import {
 } from './billing.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
 import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
+import {
+  accountBlockReason,
+  assertNotPeerAdmin,
+  auditLog,
+  isSuperAdminUser,
+  livePresence,
+  sinceHours,
+  touchPresence,
+  writeAudit,
+} from './staff.js'
 
 function loadEnvFile() {
   const dir = dirname(fileURLToPath(import.meta.url))
@@ -127,6 +137,10 @@ function publicUser(user) {
     city: user.city || '',
     secretQuestion: user.secretQuestion || '',
     secretAnswer: user.secretAnswer || '',
+    stopped: Boolean(user.stopped),
+    banned: Boolean(user.banned),
+    deleted: Boolean(user.deleted),
+    superAdmin: isSuperAdminUser(user),
     phoneConfirmed: Boolean(user.phone),
     emailConfirmed: Boolean(user.email),
     bonus: user.bonus,
@@ -154,18 +168,43 @@ function incomingAdminKey(req) {
   return ''
 }
 
+function jwtUserFromReq(req) {
+  const header = req.headers.authorization || ''
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null
+  if (!token) return null
+  try {
+    const payload = jwt.verify(token, JWT_SECRET)
+    return users.get(payload.id) || null
+  } catch {
+    return null
+  }
+}
+
 function admin(req, res, next) {
-  const key = String(process.env.ADMIN_KEY || process.env.SUPER_ADMIN_KEY || '').trim()
-  if (!key) return res.status(503).json({ error: 'Set ADMIN_KEY on the Render API service, then redeploy.' })
+  const bearerUser = jwtUserFromReq(req)
+  if (bearerUser && isSuperAdminUser(bearerUser) && !accountBlockReason(bearerUser)) {
+    req.adminUser = bearerUser
+    return next()
+  }
+  const envKey = String(process.env.ADMIN_KEY || process.env.SUPER_ADMIN_KEY || '').trim()
   const got = incomingAdminKey(req)
-  if (!got) return res.status(401).json({ error: 'Paste the same ADMIN_KEY that is set on Render. It never reached the API.' })
-  if (got !== key) return res.status(401).json({ error: 'Admin key does not match the Render ADMIN_KEY.' })
-  next()
+  if (envKey && got && got === envKey) {
+    req.adminUser = { id: 'admin-key', email: 'ADMIN_KEY' }
+    return next()
+  }
+  const allowlist = String(process.env.SUPER_ADMIN_EMAILS || process.env.SUPER_ADMIN_USER_IDS || '').trim()
+  if (!envKey && !allowlist) {
+    return res.status(503).json({ error: 'Set SUPER_ADMIN_EMAILS or ADMIN_KEY on Render, then redeploy.' })
+  }
+  if (bearerUser && !isSuperAdminUser(bearerUser)) {
+    return res.status(403).json({ error: 'Ordinary accounts cannot open Super Admin.' })
+  }
+  return res.status(401).json({ error: 'Sign in with a Super Admin account, or paste ADMIN_KEY.' })
 }
 
 function findUsers(q) {
   const needle = String(q || '').trim().toLowerCase()
-  const list = [...users.values()]
+  const list = [...users.values()].filter((u) => !u.deleted)
   if (!needle) return list.slice(0, 40)
   return list.filter((u) => (
     u.id.toLowerCase().includes(needle)
@@ -173,6 +212,7 @@ function findUsers(q) {
     || String(u.accountNumber || '').toLowerCase().includes(needle)
     || String(u.phone || '').includes(needle)
     || String(u.email || '').toLowerCase().includes(needle)
+    || String(u.country || '').toLowerCase().includes(needle)
     || String(u.username || '').toLowerCase().includes(needle)
   )).slice(0, 40)
 }
@@ -189,6 +229,8 @@ function auth(req, res, next) {
     const payload = jwt.verify(token, JWT_SECRET)
     const user = users.get(payload.id)
     if (!user) return res.status(401).json({ error: 'Account not found' })
+    const blocked = accountBlockReason(user)
+    if (blocked) return res.status(401).json({ error: blocked })
     req.user = user
     next()
   } catch {
@@ -279,6 +321,9 @@ async function loginWithOtp(req, res) {
       users.set(user.id, user)
     }
 
+    const blocked = accountBlockReason(user)
+    if (blocked) return res.status(401).json({ error: blocked })
+
     res.json({ token: sign(user), user: publicUser(user), isNew })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message })
@@ -343,11 +388,26 @@ app.post('/api/auth/login', async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(401).json({ error: 'Invalid login details' })
   }
+  const blocked = accountBlockReason(user)
+  if (blocked) return res.status(401).json({ error: blocked })
   res.json({ token: sign(user), user: publicUser(user) })
 })
 
 app.get('/api/me', auth, (req, res) => {
   res.json({ user: publicUser(req.user) })
+})
+
+app.post('/api/presence', auth, (req, res) => {
+  const row = touchPresence(req.user, req.body || {})
+  res.json({ ok: true, presence: row })
+})
+
+app.get('/api/admin/me', admin, (req, res) => {
+  res.json({
+    ok: true,
+    staff: req.adminUser?.email || req.adminUser?.id,
+    via: req.adminUser?.id === 'admin-key' ? 'key' : 'allowlist',
+  })
 })
 
 app.patch('/api/me/profile', auth, (req, res) => {
@@ -441,6 +501,8 @@ app.post('/api/wallet/deposit', auth, async (req, res) => {
 
 function handleCashout(req, res) {
   try {
+    const blocked = accountBlockReason(req.user)
+    if (blocked) return res.status(401).json({ error: blocked })
     const rupees = Number(req.body?.amount)
     const row = requestCashout(req.user, {
       amount: rupees,
@@ -477,34 +539,132 @@ app.get('/api/billing/receipts/:id.pdf', auth, (req, res) => {
   res.send(pdf)
 })
 
+function resolvePlayer(id) {
+  return users.get(id) || findUser({ accountNumber: id }) || [...users.values()].find((u) => String(u.playerId) === String(id))
+}
+
+function csvEscape(value) {
+  const text = String(value ?? '')
+  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  return text
+}
+
+function recordsCsv() {
+  const lines = [['type', 'id', 'uid', 'phone', 'email', 'amount', 'credit', 'utr', 'status', 'note', 'at'].join(',')]
+  receipts.forEach((r) => {
+    lines.push([ 'bill', r.id, r.accountNumber, r.phone, r.email, r.rupees, r.credit, r.utr, 'SETTLED', r.note, r.createdAt ].map(csvEscape).join(','))
+  })
+  cashouts.forEach((c) => {
+    lines.push([ 'cashout', c.id, c.accountNumber, c.phone, c.email, c.amount, '', c.payoutUtr || '', c.status, c.note, c.createdAt ].map(csvEscape).join(','))
+  })
+  return `${lines.join('\n')}\n`
+}
+
 function listAdminPlayers(req, res) {
   res.json({
     players: findUsers(req.query.q || req.body?.q).map((u) => publicUser(u)),
   })
 }
 
+app.get('/api/admin/overview', admin, (_req, res) => {
+  const live = livePresence()
+  const dayBets = bets.filter((b) => sinceHours(b.createdAt, 24))
+  const dayBills = receipts.filter((r) => sinceHours(r.createdAt, 24))
+  res.json({
+    registered: [...users.values()].filter((u) => !u.deleted).length,
+    live: live.length,
+    inGame: live.filter((row) => row.inGame).length,
+    bets24h: dayBets.length,
+    betsStake24h: dayBets.reduce((sum, b) => sum + Number(b.stake || 0), 0),
+    deposits24h: dayBills.length,
+    depositCash24h: dayBills.reduce((sum, r) => sum + Number(r.credit || 0), 0),
+  })
+})
+
+app.get('/api/admin/live', admin, (_req, res) => {
+  res.json({ live: livePresence() })
+})
+
+app.get('/api/admin/activity', admin, (_req, res) => {
+  res.json({
+    bets: [...bets].slice(-80).reverse(),
+    receipts: [...receipts].slice(-80).reverse(),
+    cashouts: [...cashouts].slice(-80).reverse(),
+  })
+})
+
+app.get('/api/admin/records', admin, (_req, res) => {
+  const billTotal = receipts.reduce((sum, r) => sum + Number(r.credit || 0), 0)
+  const paidTotal = cashouts.filter((c) => c.status === 'PAID').reduce((sum, c) => sum + Number(c.amount || 0), 0)
+  res.json({ receipts: [...receipts].reverse(), cashouts: [...cashouts].reverse(), billTotal, paidTotal })
+})
+
+app.get('/api/admin/records.csv', admin, (_req, res) => {
+  res.setHeader('Content-Type', 'text/csv')
+  res.setHeader('Content-Disposition', 'attachment; filename="bwc-records.csv"')
+  res.send(recordsCsv())
+})
+
+app.get('/api/admin/audit', admin, (_req, res) => {
+  res.json({ audit: auditLog.slice(0, 200) })
+})
+
 app.get('/api/admin/players', admin, listAdminPlayers)
 app.post('/api/admin/players', admin, listAdminPlayers)
 
 app.get('/api/admin/players/:id', admin, (req, res) => {
-  const user = users.get(req.params.id) || findUser({ accountNumber: req.params.id })
-  if (!user) return res.status(404).json({ error: 'Player not found' })
+  const user = resolvePlayer(req.params.id)
+  if (!user || user.deleted) return res.status(404).json({ error: 'Player not found' })
+  const live = livePresence().find((row) => row.userId === user.id) || null
   res.json({
     user: publicUser(user),
+    presence: live,
+    bets: bets.filter((b) => b.userId === user.id),
     receipts: receipts.filter((r) => r.userId === user.id),
     cashouts: cashouts.filter((c) => c.userId === user.id),
   })
 })
 
+app.post('/api/admin/players/:id/:action', admin, (req, res) => {
+  const action = String(req.params.action || '').toLowerCase()
+  const user = resolvePlayer(req.params.id)
+  if (!user || user.deleted) return res.status(404).json({ error: 'Player not found' })
+  try {
+    assertNotPeerAdmin(req.adminUser, user, action)
+    if (action === 'stop') user.stopped = true
+    else if (action === 'resume') user.stopped = false
+    else if (action === 'ban') user.banned = true
+    else if (action === 'unban') user.banned = false
+    else if (action === 'delete') {
+      user.deleted = true
+      user.stopped = true
+      user.banned = true
+    } else {
+      return res.status(400).json({ error: 'Unknown account control.' })
+    }
+    writeAudit(req.adminUser, action, user, {})
+    res.json({ user: publicUser(user) })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message })
+  }
+})
+
 app.post('/api/admin/settle-bill', admin, (req, res) => {
   try {
-    const user = users.get(req.body?.userId) || findUser({ accountNumber: req.body?.uid || req.body?.accountNumber })
-    if (!user) return res.status(404).json({ error: 'Player not found' })
+    const user = resolvePlayer(req.body?.userId) || findUser({ accountNumber: req.body?.uid || req.body?.accountNumber })
+    if (!user || user.deleted) return res.status(404).json({ error: 'Player not found' })
     const rupees = Number(req.body?.rupees ?? req.body?.amount)
     const credit = Number(req.body?.credit ?? req.body?.coins) > 0
       ? Number(req.body?.credit ?? req.body?.coins)
       : cashForRupees(rupees)
-    const receipt = settleBill(user, { rupees, credit, utr: req.body?.utr })
+    const receipt = settleBill(user, {
+      rupees,
+      credit,
+      utr: req.body?.utr,
+      note: req.body?.note,
+      settledBy: req.adminUser?.email || req.adminUser?.id,
+    })
+    writeAudit(req.adminUser, 'settle-bill', user, { utr: receipt.utr, credit: receipt.credit, rupees: receipt.rupees })
     res.status(201).json({ receipt, user: publicUser(user) })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not settle bill' })
@@ -518,6 +678,8 @@ app.get('/api/admin/cashouts', admin, (_req, res) => {
 app.post('/api/admin/cashouts/:id/paid', admin, (req, res) => {
   try {
     const row = markCashoutPaid(req.params.id, req.body?.utr)
+    const user = users.get(row.userId)
+    writeAudit(req.adminUser, 'settle-cashout', user, { utr: row.payoutUtr, amount: row.amount })
     res.json({ cashout: row })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not mark paid' })
@@ -529,6 +691,7 @@ app.post('/api/admin/cashouts/:id/reject', admin, (req, res) => {
     const row = cashouts.find((c) => c.id === req.params.id)
     const user = row ? users.get(row.userId) : null
     const result = rejectCashout(req.params.id, req.body?.reason, user)
+    writeAudit(req.adminUser, 'reject-cashout', user, { amount: result.amount })
     res.json({ cashout: result, user: user ? publicUser(user) : null })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not reject cash-out' })
@@ -545,6 +708,8 @@ app.get('/api/admin/receipts/:id.pdf', admin, (req, res) => {
 })
 
 function placeBet(req, res) {
+  const blocked = accountBlockReason(req.user)
+  if (blocked) return res.status(401).json({ error: blocked })
   const selections = Array.isArray(req.body?.selections) ? req.body.selections : []
   const stake = Number(req.body?.stake)
   if (!selections.length) return res.status(400).json({ error: 'Add at least one selection' })

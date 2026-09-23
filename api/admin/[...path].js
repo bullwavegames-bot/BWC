@@ -18,12 +18,13 @@ export default async function handler(req, res) {
     ? String(req.url).slice(String(req.url).indexOf('?'))
     : ''
   const key = readAdminKey(req)
+  const incomingAuth = String(req.headers.authorization || '')
   const forwarded = {
     method: req.method,
     headers: {
       'content-type': 'application/json',
       'x-admin-key': key,
-      authorization: key ? `Admin ${key}` : '',
+      authorization: incomingAuth || (key ? `Admin ${key}` : ''),
     },
     body: req.body,
   }

@@ -2821,3 +2821,53 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
   :root { --line: #69808f; --muted: #d0d9de; }
   .card, .odd, .chip, .responsible-control, .wallet-tx { border-width: 2px; }
 }
+
+.ops {
+  max-width: 980px;
+  margin: 0 auto 48px;
+}
+.ops-kicker {
+  margin: 0;
+  color: var(--mint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.ops h1 { margin: 4px 0 8px; font-size: 28px; }
+.ops-lead { color: var(--muted); line-height: 1.55; max-width: 720px; }
+.ops-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; }
+.ops-staff { color: var(--mint); font-weight: 700; }
+.ops-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.ops-nav a, .ops-nav button {
+  border: 1px solid var(--line);
+  background: var(--slate);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 700;
+}
+.ops-nav a.active, .ops-nav button.on { background: var(--mint); color: var(--navy); border-color: var(--mint); }
+.ops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.ops-stat {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--slate);
+}
+.ops-stat small { display: block; color: var(--muted); margin-bottom: 6px; }
+.ops-stat strong { font-size: 22px; }
+.ops-panel { max-width: none; }
+.ops-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.ops-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ops-cols p { margin: 6px 0; color: var(--muted); }
