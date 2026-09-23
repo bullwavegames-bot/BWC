@@ -4,6 +4,7 @@ import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
 import { AdminDesk, BillingPage, TelegramCashIn } from './BillingPages.jsx'
 import { PayLogo } from './PayLogo.jsx'
+import { PersonalData } from './PersonalData.jsx'
 import { ProfileAvatar, ProfileHub } from './ProfileHub.jsx'
 import { isStrongPassword, PASSWORD_HINT } from './authRules.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
@@ -364,7 +365,7 @@ const dialingCountries = [
 ]
 
 function AuthModal() {
-  const { authMode, setAuthMode, login, loginWithPhone, register, loginWithGoogle, requestPasswordReset, updatePassword, authError, setAuthError } = useApp()
+  const { authMode, setAuthMode, login, loginWithPhone, register, loginWithGoogle, resetPasswordWithPhone, authError, setAuthError } = useApp()
   const [loginTab, setLoginTab] = useState('Phone')
   const [signupTab, setSignupTab] = useState('Phone')
   const [showPass, setShowPass] = useState(false)
@@ -378,7 +379,7 @@ function AuthModal() {
   const [countryQuery, setCountryQuery] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [recoverySent, setRecoverySent] = useState(false)
+  const [recoveryDone, setRecoveryDone] = useState(false)
   const [promoCode, setPromoCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [otp, setOtp] = useState('')
@@ -398,8 +399,7 @@ function AuthModal() {
 
   if (!authMode) return null
   const isLogin = authMode === 'login'
-  const isRecover = authMode === 'recover'
-  const isUpdatePassword = authMode === 'update-password'
+  const isRecover = authMode === 'recover' || authMode === 'update-password'
 
   const requestOtp = async () => {
     setBusy(true)
@@ -430,7 +430,7 @@ function AuthModal() {
       } else {
         await verifyOtp(fullPhone, otp)
         setPhoneVerified(true)
-        setOtpHint('Phone verified.')
+        setOtpHint(isRecover ? 'Phone verified. Set a new password.' : 'Phone verified.')
       }
     } catch (err) {
       setPhoneVerified(false)
@@ -474,24 +474,19 @@ function AuthModal() {
     }
   }
 
-  const sendRecovery = async () => {
+  const saveRecoveredPassword = async () => {
     setBusy(true)
     setAuthError('')
     try {
-      await requestPasswordReset(email)
-      setRecoverySent(true)
-    } catch (err) {
-      setAuthError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const saveNewPassword = async () => {
-    setBusy(true)
-    setAuthError('')
-    try {
-      await updatePassword(password)
+      if (phone.replace(/\D/g, '').length !== 10) throw new Error('Enter the 10-digit mobile number on your account.')
+      if (!phoneVerified) throw new Error('Verify your phone with OTP first. Email cannot reset a password.')
+      if (!isStrongPassword(password)) throw new Error(`Password must be ${PASSWORD_HINT}.`)
+      await resetPasswordWithPhone({ phone: fullPhone, otp, password })
+      setRecoveryDone(true)
+      setPassword('')
+      setOtp('')
+      setPhoneVerified(false)
+      setOtpSent(false)
     } catch (err) {
       setAuthError(err.message)
     } finally {
@@ -526,10 +521,10 @@ function AuthModal() {
 
   return (
     <div className="overlay" onClick={() => setAuthMode(null)}>
-      <div className={`modal ${isLogin || isRecover || isUpdatePassword ? 'login-modal' : ''}`} role="dialog" aria-modal="true" aria-label={isLogin ? 'Log in' : isRecover ? 'Reset password' : isUpdatePassword ? 'Set new password' : 'Sign up'} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${isLogin || isRecover ? 'login-modal' : ''}`} role="dialog" aria-modal="true" aria-label={isLogin ? 'Log in' : isRecover ? 'Reset password' : 'Sign up'} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <button className="icon-btn" onClick={() => setAuthMode(null)} aria-label="Close"><Icon name="close" /></button>
-          <h1>{isLogin ? 'Log in' : isRecover ? 'Reset password' : isUpdatePassword ? 'New password' : 'Sign up'}</h1>
+          <h1>{isLogin ? 'Log in' : isRecover ? 'Reset password' : 'Sign up'}</h1>
           <button className="icon-btn" type="button" aria-label="Support">🎧</button>
         </div>
         {(isLogin || authMode === 'signup') && (
@@ -545,24 +540,43 @@ function AuthModal() {
 
         {isRecover ? (
           <div className="recovery-panel">
-            {recoverySent ? (
-              <p className="recovery-message">If an account exists for <strong>{email}</strong>, a password reset link is on its way. Check your inbox.</p>
+            {recoveryDone ? (
+              <p className="recovery-message">Password updated. Log in with your e-mail or phone and the new password. E-mail is only for creating and signing in — it cannot reset a password.</p>
             ) : (
               <>
-                <p>Enter the e-mail linked to your account. We’ll send you a secure reset link.</p>
-                <label className="auth-label" htmlFor="recovery-email">Account e-mail</label>
-                <input id="recovery-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendRecovery() }} />
-                <button className="btn btn-yellow btn-block" type="button" disabled={busy || !email.trim()} onClick={sendRecovery}>{busy ? 'Sending…' : 'Send reset link'}</button>
+                <p>E-mail cannot reset a password. Confirm the mobile number on your account with OTP, then choose a new password. New members can still create an account with e-mail.</p>
+                {renderPhoneField()}
+                <div className="otp-row login-otp-row">
+                  <input
+                    className="input"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={otpLength}
+                    placeholder={`${otpLength}-digit OTP`}
+                    aria-label="One-time password"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, otpLength))}
+                    disabled={!otpSent}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && otp.length === otpLength) confirmOtp() }}
+                  />
+                  {otpSent ? (
+                    <button className="btn btn-yellow" type="button" disabled={busy || otp.length !== otpLength || phoneVerified} onClick={confirmOtp}>{busy ? 'Checking…' : phoneVerified ? 'Verified' : 'Verify phone'}</button>
+                  ) : (
+                    <button className="btn btn-yellow" type="button" disabled={busy || phone.replace(/\D/g, '').length !== 10} onClick={requestOtp}>{busy ? 'Sending…' : 'Send OTP'}</button>
+                  )}
+                </div>
+                {otpSent && <button className="otp-resend" type="button" disabled={busy || resendSeconds > 0} onClick={requestOtp}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Send a new code'}</button>}
+                {otpHint && <p className="hint otp-status">{otpHint}</p>}
+                {phoneVerified && (
+                  <>
+                    <label className="auth-label" htmlFor="new-password">New password</label>
+                    <input id="new-password" className="input" type="password" autoComplete="new-password" placeholder={PASSWORD_HINT} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveRecoveredPassword() }} />
+                    <button className="btn btn-yellow btn-block" type="button" disabled={busy || !isStrongPassword(password)} onClick={saveRecoveredPassword}>{busy ? 'Saving…' : 'Save new password'}</button>
+                  </>
+                )}
               </>
             )}
-            <button className="auth-back" type="button" onClick={() => { setAuthError(''); setAuthMode('login') }}>← Back to log in</button>
-          </div>
-        ) : isUpdatePassword ? (
-          <div className="recovery-panel">
-            <p>Choose a new password for your Bullwave Club account.</p>
-            <label className="auth-label" htmlFor="new-password">New password</label>
-            <input id="new-password" className="input" type="password" autoComplete="new-password" placeholder={PASSWORD_HINT} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveNewPassword() }} />
-            <button className="btn btn-yellow btn-block" type="button" disabled={busy || !isStrongPassword(password)} onClick={saveNewPassword}>{busy ? 'Saving…' : 'Save new password'}</button>
+            <button className="auth-back" type="button" onClick={() => { setAuthError(''); setRecoveryDone(false); setAuthMode('login') }}>← Back to log in</button>
           </div>
         ) : isLogin ? (
           <>
@@ -607,7 +621,7 @@ function AuthModal() {
                   <input id="login-password" className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
                   <button className="eye" type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Hide password' : 'Show password'}><Icon name={showPass ? 'close' : 'eye'} size={18} /></button>
                 </div>
-                <button className="forgot" type="button" onClick={() => { setAuthError(''); setRecoverySent(false); setAuthMode('recover') }}>Forgot your password?</button>
+                <button className="forgot" type="button" onClick={() => { setAuthError(''); setRecoveryDone(false); setPhoneVerified(false); setOtpSent(false); setOtpHint(''); setOtp(''); setPassword(''); setAuthMode('recover') }}>Forgot your password?</button>
                 <button className="btn btn-yellow btn-block" disabled={busy || !email.trim() || !password} onClick={submit}>{busy ? 'Please wait…' : 'Log in to Bullwave Club'}</button>
               </>
             )}
@@ -1601,9 +1615,6 @@ function About() {
   )
 }
 
-function Verification() {
-  return <div className="content-page"><PageIntro eyebrow="ACCOUNT" title="Verification" description="Review your account details and available verification steps." icon="shield" action={{ to: '/account', label: 'Back to account' }} /><EmptyState icon="shield" title="Verification details" detail="Account verification options will appear here when available for your account." action={{ to: '/account', label: 'My account' }} /></div>
-}
 
 function SearchOverlay() {
   const { searchOpen, setSearchOpen, catalogMatches: matches } = useApp()
@@ -1707,7 +1718,8 @@ export default function App() {
             <Route path="/account/withdraw" element={<Deposit type="withdraw" />} />
             <Route path="/account/billing" element={<BillingPage />} />
             <Route path="/account/bets" element={<Bets />} />
-            <Route path="/account/verify" element={<Verification />} />
+            <Route path="/account/verify" element={<PersonalData />} />
+            <Route path="/account/personal-data" element={<PersonalData />} />
             <Route path="/account/settings" element={<More settings />} />
             <Route path="/ops" element={<AdminDesk />} />
             <Route path="/vip" element={<Vip />} />

@@ -81,6 +81,14 @@ export function mapAccount(data, extra = {}) {
     bonusCoins: Number(wallet.bonusCash ?? profile.bonusCoins ?? extra.bonusCoins ?? 0),
     vipLevel: profile.vipLevel || 1,
     accountNumber: profile.accountNumber || extra.accountNumber || '',
+    playerId: profile.playerId || extra.playerId || '',
+    firstName: profile.firstName || extra.firstName || '',
+    lastName: profile.lastName || extra.lastName || '',
+    dob: profile.dob || extra.dob || '',
+    country: profile.country || extra.country || 'India',
+    city: profile.city || extra.city || '',
+    secretQuestion: profile.secretQuestion || extra.secretQuestion || '',
+    secretAnswer: profile.secretAnswer || extra.secretAnswer || '',
     createdAt: profile.createdAt || extra.createdAt,
   }
 }

@@ -326,7 +326,7 @@ export const accountLinks = [
   { name: 'Withdraw', to: '/account/withdraw', icon: 'minus', hint: 'Cash out' },
   { name: 'My bets', to: '/account/bets', icon: 'ticket', hint: 'Open and settled' },
   { name: 'Bonuses', to: '/promotions', icon: 'gift', hint: 'Offers and codes' },
-  { name: 'Verification', to: '/account/verify', icon: 'shield', hint: 'Account details' },
+  { name: 'Personal data', to: '/account/verify', icon: 'shield', hint: 'Aadhaar details and password' },
   { name: 'Settings', to: '/account/settings', icon: 'gear', hint: 'Theme and security' },
   { name: 'Safer play', to: '/faq', icon: 'heart', hint: 'Limits and breaks' },
   { name: 'Billing', to: '/account/billing', icon: 'ticket', hint: 'Receipts and UTR' },

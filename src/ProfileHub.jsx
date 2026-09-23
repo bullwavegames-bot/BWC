@@ -2,11 +2,9 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useApp } from './store.jsx'
 
 export function playerPublicId(user) {
-  const digits = String(user?.accountNumber || '').replace(/\D/g, '')
-  if (digits.length >= 8) return digits.padStart(9, '0').slice(-9)
-  let n = 410000000
-  for (const ch of String(user?.id || 'guest')) n = (n + ch.charCodeAt(0) * 131) % 89999999
-  return String(410000000 + n).slice(0, 9)
+  if (user?.playerId) return String(user.playerId)
+  if (user?.accountNumber) return String(user.accountNumber).replace(/^BW/i, '')
+  return ''
 }
 
 function Row({ to, icon, label, onClick }) {
@@ -56,7 +54,7 @@ const Ico = {
 export function ProfileAvatar({ to = '/profile' }) {
   return (
     <NavLink to={to} className="profile-avatar" aria-label="Open profile">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1a1a1a" strokeWidth="1.7">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0c191b" strokeWidth="1.7">
         <circle cx="12" cy="8.2" r="3.4" />
         <path d="M5 19.2c1.4-3.5 3.8-5.2 7-5.2s5.6 1.7 7 5.2" />
       </svg>
@@ -87,19 +85,8 @@ export function ProfileHub() {
   return (
     <div className="profile-page">
       <div className="profile-id">
-        <span>ID {id}</span>
+        <span>ID {id || '—'}</span>
         <button type="button" className="profile-id-copy" onClick={copyId} aria-label="Copy ID">⧉</button>
-        <span className="profile-id-alert" aria-hidden="true">!</span>
-      </div>
-      <div className="profile-hubs">
-        <NavLink to="/vip" className="profile-hub profile-hub-loyalty">
-          <span>Loyalty Hub</span>
-          <span className="profile-hub-art" aria-hidden="true">★</span>
-        </NavLink>
-        <NavLink to="/promotions" className="profile-hub profile-hub-bonus">
-          <span>Bonus Bazaar</span>
-          <span className="profile-hub-art" aria-hidden="true">🛍</span>
-        </NavLink>
       </div>
       <div className="profile-balance-card">
         <NavLink to="/account" className="profile-balance">

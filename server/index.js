@@ -67,6 +67,28 @@ app.use(express.json())
 app.set('trust proxy', 1)
 
 const users = new Map()
+const usedPlayerIds = new Set()
+let playerSeq = 100000000
+
+function nextPlayerId() {
+  let id
+  do {
+    playerSeq += 1
+    id = String(playerSeq)
+  } while (usedPlayerIds.has(id))
+  usedPlayerIds.add(id)
+  return id
+}
+
+function ensurePlayerId(user) {
+  if (!user) return null
+  if (user.playerId) {
+    usedPlayerIds.add(String(user.playerId))
+    return user.playerId
+  }
+  user.playerId = nextPlayerId()
+  return user.playerId
+}
 const bets = []
 const otpRequests = new Map()
 const OTP_WINDOW_MS = 10 * 60 * 1000
@@ -88,14 +110,25 @@ function limitOtpRequests(req, res, next) {
 }
 
 function publicUser(user) {
+  ensurePlayerId(user)
   const cash = Number(user.balance || 0)
   const bonusCoins = Number(user.bonusCoins || 0)
   return {
     id: user.id,
+    playerId: user.playerId,
     phone: user.phone || null,
     email: user.email || null,
     username: user.username || null,
     accountNumber: user.accountNumber,
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    dob: user.dob || '',
+    country: user.country || 'India',
+    city: user.city || '',
+    secretQuestion: user.secretQuestion || '',
+    secretAnswer: user.secretAnswer || '',
+    phoneConfirmed: Boolean(user.phone),
+    emailConfirmed: Boolean(user.email),
     bonus: user.bonus,
     bonusCoins,
     promoCode: user.promoCode || null,
@@ -125,6 +158,7 @@ function findUsers(q) {
   if (!needle) return list.slice(0, 40)
   return list.filter((u) => (
     u.id.toLowerCase().includes(needle)
+    || String(u.playerId || '').includes(needle)
     || String(u.accountNumber || '').toLowerCase().includes(needle)
     || String(u.phone || '').includes(needle)
     || String(u.email || '').toLowerCase().includes(needle)
@@ -223,6 +257,7 @@ async function loginWithOtp(req, res) {
         phone,
         email: null,
         accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
+        playerId: nextPlayerId(),
         passwordHash: null,
         bonus: 'Welcome Casino 100%',
         bonusCoins: 0,
@@ -273,6 +308,7 @@ app.post('/api/auth/register', async (req, res) => {
     phone: method === 'email' ? null : identifier,
     email: method === 'email' ? identifier : cleanEmail || null,
     accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
+    playerId: nextPlayerId(),
     passwordHash: await bcrypt.hash(password, 10),
     bonus: bonus || 'Welcome Casino 100%',
     bonusCoins: 0,
@@ -301,6 +337,54 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/me', auth, (req, res) => {
   res.json({ user: publicUser(req.user) })
+})
+
+app.patch('/api/me/profile', auth, (req, res) => {
+  const body = req.body || {}
+  const firstName = String(body.firstName || '').trim()
+  const lastName = String(body.lastName || '').trim()
+  const dob = String(body.dob || '').trim()
+  const country = String(body.country || 'India').trim()
+  const city = String(body.city || '').trim()
+  const secretQuestion = String(body.secretQuestion || '').trim()
+  const secretAnswer = String(body.secretAnswer || '').trim()
+  const phone = body.phone ? normalizePhone(body.phone) : req.user.phone
+  if (!firstName || !lastName || !dob || !country || !city || !secretQuestion || !secretAnswer) {
+    return res.status(400).json({ error: 'Fill every required personal-data field.' })
+  }
+  if (phone && !isTenDigitPhone(phone)) {
+    return res.status(400).json({ error: 'Enter a 10-digit mobile number.' })
+  }
+  if (phone && phone !== normalizePhone(req.user.phone) && !isPhoneVerified(phone)) {
+    return res.status(400).json({ error: 'Verify the new mobile number with OTP before saving.' })
+  }
+  Object.assign(req.user, { firstName, lastName, dob, country, city, secretQuestion, secretAnswer, phone: phone || req.user.phone })
+  res.json({ user: publicUser(req.user) })
+})
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const phone = normalizePhone(req.body?.phone)
+  const password = req.body?.password
+  if (!isTenDigitPhone(phone)) {
+    return res.status(400).json({ error: 'Verify your mobile number with OTP first. Email cannot reset a password.' })
+  }
+  if (!isStrongPassword(password)) {
+    return res.status(400).json({ error: passwordError(password) })
+  }
+  if (!isPhoneVerified(phone)) {
+    try {
+      await verifyOtp(phone, req.body?.otp, { consume: false })
+    } catch (err) {
+      return res.status(400).json({ error: err.message || 'Verify the OTP sent to your phone first.' })
+    }
+  }
+  const user = findUser({ phone })
+  if (!user) return res.status(400).json({ error: 'No club account uses this mobile number.' })
+  if (!consumePhoneVerification(phone)) {
+    return res.status(400).json({ error: 'Verify the OTP sent to your phone first.' })
+  }
+  user.passwordHash = await bcrypt.hash(password, 10)
+  res.json({ ok: true, message: 'Password updated. Log in with your phone or e-mail and the new password.' })
 })
 
 app.get('/api/me/bets', auth, (req, res) => {

@@ -76,9 +76,7 @@ export function AppProvider({ children }) {
       }
     }
     boot()
-    const { data: authListener } = supabase?.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setAuthMode('update-password')
-    }) || {}
+    const { data: authListener } = supabase?.auth.onAuthStateChange(() => {}) || {}
     return () => authListener?.subscription.unsubscribe()
   }, [])
 
@@ -123,22 +121,20 @@ export function AppProvider({ children }) {
     return mapped
   }
 
-  const requestPasswordReset = async (email) => {
-    const client = assertSupabase()
-    const address = email?.trim()
-    if (!address) throw new Error('Enter your account e-mail first.')
-    const { error } = await client.auth.resetPasswordForEmail(address, { redirectTo: window.location.origin })
-    if (error) throw new Error(error.message)
+  const saveProfile = async (fields) => {
+    if (!token) throw new Error('Log in first')
+    const data = await api('/api/me/profile', { method: 'PATCH', token, body: fields })
+    const mapped = mapAccount(data, user)
+    applySession(token, mapped)
+    return mapped
   }
 
-  const updatePassword = async (password) => {
-    const client = assertSupabase()
-    if (!password) throw new Error('Password is required')
-    const nextPasswordError = passwordError(password)
-    if (nextPasswordError) throw new Error(nextPasswordError)
-    const { error } = await client.auth.updateUser({ password })
-    if (error) throw new Error(error.message)
-    setAuthMode(null)
+  const resetPasswordWithPhone = async ({ phone, otp, password }) => {
+    setAuthError('')
+    if (!isTenDigitPhone(phone)) throw new Error('Verify your mobile number with OTP first. Email cannot reset a password.')
+    const err = passwordError(password)
+    if (err) throw new Error(err)
+    await api('/api/auth/reset-password', { method: 'POST', body: { phone, otp, password } })
   }
 
   const register = async (payload) => {
@@ -266,8 +262,12 @@ export function AppProvider({ children }) {
       token,
       login,
       loginWithPhone,
-      requestPasswordReset,
-      updatePassword,
+      requestPasswordReset: resetPasswordWithPhone,
+      resetPasswordWithPhone,
+      saveProfile,
+      updatePassword: async () => {
+        throw new Error('Email cannot reset a password. Verify your phone with OTP first.')
+      },
       register,
       loginWithGoogle,
       logout,
