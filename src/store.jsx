@@ -8,7 +8,20 @@ const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
   const [betslip, setBetslip] = useState([])
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bwc_favorites')) || []
+    } catch {
+      return []
+    }
+  })
+  const [recentMatches, setRecentMatches] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bwc_recent_matches')) || []
+    } catch {
+      return []
+    }
+  })
   const [authMode, setAuthMode] = useState(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -24,6 +37,10 @@ export function AppProvider({ children }) {
   const [oddsFormat, setOddsFormat] = useState('decimal')
   const [theme, setTheme] = useState(() => (typeof localStorage !== 'undefined' && localStorage.getItem('bwc_theme') === 'light' ? 'light' : 'dark'))
   const [slipOpen, setSlipOpen] = useState(false)
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState('')
+  const [betNotice, setBetNotice] = useState(null)
+  const [lastAddedBetId, setLastAddedBetId] = useState(null)
 
   const applySession = (nextToken, nextUser) => {
     setToken(nextToken)
@@ -48,17 +65,26 @@ export function AppProvider({ children }) {
     }
   }
 
+  const reloadCatalog = async () => {
+    setCatalogLoading(true)
+    setCatalogError('')
+    try {
+      const data = await api('/api/games')
+      if (data.games?.length) setClubGames(data.games.map(mapClubGame))
+    } catch {
+      setCatalogError('Live catalogue unavailable. Showing saved markets.')
+    } finally {
+      setCatalogLoading(false)
+    }
+  }
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     localStorage.setItem('bwc_theme', theme)
   }, [theme])
 
   useEffect(() => {
-    api('/api/games')
-      .then((data) => {
-        if (data.games?.length) setClubGames(data.games.map(mapClubGame))
-      })
-      .catch(() => {})
+    reloadCatalog()
 
     const boot = async () => {
       const session = loadSession()
@@ -80,20 +106,46 @@ export function AppProvider({ children }) {
     return () => authListener?.subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem('bwc_favorites', JSON.stringify(favorites))
+  }, [favorites])
+
+  useEffect(() => {
+    localStorage.setItem('bwc_recent_matches', JSON.stringify(recentMatches))
+  }, [recentMatches])
+
+  useEffect(() => {
+    if (!betNotice) return undefined
+    const timer = window.setTimeout(() => setBetNotice(null), 2600)
+    return () => window.clearTimeout(timer)
+  }, [betNotice])
+
   const addBet = (bet) => {
-    setBetslip((prev) => {
-      const exists = prev.find((b) => b.id === bet.id)
-      if (exists) return prev.filter((b) => b.id !== bet.id)
-      return [...prev, bet]
-    })
+    if (betslip.some((item) => item.id === bet.id)) {
+      setBetNotice({ type: 'warning', message: 'This selection is already in your bet slip.' })
+      return
+    }
+    setBetslip((prev) => [...prev, bet])
+    setLastAddedBetId(bet.id)
+    setBetNotice({ type: 'success', message: `${bet.pick} added to your bet slip.` })
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1200px)').matches) setSlipOpen(true)
   }
 
-  const removeBet = (id) => setBetslip((prev) => prev.filter((b) => b.id !== id))
-  const clearSlip = () => setBetslip([])
+  const removeBet = (id) => {
+    setBetslip((prev) => prev.filter((b) => b.id !== id))
+    setBetNotice({ type: 'info', message: 'Selection removed.' })
+  }
+  const clearSlip = () => {
+    setBetslip([])
+    setBetNotice({ type: 'info', message: 'Bet slip cleared.' })
+  }
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const recordMatchView = (id) => {
+    setRecentMatches((current) => [id, ...current.filter((item) => item !== id)].slice(0, 6))
   }
 
   const login = async (payload) => {
@@ -249,6 +301,8 @@ export function AppProvider({ children }) {
       placeBets,
       favorites,
       toggleFavorite,
+      recentMatches,
+      recordMatchView,
       authMode,
       setAuthMode,
       authError,
@@ -287,8 +341,14 @@ export function AppProvider({ children }) {
       setTheme,
       slipOpen,
       setSlipOpen,
+      catalogLoading,
+      catalogError,
+      reloadCatalog,
+      betNotice,
+      setBetNotice,
+      lastAddedBetId,
     }),
-    [betslip, favorites, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme, slipOpen],
+    [betslip, favorites, recentMatches, authMode, authError, searchOpen, menuOpen, loggedIn, user, token, myBets, catalogMatches, clubGames, language, langOpen, oddsFormat, theme, slipOpen, catalogLoading, catalogError, betNotice, lastAddedBetId],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, Route, Routes, useParams } from 'react-router-dom'
+import { NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
 import { sendOtp, verifyOtp } from './api.js'
 import { AdminDesk, BillingPage, TelegramCashIn } from './BillingPages.jsx'
@@ -140,6 +140,113 @@ function CountryFlag({ code, className = '' }) {
   return <img className={`country-flag-image ${className}`} src={`${import.meta.env.BASE_URL}images/flags/${code.toLowerCase()}.svg`} alt="" width="24" height="18" />
 }
 
+function stableNumber(value) {
+  return [...String(value)].reduce((sum, char) => ((sum * 31) + char.charCodeAt(0)) % 997, 7)
+}
+
+function OddButton({ id, odd, label, selected, onSelect }) {
+  const seed = useMemo(() => stableNumber(id), [id])
+  const [quote, setQuote] = useState({ value: odd, direction: 0 })
+  useEffect(() => {
+    setQuote({ value: odd, direction: 0 })
+    const interval = window.setInterval(() => {
+      const direction = ((Math.floor(Date.now() / 8000) + seed) % 3) - 1
+      if (direction === 0) return
+      setQuote((current) => ({ value: Math.max(1.01, Number((current.value + direction * 0.01).toFixed(2))), direction }))
+    }, 8000 + (seed % 4) * 700)
+    return () => window.clearInterval(interval)
+  }, [id, odd, seed])
+  return (
+    <button className={`odd ${selected ? 'on' : ''} ${quote.direction > 0 ? 'odd-up' : quote.direction < 0 ? 'odd-down' : ''}`} onClick={() => onSelect(quote.value)} aria-label={`${label}, odds ${quote.value.toFixed(2)}${quote.direction ? `, moved ${quote.direction > 0 ? 'up' : 'down'}` : ''}`}>
+      <b>{quote.value.toFixed(2)}{quote.direction !== 0 && <i aria-hidden="true">{quote.direction > 0 ? '↑' : '↓'}</i>}</b>
+      <small>{label}</small>
+    </button>
+  )
+}
+
+function SkeletonGrid({ count = 6, type = 'matches' }) {
+  return <div className={`skeleton-grid skeleton-${type}`} aria-label="Loading content" aria-busy="true">
+    {Array.from({ length: count }, (_, index) => <div key={index} className="skeleton-card"><span /><span /><span /><div><i /><i /><i /></div></div>)}
+  </div>
+}
+
+function LiveTicker() {
+  const { catalogMatches: matches } = useApp()
+  const live = matches.filter((match) => match.live)
+  if (!live.length) return null
+  return <section className="live-ticker" aria-label="Live score ticker">
+    <NavLink to="/live" className="ticker-label"><span />Live now</NavLink>
+    <div className="ticker-track">
+      <div className="ticker-items">
+        {live.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="ticker-event"><small>{match.time}</small><strong>{match.home}</strong><b>{match.score?.[0] || 'Live'}</b><span>vs</span><strong>{match.away}</strong><b>{match.score?.[1] || ''}</b></NavLink>)}
+      </div>
+    </div>
+    <NavLink to="/live" className="ticker-all" aria-label="View all live events"><Icon name="chevron" size={16} /></NavLink>
+  </section>
+}
+
+function BetNotice() {
+  const { betNotice, setBetNotice, setSlipOpen } = useApp()
+  if (!betNotice) return null
+  return <div className={`bet-toast is-${betNotice.type}`} role="status">
+    <span>{betNotice.type === 'success' ? '✓' : betNotice.type === 'warning' ? '!' : '–'}</span>
+    <p>{betNotice.message}</p>
+    {betNotice.type === 'success' && <button type="button" onClick={() => setSlipOpen(true)}>View slip</button>}
+    <button type="button" className="toast-close" onClick={() => setBetNotice(null)} aria-label="Dismiss notification"><Icon name="close" size={15} /></button>
+  </div>
+}
+
+function useSwipeDismiss(onDismiss, direction = 'left') {
+  const touchStart = useRef(null)
+  return {
+    onTouchStart: (event) => {
+      const touch = event.touches[0]
+      touchStart.current = { x: touch.clientX, y: touch.clientY }
+    },
+    onTouchEnd: (event) => {
+      if (!touchStart.current) return
+      const touch = event.changedTouches[0]
+      const dx = touch.clientX - touchStart.current.x
+      const dy = touch.clientY - touchStart.current.y
+      touchStart.current = null
+      if (direction === 'left' && dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.25) onDismiss()
+      if (direction === 'down' && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.25) onDismiss()
+    },
+  }
+}
+
+function ConnectivityBanner() {
+  const [online, setOnline] = useState(() => navigator.onLine)
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
+  return online ? null : <div className="connectivity-banner" role="status"><span />You're offline. Saved content is still available.</div>
+}
+
+function CatalogNotice() {
+  const { catalogError, reloadCatalog } = useApp()
+  if (!catalogError) return null
+  return <div className="catalog-notice" role="alert"><Icon name="live" size={17} /><span>{catalogError}</span><button type="button" onClick={reloadCatalog}>Retry</button></div>
+}
+
+function SessionReminder() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const settings = loadPlaySettings()
+    if (!settings.reminder) return undefined
+    const timer = window.setTimeout(() => setVisible(true), Number(settings.reminder) * 60 * 1000)
+    return () => window.clearTimeout(timer)
+  }, [])
+  if (!visible) return null
+  return <div className="session-reminder" role="alertdialog" aria-modal="true" aria-label="Session time reminder"><span className="feature-icon"><Icon name="clock" size={20} /></span><div><strong>Time check</strong><p>You have been active for a while. Review your play and take a break if you need one.</p></div><NavLink to="/responsible-play" onClick={() => setVisible(false)}>Review limits</NavLink><button type="button" onClick={() => setVisible(false)}>Continue</button></div>
+}
+
 function LanguagePicker({ embedded = false }) {
   const { language, setLanguage, langOpen, setLangOpen } = useApp()
   const current = languages.find((l) => l.code === language) || languages[1]
@@ -184,6 +291,40 @@ function sportIcon(sport) {
   return sport || 'live'
 }
 
+const notificationSeed = [
+  { id: 'n1', group: 'Today', type: 'match', title: 'Camel race starts in 15 minutes', detail: 'Desert King vs Sand Storm', time: '12:15 PM', icon: 'clock' },
+  { id: 'n2', group: 'Today', type: 'odds', title: 'Odds moved on your selection', detail: 'India U-19 shortened from 1.82 to 1.76', time: '11:42 AM', icon: 'live' },
+  { id: 'n3', group: 'Today', type: 'bet', title: 'Bet settled', detail: 'Your football single was won', time: '10:08 AM', icon: 'ticket' },
+  { id: 'n4', group: 'Yesterday', type: 'wallet', title: 'Deposit completed', detail: '₹1,000 added through UPI', time: '6:31 PM', icon: 'plus' },
+  { id: 'n5', group: 'Yesterday', type: 'wallet', title: 'Withdrawal processing', detail: '₹500 is being reviewed', time: '3:12 PM', icon: 'minus' },
+  { id: 'n6', group: 'Earlier', type: 'promo', title: 'Weekend odds boost', detail: 'A new member promotion is available', time: 'Mon', icon: 'gift' },
+]
+
+function NotificationCenter({ onClose }) {
+  const [filter, setFilter] = useState('All')
+  const [read, setRead] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bwc_read_notifications')) || [] } catch { return [] }
+  })
+  const shown = notificationSeed.filter((item) => filter === 'All' || item.type === filter)
+  const groups = [...new Set(shown.map((item) => item.group))]
+  const markRead = (id) => {
+    const next = read.includes(id) ? read : [...read, id]
+    setRead(next)
+    localStorage.setItem('bwc_read_notifications', JSON.stringify(next))
+  }
+  const markAll = () => {
+    const next = notificationSeed.map((item) => item.id)
+    setRead(next)
+    localStorage.setItem('bwc_read_notifications', JSON.stringify(next))
+  }
+  return <section className="notifications-popover" role="dialog" aria-label="Notification centre">
+    <header><div><strong>Notifications</strong><small>{notificationSeed.length - read.length} unread</small></div><button type="button" onClick={onClose} aria-label="Close notifications"><Icon name="close" size={17} /></button></header>
+    <div className="notification-filters" role="tablist" aria-label="Notification types">{['All', 'match', 'bet', 'wallet', 'promo'].map((item) => <button key={item} type="button" role="tab" aria-selected={filter === item} className={filter === item ? 'on' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+    <div className="notification-list">{groups.map((group) => <div key={group} className="notification-group"><h3>{group}</h3>{shown.filter((item) => item.group === group).map((item) => <button key={item.id} type="button" className={read.includes(item.id) ? 'is-read' : ''} onClick={() => markRead(item.id)}><span className="notification-icon"><Icon name={item.icon} size={17} /></span><span><strong>{item.title}</strong><small>{item.detail}</small></span><time>{item.time}</time></button>)}</div>)}</div>
+    <footer><button type="button" onClick={markAll}>Mark all as read</button><NavLink to="/account/settings" onClick={onClose}>Preferences</NavLink></footer>
+  </section>
+}
+
 function Header() {
   const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, theme, setTheme } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -208,7 +349,7 @@ function Header() {
       <div className="header-right">
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
         <button className="icon-btn notification-btn" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Icon name="bell" size={21} /><i /></button>
-        {notificationsOpen && <div className="notifications-popover"><strong>Notifications</strong><p>You're all caught up.</p></div>}
+        {notificationsOpen && <NotificationCenter onClose={() => setNotificationsOpen(false)} />}
         <button
           type="button"
           className={`theme-toggle${light ? ' is-light' : ''}`}
@@ -273,6 +414,7 @@ function Sidebar() {
       ))}
       <div className="side-utility">
         <NavLink to="/account/settings" className="side-item"><span className="dot"><Icon name="gear" size={18} /></span>Settings</NavLink>
+        <NavLink to="/responsible-play" className="side-item"><span className="dot"><Icon name="shield" size={18} /></span>Responsible play</NavLink>
         <NavLink to="/faq" className="side-item"><span className="dot"><Icon name="help" size={18} /></span>Help</NavLink>
       </div>
       <div className="side-club"><span aria-hidden="true">♛</span><strong>Join Bullwave Club</strong><p>Get exclusive rewards,<br />boosted odds and more!</p><button type="button" onClick={() => setAuthMode('signup')}>Create Account</button></div>
@@ -281,17 +423,21 @@ function Sidebar() {
 }
 
 function Betslip() {
-  const { betslip, removeBet, placeBets, loggedIn, setAuthMode, slipOpen, setSlipOpen } = useApp()
+  const { betslip, removeBet, clearSlip, placeBets, loggedIn, setAuthMode, slipOpen, setSlipOpen, lastAddedBetId } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
-  const [mode, setMode] = useState('System')
+  const [mode, setMode] = useState('Single')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
+  const stakeValue = Number(stake)
+  const stakeError = stake !== '' && (!Number.isFinite(stakeValue) || stakeValue < 10) ? 'Minimum stake is ₹10.' : ''
+  const swipe = useSwipeDismiss(() => setSlipOpen(false), 'down')
   return (
     <>
     {slipOpen && <div className="slip-backdrop" onClick={() => setSlipOpen(false)} />}
-    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`}>
+    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`} {...swipe}>
       <div className="slip-panel">
-      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}<button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button></h3>
+      <span className="sheet-grabber" aria-hidden="true" />
+      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}{betslip.length > 0 && <button type="button" className="slip-clear" onClick={clearSlip}>Clear</button>}<button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button></h3>
       <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
       {betslip.length === 0 ? (
         <div className="slip-empty">
@@ -303,24 +449,26 @@ function Betslip() {
       ) : (
         <>
           {betslip.map((b) => (
-            <div key={b.id} className="slip-item">
-              <button className="remove" onClick={() => removeBet(b.id)}>✕</button>
-              <div style={{ color: '#888', fontSize: 12 }}>{b.event}</div>
-              <div style={{ fontWeight: 700 }}>{b.pick}</div>
-              <div style={{ color: '#61D6B0', marginTop: 4 }}>{b.odd}</div>
+            <div key={b.id} className={`slip-item ${lastAddedBetId === b.id ? 'just-added' : ''}`}>
+              <button className="remove" onClick={() => removeBet(b.id)} aria-label={`Remove ${b.pick}`}><Icon name="close" size={15} /></button>
+              <div className="slip-event">{b.event}</div>
+              <div className="slip-pick"><strong>{b.pick}</strong><b>{Number(b.odd).toFixed(2)}</b></div>
             </div>
           ))}
           <div className="stake">
-            <input placeholder="Stake, ₹" value={stake} onChange={(e) => setStake(e.target.value)} />
+            <label htmlFor="bet-stake">Stake</label>
+            <div className="stake-input"><span>₹</span><input id="bet-stake" type="number" min="10" inputMode="decimal" placeholder="100" value={stake} onChange={(e) => { setStake(e.target.value); setSlipError('') }} /></div>
+            <div className="stake-quick">{[100, 500, 1000].map((amount) => <button key={amount} type="button" className={stakeValue === amount ? 'on' : ''} onClick={() => setStake(String(amount))}>₹{amount}</button>)}</div>
+            {stakeError && <p className="stake-error">{stakeError}</p>}
           </div>
           <div className="slip-foot">
             {mode !== 'Single' && <p className="hint">{mode} bets are not available yet. Select Single to place a bet.</p>}
             <div className="row-between"><span>Total odds</span><b>{total.toFixed(2)}</b></div>
-            <div className="row-between"><span>Possible win</span><b>₹{(total * Number(stake || 0)).toFixed(2)}</b></div>
+            <div className="slip-payout"><span>Potential payout</span><b>₹{(total * Number(stake || 0)).toFixed(2)}</b></div>
             {slipError && <p className="hint" style={{ color: 'var(--coral)' }}>{slipError}</p>}
             <button
               className="btn btn-yellow btn-block"
-              disabled={mode !== 'Single'}
+              disabled={mode !== 'Single' || Boolean(stakeError) || !stakeValue}
               onClick={async () => {
                 setSlipError('')
                 if (!loggedIn) {
@@ -735,14 +883,14 @@ function MatchCard({ m }) {
       ) : (
         <div className={`odds ${m.markets.length === 2 ? 'two' : ''}`}>
           {m.markets.map((mk) => (
-            <button
+            <OddButton
               key={mk.id}
-              className={`odd ${selected(mk.id) ? 'on' : ''}`}
-              onClick={() => addBet({ id: mk.id, event: `${m.home} vs ${m.away}`, pick: `${mk.label}`, odd: mk.odd })}
-            >
-              <b>{mk.odd.toFixed(2)}</b>
-              <small>{mk.label}</small>
-            </button>
+              id={mk.id}
+              odd={mk.odd}
+              label={mk.label}
+              selected={selected(mk.id)}
+              onSelect={(price) => addBet({ id: mk.id, event: `${m.home} vs ${m.away}`, pick: `${mk.label}`, odd: price })}
+            />
           ))}
         </div>
       )}
@@ -828,8 +976,8 @@ function FeatureCards({ items }) {
   })}</div>
 }
 
-function EmptyState({ icon = 'star', title, detail, action }) {
-  return <div className="empty-state"><span className="empty-state-icon"><Icon name={icon} size={30} /></span><h2>{title}</h2><p>{detail}</p>{action && <NavLink to={action.to} className="btn btn-yellow">{action.label}</NavLink>}</div>
+function EmptyState({ icon = 'star', title, detail, action, type = 'empty', onRetry }) {
+  return <div className={`empty-state is-${type}`}><span className="empty-state-icon"><Icon name={icon} size={30} /></span><h2>{title}</h2><p>{detail}</p><div className="empty-state-actions">{onRetry && <button type="button" className="btn btn-yellow" onClick={onRetry}>Try again</button>}{action && <NavLink to={action.to} className={onRetry ? 'btn btn-ghost' : 'btn btn-yellow'}>{action.label}</NavLink>}</div></div>
 }
 
 function useCarouselControls() {
@@ -910,11 +1058,14 @@ function GameCarousel({ catalog }) {
 }
 
 function Home() {
-  const { catalogMatches: matches, clubGames } = useApp()
+  const { catalogMatches: matches, clubGames, favorites, recentMatches } = useApp()
   const featured = matches.find((m) => m.live) || matches[0]
   const [matchDay, setMatchDay] = useState('Today')
   const todayMatches = [matches.find((m) => m.sport === 'cricket' && m.live), matches.find((m) => m.sport === 'football' && !m.live), matches.find((m) => m.sport === 'tennis'), matches.find((m) => m.sport === 'basketball')].filter(Boolean)
   const topMatches = matchDay === 'Today' ? (todayMatches.length ? todayMatches : matches.slice(0, 4)) : matchDay === 'Tomorrow' ? matches.filter((m) => /TOMORROW/.test(m.time)).slice(0, 4) : matches.slice(0, 4)
+  const personalIds = [...recentMatches, ...favorites]
+  const personalMatches = personalIds.map((matchId) => matches.find((match) => match.id === matchId)).filter((match, index, list) => match && list.findIndex((item) => item.id === match.id) === index).slice(0, 4)
+  const forYou = personalMatches.length ? personalMatches : matches.filter((match) => match.live).slice(0, 4)
   const leagueCards = [
     { name: 'IPL', sport: 'Cricket', mark: 'IPL', className: 'ipl', to: '/sport/cricket' },
     { name: 'Premier League', sport: 'Football', mark: '♛', className: 'premier', to: '/sport/football' },
@@ -933,6 +1084,10 @@ function Home() {
         {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
+      <section className="personalized-home">
+        <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
+        <div className="personalized-row">{forYou.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="personalized-match"><span className={`top-match-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={18} /></span><span><small>{match.live ? 'LIVE' : match.time}</small><strong>{match.home} vs {match.away}</strong><em>{match.league}</em></span><Icon name="chevron" size={15} /></NavLink>)}</div>
+      </section>
       <div className="home-content-grid">
         <section className="live-feature-area">
           <h2 className="home-section-title"><Icon name="zap" size={24} /> Featured Live</h2>
@@ -952,7 +1107,7 @@ function Home() {
 }
 
 function Live() {
-  const { catalogMatches: matches } = useApp()
+  const { catalogMatches: matches, catalogLoading } = useApp()
   const live = matches.filter((m) => m.live)
   const [sport, setSport] = useState('All Live')
   const liveKey = { 'Camel Riding': 'camel', 'Horse Racing': 'horse', 'Table Tennis': 'table-tennis' }
@@ -960,32 +1115,32 @@ function Live() {
   return (
     <div className="content-page">
       <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
-      <div className="filters">
+      <div className="filters sticky-filters">
         {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Horse Racing', 'Camel Riding'].map((c) => (
           <button key={c} type="button" className={`chip ${sport === c ? 'on' : ''}`} onClick={() => setSport(c)}>{c}</button>
         ))}
       </div>
       <div className="content-section-title"><h2>{sport === 'All Live' ? 'Live right now' : `${sport} live`}</h2><span>{filtered.length} events</span></div>
-      {filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="live" title="No live events in this sport" detail="Try another sport or browse upcoming fixtures." action={{ to: '/upcoming', label: 'See upcoming events' }} />}
+      {catalogLoading ? <SkeletonGrid count={4} /> : filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="live" title="No live events in this sport" detail="Try another sport or browse upcoming fixtures." action={{ to: '/upcoming', label: 'See upcoming events' }} />}
     </div>
   )
 }
 
 function Upcoming() {
-  const { catalogMatches: matches } = useApp()
+  const { catalogMatches: matches, catalogLoading } = useApp()
   const upcoming = matches.filter((m) => !m.live)
   const [when, setWhen] = useState('All')
   const filtered = when === 'All' ? upcoming : upcoming.filter((m) => String(m.time || '').toUpperCase().startsWith(when.toUpperCase()))
   return (
     <div className="content-page">
       <PageIntro eyebrow="NEXT UP" title="Upcoming events" description="Plan ahead with the fixtures and markets on the schedule." icon="cal" stats={[{ label: 'Fixtures', value: upcoming.length }, { label: 'Sports', value: new Set(upcoming.map((m) => m.sport)).size }]} action={{ to: '/live', label: 'Explore live events' }} />
-      <div className="filters">
+      <div className="filters sticky-filters">
         {['All', 'Today', 'Tomorrow'].map((c) => (
           <button key={c} type="button" className={`chip ${when === c ? 'on' : ''}`} onClick={() => setWhen(c)}>{c}</button>
         ))}
       </div>
       <div className="content-section-title"><h2>{when === 'All' ? 'On the calendar' : when}</h2><span>{filtered.length} fixtures</span></div>
-      {filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No fixtures in this window" detail="Check all upcoming events for more matches." action={{ to: '/upcoming', label: 'All fixtures' }} />}
+      {catalogLoading ? <SkeletonGrid count={6} /> : filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No fixtures in this window" detail="Check all upcoming events for more matches." action={{ to: '/upcoming', label: 'All fixtures' }} />}
     </div>
   )
 }
@@ -1044,7 +1199,7 @@ function PromoArtwork({ type }) {
 }
 
 function Casino({ title, cat }) {
-  const { clubGames } = useApp()
+  const { clubGames, catalogLoading } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const items = catalog.filter((g) => g.cat === cat)
   const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Explore digital sports and strategy games.', tv: 'Game shows and trivia in the Bullwave collection.' }
@@ -1057,7 +1212,7 @@ function Casino({ title, cat }) {
       </div>
       {items.length > 0 && <div className="game-spotlight"><div className="game-spotlight-art"><GameArtwork game={items[0]} /></div><div className="game-spotlight-copy"><span className="eyebrow">FEATURED IN {title.toUpperCase()}</span><h2>{items[0].name}</h2><p>Take a closer look at this club favorite, then browse the full collection below.</p><a href="#game-collection" className="page-intro-action">Browse games <span aria-hidden="true">↘</span></a></div></div>}
       <div className="content-section-title" id="game-collection"><h2>Explore {title}</h2><span>{items.length} games</span></div>
-      {items.length ? <div className="casino-row">
+      {catalogLoading ? <SkeletonGrid count={6} type="games" /> : items.length ? <div className="casino-row">
         {items.map((g) => (
           <div key={g.id} className="game-tile">
             <GameArtwork game={g} />
@@ -1071,7 +1226,7 @@ function Casino({ title, cat }) {
 
 function Sport() {
   const { name } = useParams()
-  const { catalogMatches: matches } = useApp()
+  const { catalogMatches: matches, catalogLoading } = useApp()
   const [view, setView] = useState('All')
   const key = (name || 'football').replace('-racing', '')
   const list = matches.filter((m) => m.sport === key || m.sport === name)
@@ -1081,21 +1236,27 @@ function Sport() {
   return (
     <div className="content-page">
       <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
-      <div className="filters">
+      <div className="filters sticky-filters">
         {['All', 'Live', 'Upcoming'].map((c) => (
           <button key={c} type="button" className={`chip ${view === c ? 'on' : ''}`} onClick={() => setView(c)}>{c}</button>
         ))}
       </div>
       <div className="content-section-title"><h2>{view === 'All' ? 'All events' : view}</h2><span>{shown.length} events</span></div>
-      {shown.length ? <div className="match-grid">{shown.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No events in this view" detail="Try another tab or see all live events." action={{ to: '/live', label: 'Browse live events' }} />}
+      {catalogLoading ? <SkeletonGrid count={6} /> : shown.length ? <div className="match-grid">{shown.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No events in this view" detail="Try another tab or see all live events." action={{ to: '/live', label: 'Browse live events' }} />}
     </div>
   )
 }
 
 function MatchPage() {
   const { id } = useParams()
-  const { addBet, betslip, catalogMatches: matches } = useApp()
+  const { addBet, betslip, catalogMatches: matches, catalogLoading, recordMatchView } = useApp()
+  const [marketTab, setMarketTab] = useState('Popular')
   const m = matches.find((x) => x.id === id) || matches[4]
+  const visibleMarkets = matchMarkets.filter((market) => market.categories?.includes(marketTab))
+  useEffect(() => {
+    if (m?.id) recordMatchView(m.id)
+  }, [m?.id])
+  if (catalogLoading) return <div className="content-page"><SkeletonGrid count={4} /></div>
   return (
     <div className="content-page">
       <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={sportIcon(m.sport)} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
@@ -1103,21 +1264,18 @@ function MatchPage() {
         <div className="event-meta">{m.league} · {m.time}{m.live ? ' LIVE' : ''}</div>
         <h1 style={{ margin: '8px 0 0' }}>{m.home} {m.score?.[0] || ''} — {m.score?.[1] || ''} {m.away}</h1>
       </div>
-      {matchMarkets.map((mk) => (
+      <div className="market-tabs-wrap">
+        <nav className="market-tabs" role="tablist" aria-label="Betting market categories">
+          {['Popular', 'Match', 'Goals', 'Specials'].map((tab) => <button key={tab} type="button" role="tab" aria-selected={marketTab === tab} className={marketTab === tab ? 'active' : ''} onClick={() => setMarketTab(tab)}>{tab}{tab === 'Popular' && <span>★</span>}</button>)}
+        </nav>
+        <span className="odds-live-note"><i /> Odds update automatically</span>
+      </div>
+      {visibleMarkets.map((mk) => (
         <div key={mk.name} className="market">
-          <h3>{mk.name}</h3>
+          <h3>{mk.name}<span>{mk.rows.flat().length} selections</span></h3>
           {mk.rows.map((row, i) => (
             <div key={i} className="market-row" style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }}>
-              {row.map((c) => (
-                <button
-                  key={c.label}
-                  className={`odd ${betslip.some((b) => b.id === m.id + c.label) ? 'on' : ''}`}
-                  onClick={() => addBet({ id: m.id + c.label, event: `${m.home} vs ${m.away}`, pick: `${mk.name}: ${c.label}`, odd: c.odd })}
-                >
-                  <b>{c.odd.toFixed(2)}</b>
-                  <small>{c.label}</small>
-                </button>
-              ))}
+              {row.map((c) => <OddButton key={c.label} id={`${m.id}-${mk.name}-${c.label}`} odd={c.odd} label={c.label} selected={betslip.some((b) => b.id === `${m.id}-${mk.name}-${c.label}`)} onSelect={(price) => addBet({ id: `${m.id}-${mk.name}-${c.label}`, event: `${m.home} vs ${m.away}`, pick: `${mk.name}: ${c.label}`, odd: price })} />)}
             </div>
           ))}
         </div>
@@ -1192,29 +1350,36 @@ const WALLET_FACTS = [
   { title: '18+ only', body: 'Play with money you can afford to lose. Set limits anytime.' },
 ]
 
-function WalletActivity({ userId }) {
+function WalletActivity({ userId, bets = [], bonus = 0 }) {
   const [rows, setRows] = useState(() => loadWalletTx(userId))
+  const [filter, setFilter] = useState('All')
   useEffect(() => { setRows(loadWalletTx(userId)) }, [userId])
-  if (!rows.length) {
+  const betRows = bets.map((bet) => ({ id: `bet-${bet.id}`, type: 'bet', method: `${bet.selections?.length || 1} selection bet`, amount: Number(bet.stake || 0), status: bet.status || 'Open', at: bet.createdAt, detail: `Potential return ${rupees(bet.possibleWin)}` }))
+  const bonusRows = bonus > 0 ? [{ id: 'bonus-balance', type: 'bonus', method: 'Club bonus balance', amount: bonus, status: 'Available', at: new Date().toISOString(), detail: 'Bonus funds may have wagering requirements.' }] : []
+  const timeline = [...rows, ...betRows, ...bonusRows].sort((a, b) => new Date(b.at) - new Date(a.at))
+  const filtered = timeline.filter((item) => filter === 'All' || item.type === filter)
+  if (!timeline.length) {
     return <p className="wallet-empty-tx">No wallet activity yet. Deposits and withdrawals will show up here.</p>
   }
   return (
-    <div className="wallet-tx-list">
-      {rows.map((t) => (
-        <div key={t.id} className="wallet-tx">
-          <div>
-            <strong>{t.type === 'withdraw' ? 'Withdrawal' : 'Deposit'} · {t.method}</strong>
-            <small>{new Date(t.at).toLocaleString()} · {t.status}</small>
-          </div>
-          <b className={t.type === 'withdraw' ? 'is-out' : 'is-in'}>{t.type === 'withdraw' ? '−' : '+'}{rupees(t.amount)}</b>
-        </div>
-      ))}
+    <div className="wallet-timeline-wrap">
+      <div className="wallet-timeline-filters" role="tablist" aria-label="Transaction types">{['All', 'deposit', 'withdraw', 'bonus', 'bet'].map((item) => <button key={item} type="button" role="tab" aria-selected={filter === item} className={filter === item ? 'on' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      <div className="wallet-timeline">
+        {filtered.map((t) => {
+          const incoming = ['deposit', 'bonus'].includes(t.type)
+          const label = t.type === 'withdraw' ? 'Withdrawal' : t.type === 'bet' ? 'Bet placed' : t.type === 'bonus' ? 'Bonus' : 'Deposit'
+          return <details key={t.id} className={`wallet-tx tx-${t.type}`}>
+            <summary><span className="tx-marker"><Icon name={incoming ? 'plus' : t.type === 'bet' ? 'ticket' : 'minus'} size={16} /></span><span><strong>{label}</strong><small>{t.method} · {new Date(t.at).toLocaleString()}</small></span><span className={`tx-status status-${String(t.status).toLowerCase()}`}>{t.status}</span><b className={incoming ? 'is-in' : 'is-out'}>{incoming ? '+' : '−'}{rupees(t.amount)}</b><Icon name="chevron" size={15} /></summary>
+            <div className="tx-details"><span>Reference</span><b>{String(t.id).slice(-10).toUpperCase()}</b><span>Details</span><b>{t.detail || `${label} through ${t.method}`}</b></div>
+          </details>
+        })}
+      </div>
     </div>
   )
 }
 
 function Account() {
-  const { user, loggedIn, setAuthMode, logout } = useApp()
+  const { user, loggedIn, setAuthMode, logout, myBets } = useApp()
   const cash = Number(user?.balance || 0)
   const bonus = bonusCash(user)
   const bonusLabel = typeof user?.bonus === 'string' && user.bonus && !Number(user.bonus) ? user.bonus : null
@@ -1267,7 +1432,7 @@ function Account() {
       {loggedIn && (
         <>
           <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
-          <WalletActivity userId={user?.id} />
+          <WalletActivity userId={user?.id} bets={myBets} bonus={bonus} />
         </>
       )}
       <div className="content-section-title"><h2>Quick access</h2><span>Manage your club account</span></div>
@@ -1598,12 +1763,44 @@ function More({ settings = false }) {
       </div>
       <div className="card menu-item" style={{ marginTop: 8 }}>Odds Format <select value={oddsFormat} onChange={(e) => setOddsFormat(e.target.value)} className="input" style={{ width: 140, height: 36 }}><option value="decimal">2.20</option><option value="fractional">6/5</option><option value="american">+120</option></select></div>
       <div className="card more-links" style={{ marginTop: 8 }}>
+        <NavLink className="menu-item" to="/responsible-play">Responsible play</NavLink>
         <NavLink className="menu-item" to="/about">About Bullwave Club</NavLink>
         <NavLink className="menu-item" to="/faq">FAQ</NavLink>
         <NavLink className="menu-item" to="/vip">VIP Club</NavLink>
       </div>
     </div>
   )
+}
+
+function loadPlaySettings() {
+  try {
+    return { depositLimit: 5000, reminder: 60, coolOff: 'None', ...JSON.parse(localStorage.getItem('bwc_play_settings') || '{}') }
+  } catch {
+    return { depositLimit: 5000, reminder: 60, coolOff: 'None' }
+  }
+}
+
+function ResponsiblePlay() {
+  const [settings, setSettings] = useState(loadPlaySettings)
+  const [saved, setSaved] = useState(false)
+  const update = (field, value) => setSettings((current) => ({ ...current, [field]: value }))
+  const save = () => {
+    localStorage.setItem('bwc_play_settings', JSON.stringify(settings))
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 2200)
+  }
+  return <div className="content-page responsible-page">
+    <PageIntro eyebrow="PLAY WITHIN LIMITS" title="Responsible play" description="Set practical boundaries, check your time, and step away whenever play stops feeling enjoyable." icon="shield" stats={[{ label: 'Age requirement', value: '18+' }, { label: 'Support', value: 'Always' }]} action={{ to: '/faq', label: 'Get help' }} />
+    <div className="age-message"><strong>18+ only</strong><span>Betting is entertainment, not a way to make money. Never chase losses or borrow to play.</span></div>
+    <div className="responsible-grid">
+      <section className="responsible-control"><span className="feature-icon"><Icon name="plus" size={20} /></span><div><h2>Deposit limit</h2><p>Set the most this device should allow you to deposit in a rolling 24-hour period.</p></div><label>Daily limit (₹)<input className="input" type="number" min="0" step="500" value={settings.depositLimit} onChange={(event) => update('depositLimit', Number(event.target.value))} /></label></section>
+      <section className="responsible-control"><span className="feature-icon"><Icon name="clock" size={20} /></span><div><h2>Session reminder</h2><p>Receive a visible reminder after you have been active for the selected time.</p></div><label>Reminder<select className="input" value={settings.reminder} onChange={(event) => update('reminder', Number(event.target.value))}><option value="30">Every 30 minutes</option><option value="60">Every 60 minutes</option><option value="120">Every 2 hours</option></select></label></section>
+      <section className="responsible-control"><span className="feature-icon"><Icon name="minus" size={20} /></span><div><h2>Take a break</h2><p>Pause betting controls on this device for a defined cooling-off period.</p></div><label>Cooling-off period<select className="input" value={settings.coolOff} onChange={(event) => update('coolOff', event.target.value)}><option>None</option><option>24 hours</option><option>7 days</option><option>30 days</option></select></label></section>
+      <section className="responsible-control self-exclusion"><span className="feature-icon"><Icon name="shield" size={20} /></span><div><h2>Self-exclusion</h2><p>For account-wide exclusion, contact support. This action must be verified and cannot be reversed early.</p></div><NavLink className="btn btn-ghost" to="/faq">Contact support</NavLink></section>
+    </div>
+    <div className="responsible-save"><button type="button" className="btn btn-yellow" onClick={save}>Save limits</button>{saved && <span role="status">Preferences saved on this device.</span>}</div>
+    <p className="responsible-disclaimer">Device preferences support safer play but do not replace account-level controls. Contact support for permanent self-exclusion or help with gambling-related harm.</p>
+  </div>
 }
 
 function About() {
@@ -1616,22 +1813,56 @@ function About() {
 }
 
 
+function Highlight({ text, query }) {
+  const value = String(text)
+  const index = value.toLowerCase().indexOf(query.trim().toLowerCase())
+  if (!query.trim() || index < 0) return value
+  return <>{value.slice(0, index)}<mark>{value.slice(index, index + query.trim().length)}</mark>{value.slice(index + query.trim().length)}</>
+}
+
 function SearchOverlay() {
   const { searchOpen, setSearchOpen, catalogMatches: matches } = useApp()
+  const navigate = useNavigate()
   const [q, setQ] = useState('')
+  const [sport, setSport] = useState('All')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [recent, setRecent] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bwc_recent_searches')) || [] } catch { return [] }
+  })
+  const sportsInCatalog = ['All', ...new Set(matches.map((match) => match.sport))]
+  const filtered = matches.filter((match) => {
+    const copy = `${match.home} ${match.away} ${match.league} ${match.sport}`.toLowerCase()
+    return (!q.trim() || copy.includes(q.trim().toLowerCase())) && (sport === 'All' || match.sport === sport)
+  })
+  const results = (q.trim() || sport !== 'All' ? filtered : matches.filter((match) => match.live)).slice(0, 8)
+  const close = () => setSearchOpen(false)
+  const selectResult = (match) => {
+    const term = q.trim() || `${match.home} vs ${match.away}`
+    const next = [term, ...recent.filter((item) => item !== term)].slice(0, 5)
+    setRecent(next)
+    localStorage.setItem('bwc_recent_searches', JSON.stringify(next))
+    close()
+    navigate(`/match/${match.id}`)
+  }
+  useEffect(() => setActiveIndex(0), [q, sport])
   if (!searchOpen) return null
-  const results = matches.filter((m) => `${m.home} ${m.away} ${m.league}`.toLowerCase().includes(q.toLowerCase()))
   return (
-    <div className="search-panel">
-      <input autoFocus placeholder="Search events, teams, games" value={q} onChange={(e) => setQ(e.target.value)} />
-      <button className="btn btn-ghost" onClick={() => setSearchOpen(false)}>Close</button>
-      <div className="list" style={{ marginTop: 16 }}>
-        {results.map((m) => (
-          <NavLink key={m.id} to={`/match/${m.id}`} onClick={() => setSearchOpen(false)} className="card" style={{ display: 'block' }}>
-            {m.home} vs {m.away}
-            <div className="event-meta">{m.league}</div>
-          </NavLink>
-        ))}
+    <div className="search-panel" role="dialog" aria-modal="true" aria-label="Search matches">
+      <div className="search-shell">
+        <div className="search-field"><Icon name="search" size={21} /><input autoFocus role="combobox" aria-expanded="true" aria-controls="search-results" placeholder="Search teams, leagues or sports" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(event) => {
+          if (event.key === 'Escape') close()
+          if (event.key === 'ArrowDown') { event.preventDefault(); setActiveIndex((index) => Math.min(results.length - 1, index + 1)) }
+          if (event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex((index) => Math.max(0, index - 1)) }
+          if (event.key === 'Enter' && results[activeIndex]) selectResult(results[activeIndex])
+        }} />{q && <button type="button" onClick={() => setQ('')} aria-label="Clear search"><Icon name="close" size={16} /></button>}</div>
+        <button className="search-cancel" type="button" onClick={close}>Cancel</button>
+      </div>
+      <div className="search-sports">{sportsInCatalog.map((item) => <button key={item} type="button" className={sport === item ? 'on' : ''} onClick={() => setSport(item)}>{item.replaceAll('-', ' ')}</button>)}</div>
+      {!q && recent.length > 0 && <div className="recent-searches"><div><strong>Recent searches</strong><button type="button" onClick={() => { setRecent([]); localStorage.removeItem('bwc_recent_searches') }}>Clear</button></div><nav>{recent.map((term) => <button key={term} type="button" onClick={() => setQ(term)}><Icon name="clock" size={15} />{term}</button>)}</nav></div>}
+      <div className="search-results-head"><strong>{q ? 'Search results' : 'Live and trending'}</strong><span>{results.length} matches</span></div>
+      <div className="search-results" id="search-results" role="listbox">
+        {results.map((match, index) => <button key={match.id} type="button" role="option" aria-selected={activeIndex === index} className={activeIndex === index ? 'active' : ''} onMouseEnter={() => setActiveIndex(index)} onClick={() => selectResult(match)}><span className={`search-result-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={19} /></span><span><small>{match.live ? 'LIVE' : match.time} · {match.sport.replaceAll('-', ' ')}</small><strong><Highlight text={`${match.home} vs ${match.away}`} query={q} /></strong><em><Highlight text={match.league} query={q} /></em></span><Icon name="chevron" size={16} /></button>)}
+        {!results.length && <EmptyState icon="search" title="No matching events" detail="Try a team, league, or a different sport filter." />}
       </div>
     </div>
   )
@@ -1641,10 +1872,11 @@ function MenuDrawer() {
   const { menuOpen, setMenuOpen, setAuthMode, loggedIn } = useApp()
   if (!menuOpen) return null
   const close = () => setMenuOpen(false)
+  const swipe = useSwipeDismiss(close, 'left')
   const sportsList = sports.filter((s) => !['promos', 'parlays', 'all-live', 'favorites'].includes(s.id))
   return (
     <div className="overlay menu-overlay" onClick={close}>
-      <div className="menu-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="menu-panel" onClick={(e) => e.stopPropagation()} {...swipe}>
         <div className="menu-head">
           <strong>Browse</strong>
           <button type="button" className="icon-btn" onClick={close} aria-label="Close menu"><Icon name="close" /></button>
@@ -1660,6 +1892,7 @@ function MenuDrawer() {
         <NavLink className="menu-item" to="/account" onClick={close}>Wallet</NavLink>
         <NavLink className="menu-item" to="/account/bets" onClick={close}>My bets</NavLink>
         <NavLink className="menu-item" to="/vip" onClick={close}>VIP</NavLink>
+        <NavLink className="menu-item" to="/responsible-play" onClick={close}>Responsible play</NavLink>
         <NavLink className="menu-item" to="/faq" onClick={close}>Help</NavLink>
         <div className="menu-auth">
           {loggedIn ? (
@@ -1697,6 +1930,9 @@ export default function App() {
   return (
     <div className="app">
       <Header />
+      <LiveTicker />
+      <ConnectivityBanner />
+      <CatalogNotice />
       <div className="shell">
         <Sidebar />
         <main className="main">
@@ -1728,6 +1964,7 @@ export default function App() {
             <Route path="/parlays" element={<Parlays />} />
             <Route path="/more" element={<More />} />
             <Route path="/about" element={<About />} />
+            <Route path="/responsible-play" element={<ResponsiblePlay />} />
           </Routes>
         </main>
         <Betslip />
@@ -1736,6 +1973,9 @@ export default function App() {
       <SearchOverlay />
       <MenuDrawer />
       <MobileDock />
+      <BetNotice />
+      <SessionReminder />
+      <NavLink className="responsible-float" to="/responsible-play"><Icon name="shield" size={15} />18+ Responsible play</NavLink>
     </div>
   )
 }

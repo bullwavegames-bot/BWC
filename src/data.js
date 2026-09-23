@@ -233,12 +233,12 @@ export const matches = [
 ]
 
 export const matchMarkets = [
-  { name: '1X2', rows: [[{ label: '1', odd: 1.72 }, { label: 'X', odd: 3.85 }, { label: '2', odd: 4.60 }]] },
-  { name: 'Double Chance', rows: [[{ label: '1X', odd: 1.22 }, { label: '12', odd: 1.28 }, { label: 'X2', odd: 2.10 }]] },
-  { name: 'Total', rows: [[{ label: 'Over 2.5', odd: 1.85 }, { label: 'Under 2.5', odd: 1.98 }]] },
-  { name: 'Both Teams To Score', rows: [[{ label: 'Yes', odd: 1.74 }, { label: 'No', odd: 2.08 }]] },
-  { name: 'Asian Handicap', rows: [[{ label: 'Home -0.5', odd: 1.90 }, { label: 'Away +0.5', odd: 1.92 }]] },
-  { name: 'Next Goal', rows: [[{ label: 'Home', odd: 2.10 }, { label: 'None', odd: 6.50 }, { label: 'Away', odd: 3.40 }]] },
+  { name: '1X2', categories: ['Popular', 'Match'], rows: [[{ label: '1', odd: 1.72 }, { label: 'X', odd: 3.85 }, { label: '2', odd: 4.60 }]] },
+  { name: 'Double Chance', categories: ['Popular', 'Match'], rows: [[{ label: '1X', odd: 1.22 }, { label: '12', odd: 1.28 }, { label: 'X2', odd: 2.10 }]] },
+  { name: 'Total', categories: ['Popular', 'Goals'], rows: [[{ label: 'Over 2.5', odd: 1.85 }, { label: 'Under 2.5', odd: 1.98 }]] },
+  { name: 'Both Teams To Score', categories: ['Goals'], rows: [[{ label: 'Yes', odd: 1.74 }, { label: 'No', odd: 2.08 }]] },
+  { name: 'Asian Handicap', categories: ['Match', 'Specials'], rows: [[{ label: 'Home -0.5', odd: 1.90 }, { label: 'Away +0.5', odd: 1.92 }]] },
+  { name: 'Next Goal', categories: ['Goals', 'Specials'], rows: [[{ label: 'Home', odd: 2.10 }, { label: 'None', odd: 6.50 }, { label: 'Away', odd: 3.40 }]] },
 ]
 
 export const games = [
