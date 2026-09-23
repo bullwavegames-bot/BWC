@@ -64,7 +64,7 @@ export async function api(path, { method = 'GET', body, token } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || data.message || 'Request failed')
+  if (!res.ok) throw new Error(data.error || data.message || (res.status === 404 ? 'Payment API is not deployed yet.' : 'Request failed'))
   return data
 }
 

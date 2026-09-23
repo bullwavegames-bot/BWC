@@ -118,7 +118,7 @@ function findUser({ phone, email, accountNumber }) {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'bullwave-club', time: new Date().toISOString() })
+  res.json({ ok: true, service: 'bullwave-club', payments: true, time: new Date().toISOString() })
 })
 
 app.get('/api/catalog', (_req, res) => {
