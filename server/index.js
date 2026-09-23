@@ -10,7 +10,7 @@ import { createDepositOrder, razorpayPublicConfig, verifyDepositPayment } from '
 import {
   buildReceiptPdf,
   cashouts,
-  coinsForRupees,
+  cashForRupees,
   markCashoutPaid,
   publicBillingConfig,
   receipts,
@@ -107,7 +107,7 @@ function publicUser(user) {
 
 function goneCreateDeposit(_req, res) {
   return res.status(410).json({
-    error: 'Razorpay checkout cannot mint coins. Pay the Telegram UPI QR, send proof, and wait for Super Admin to Settle bill on a unique UTR.',
+    error: 'Razorpay checkout cannot mint cash here. Pay the Telegram UPI QR, send proof, and wait for Super Admin to Settle bill on a unique UTR.',
   })
 }
 
@@ -347,10 +347,8 @@ app.post('/api/wallet/deposit', auth, async (req, res) => {
 function handleCashout(req, res) {
   try {
     const rupees = Number(req.body?.amount)
-    const coins = Number(req.body?.coins)
     const row = requestCashout(req.user, {
-      coins: Number.isFinite(coins) && coins > 0 ? coins : 0,
-      rupees,
+      amount: rupees,
       destination: req.body?.destination || req.body?.upi || req.body?.account,
       method: req.body?.method || 'upi',
     })
@@ -405,8 +403,10 @@ app.post('/api/admin/settle-bill', admin, (req, res) => {
     const user = users.get(req.body?.userId) || findUser({ accountNumber: req.body?.uid || req.body?.accountNumber })
     if (!user) return res.status(404).json({ error: 'Player not found' })
     const rupees = Number(req.body?.rupees ?? req.body?.amount)
-    const coins = Number(req.body?.coins) > 0 ? Number(req.body.coins) : coinsForRupees(rupees)
-    const receipt = settleBill(user, { rupees, coins, utr: req.body?.utr })
+    const credit = Number(req.body?.credit ?? req.body?.coins) > 0
+      ? Number(req.body?.credit ?? req.body?.coins)
+      : cashForRupees(rupees)
+    const receipt = settleBill(user, { rupees, credit, utr: req.body?.utr })
     res.status(201).json({ receipt, user: publicUser(user) })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not settle bill' })

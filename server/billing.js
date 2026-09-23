@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto'
 
-export const COINS_PER_RUPEE = 10
 export const PACKS = [
-  { id: 'p49', rupees: 49, coins: 500 },
-  { id: 'p99', rupees: 99, coins: 1200 },
-  { id: 'p199', rupees: 199, coins: 3000 },
+  { id: 'p49', rupees: 49, credit: 500 },
+  { id: 'p99', rupees: 99, credit: 1200 },
+  { id: 'p199', rupees: 199, credit: 3000 },
 ]
 
 export const depositUtrs = new Map()
@@ -24,16 +23,15 @@ export function normalizeUtr(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
-export function coinsForRupees(rupees) {
+export function cashForRupees(rupees) {
   const pack = PACKS.find((p) => p.rupees === Number(rupees))
-  if (pack) return pack.coins
-  return Math.round(Number(rupees) * COINS_PER_RUPEE)
+  if (pack) return pack.credit
+  return Number(rupees)
 }
 
 export function publicBillingConfig() {
   return {
     packs: PACKS,
-    coinsPerRupee: COINS_PER_RUPEE,
     telegramChannel: telegramChannel(),
     cashoutHours: 12,
     cashoutPayoutsEnabled: cashoutPayoutsEnabled(),
@@ -50,7 +48,7 @@ export function buildReceiptPdf(receipt) {
     `UID: ${receipt.accountNumber}`,
     `Player: ${receipt.username || receipt.email || receipt.phone || '—'}`,
     `Paid: INR ${receipt.rupees}`,
-    `Credited: ${receipt.coins} cash BullCoins`,
+    `Credited cash: INR ${receipt.credit}`,
     `UTR: ${receipt.utr}`,
     `Settled: ${receipt.createdAt}`,
     '',
@@ -85,17 +83,17 @@ export function buildReceiptPdf(receipt) {
   return Buffer.from(pdf, 'utf8')
 }
 
-export function settleBill(user, { rupees, coins, utr }) {
+export function settleBill(user, { rupees, credit, utr }) {
   const paid = Number(rupees)
-  const credit = Number(coins)
+  const cash = Number(credit)
   const key = normalizeUtr(utr)
   if (!Number.isFinite(paid) || paid <= 0) {
     const err = new Error('Enter the INR amount paid.')
     err.status = 400
     throw err
   }
-  if (!Number.isFinite(credit) || credit <= 0) {
-    const err = new Error('Enter cash BullCoins to credit.')
+  if (!Number.isFinite(cash) || cash <= 0) {
+    const err = new Error('Enter cash (INR) to credit.')
     err.status = 400
     throw err
   }
@@ -109,7 +107,7 @@ export function settleBill(user, { rupees, coins, utr }) {
     err.status = 409
     throw err
   }
-  user.balance = Number((Number(user.balance || 0) + credit).toFixed(2))
+  user.balance = Number((Number(user.balance || 0) + cash).toFixed(2))
   const receipt = {
     id: `BWC-${randomUUID().slice(0, 8).toUpperCase()}`,
     userId: user.id,
@@ -118,7 +116,7 @@ export function settleBill(user, { rupees, coins, utr }) {
     email: user.email || '',
     phone: user.phone || '',
     rupees: paid,
-    coins: credit,
+    credit: cash,
     utr: key,
     createdAt: new Date().toISOString(),
   }
@@ -127,15 +125,15 @@ export function settleBill(user, { rupees, coins, utr }) {
   return receipt
 }
 
-export function requestCashout(user, { coins, rupees, destination, method }) {
-  const amount = Number(coins > 0 ? coins : Number(rupees) * COINS_PER_RUPEE)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    const err = new Error('Enter cash BullCoins to withdraw.')
+export function requestCashout(user, { amount, destination, method }) {
+  const cash = Number(amount)
+  if (!Number.isFinite(cash) || cash <= 0) {
+    const err = new Error('Enter cash to withdraw.')
     err.status = 400
     throw err
   }
-  if (amount > Number(user.balance || 0)) {
-    const err = new Error('Only cash BullCoins can leave. Bonus/promo cannot be withdrawn.')
+  if (cash > Number(user.balance || 0)) {
+    const err = new Error('Only cash can leave. Bonus/promo cannot be withdrawn.')
     err.status = 400
     throw err
   }
@@ -145,13 +143,12 @@ export function requestCashout(user, { coins, rupees, destination, method }) {
     err.status = 400
     throw err
   }
-  user.balance = Number((Number(user.balance || 0) - amount).toFixed(2))
+  user.balance = Number((Number(user.balance || 0) - cash).toFixed(2))
   const row = {
     id: randomUUID(),
     userId: user.id,
     accountNumber: user.accountNumber,
-    coins: amount,
-    rupees: Number((amount / COINS_PER_RUPEE).toFixed(2)),
+    amount: cash,
     destination: dest,
     method: method || 'upi',
     status: 'PENDING',
@@ -209,6 +206,6 @@ export function rejectCashout(id, reason, user) {
   row.status = 'REJECTED'
   row.note = reason || 'Rejected by Super Admin'
   row.settledAt = new Date().toISOString()
-  if (user) user.balance = Number((Number(user.balance || 0) + row.coins).toFixed(2))
+  if (user) user.balance = Number((Number(user.balance || 0) + row.amount).toFixed(2))
   return row
 }

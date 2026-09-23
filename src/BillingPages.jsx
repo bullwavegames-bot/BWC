@@ -3,8 +3,13 @@ import { NavLink } from 'react-router-dom'
 import { api } from './api.js'
 import { useApp } from './store.jsx'
 
-function coinsLabel(n) {
-  return `${Number(n || 0).toLocaleString('en-IN')} BC`
+function inr(n) {
+  return `₹\u00a0${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function packCredit(pack, rupees) {
+  if (pack?.credit) return pack.credit
+  return Number(rupees || 0)
 }
 
 export function TelegramCashIn({ user, token }) {
@@ -16,11 +21,10 @@ export function TelegramCashIn({ user, token }) {
     api('/api/billing/config').then(setConfig).catch(() => {
       setConfig({
         packs: [
-          { id: 'p49', rupees: 49, coins: 500 },
-          { id: 'p99', rupees: 99, coins: 1200 },
-          { id: 'p199', rupees: 199, coins: 3000 },
+          { id: 'p49', rupees: 49, credit: 500 },
+          { id: 'p99', rupees: 99, credit: 1200 },
+          { id: 'p199', rupees: 199, credit: 3000 },
         ],
-        coinsPerRupee: 10,
         telegramChannel: 'https://t.me/bullwaveclub',
         cashoutHours: 12,
       })
@@ -28,9 +32,8 @@ export function TelegramCashIn({ user, token }) {
   }, [])
 
   const packs = config?.packs || []
-  const rate = config?.coinsPerRupee || 10
   const pack = packs.find((p) => p.rupees === Number(rupees))
-  const coins = pack ? pack.coins : Math.round(Number(rupees || 0) * rate)
+  const credit = packCredit(pack, rupees)
   const channel = config?.telegramChannel || 'https://t.me/bullwaveclub'
   const uid = user?.accountNumber || '—'
   const username = user?.username || user?.email || user?.phone || '—'
@@ -38,7 +41,7 @@ export function TelegramCashIn({ user, token }) {
     'Bullwave Club cash-in proof',
     `Username: ${username}`,
     `UID: ${uid}`,
-    `Pack: ₹${rupees} → ${coins} cash BullCoins`,
+    `Pay: ₹${rupees} → cash credit ₹${credit}`,
     'UTR: ',
     'Screenshot: attached',
   ].join('\n')
@@ -51,12 +54,12 @@ export function TelegramCashIn({ user, token }) {
 
   return (
     <div className="payment-shell">
-      <div className="content-section-title"><h2>Telegram UPI packs</h2><span>10 BullCoins = ₹1</span></div>
-      <p className="wallet-method-note">Pay the official UPI QR in Telegram. This site never auto-credits from a static QR. Super Admin settles one unique UTR.</p>
+      <div className="content-section-title"><h2>Telegram UPI packs</h2><span>Cash in INR</span></div>
+      <p className="wallet-method-note">Pay the official UPI QR in Telegram. This site never auto-credits from a static QR. Super Admin settles one unique UTR into cash.</p>
       <div className="wallet-quick">
         {packs.map((p) => (
           <button key={p.id} type="button" className={`chip ${Number(rupees) === p.rupees ? 'on' : ''}`} onClick={() => setRupees(p.rupees)}>
-            ₹{p.rupees} / {p.coins} BC
+            Pay ₹{p.rupees} · get {inr(p.credit)}
           </button>
         ))}
       </div>
@@ -65,9 +68,9 @@ export function TelegramCashIn({ user, token }) {
         <input className="input" type="number" min="49" value={rupees} onChange={(e) => setRupees(Number(e.target.value))} />
       </div>
       <div className="wallet-summary">
-        <span>You pay</span><b>₹ {Number(rupees || 0).toLocaleString('en-IN')}</b>
-        <span>Cash BullCoins</span><b>{coinsLabel(coins)}</b>
-        <span>Credit</span><b>After Settle bill</b>
+        <span>You pay</span><b>{inr(rupees)}</b>
+        <span>Cash credited</span><b>{inr(credit)}</b>
+        <span>When</span><b>After Settle bill</b>
       </div>
       <ol className="wallet-notes">
         <li>Open the official channel and pay that QR only.</li>
@@ -117,16 +120,16 @@ export function BillingPage() {
 
   return (
     <div className="content-page">
-      <div className="content-section-title"><h2>Billing</h2><span>Cash BullCoins · unique UTR</span></div>
-      <p className="wallet-user">UID {user?.accountNumber} · cash {coinsLabel(user?.balance)}</p>
+      <div className="content-section-title"><h2>Billing</h2><span>Cash · unique UTR</span></div>
+      <p className="wallet-user">UID {user?.accountNumber} · cash {inr(user?.balance)}</p>
       {error && <p className="hint is-bad">{error}</p>}
       {!data.receipts.length && <p className="wallet-empty-tx">No cash-in receipts yet. Telegram UPI credits only after Super Admin Settle bill.</p>}
       <div className="wallet-tx-list">
         {data.receipts.map((r) => (
           <div key={r.id} className="wallet-tx">
             <div>
-              <strong>{r.id} · {coinsLabel(r.coins)}</strong>
-              <small>UTR {r.utr} · ₹{r.rupees} · {new Date(r.createdAt).toLocaleString()}</small>
+              <strong>{r.id} · {inr(r.credit)}</strong>
+              <small>UTR {r.utr} · paid {inr(r.rupees)} · {new Date(r.createdAt).toLocaleString()}</small>
             </div>
             <button type="button" className="btn btn-ghost" onClick={() => download(r.id).catch((e) => setError(e.message))}>PDF</button>
           </div>
@@ -137,10 +140,10 @@ export function BillingPage() {
         {data.cashouts.map((c) => (
           <div key={c.id} className="wallet-tx">
             <div>
-              <strong>{c.status} · {coinsLabel(c.coins)}</strong>
+              <strong>{c.status} · {inr(c.amount)}</strong>
               <small>{c.destination} · {c.payoutUtr || 'UTR after staff pay'} · {c.note}</small>
             </div>
-            <b className="is-out">−₹{c.rupees}</b>
+            <b className="is-out">−{inr(c.amount)}</b>
           </div>
         ))}
       </div>
@@ -154,7 +157,7 @@ export function AdminDesk() {
   const [players, setPlayers] = useState([])
   const [picked, setPicked] = useState(null)
   const [rupees, setRupees] = useState(99)
-  const [coins, setCoins] = useState(1200)
+  const [credit, setCredit] = useState(1200)
   const [utr, setUtr] = useState('')
   const [payoutUtr, setPayoutUtr] = useState('')
   const [cashouts, setCashouts] = useState([])
@@ -185,11 +188,11 @@ export function AdminDesk() {
     const res = await fetch('/api/admin/settle-bill', {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ userId: picked?.user?.id, rupees, coins, utr }),
+      body: JSON.stringify({ userId: picked?.user?.id, rupees, credit, utr }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || 'Settle failed')
-    setMessage(`Settled ${data.receipt.id}. Cash is now ${coinsLabel(data.user.balance)}.`)
+    setMessage(`Settled ${data.receipt.id}. Cash is now ${inr(data.user.balance)}.`)
     setUtr('')
     await openPlayer(picked.user.id)
   }
@@ -222,11 +225,19 @@ export function AdminDesk() {
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || 'Could not reject')
-    setMessage('Cash-out rejected and coins returned.')
+    setMessage('Cash-out rejected and cash returned.')
     await loadCashouts()
   }
 
   const run = (fn) => fn().catch((err) => setMessage(err.message))
+
+  const onPaidChange = (n) => {
+    setRupees(n)
+    if (n === 49) setCredit(500)
+    else if (n === 99) setCredit(1200)
+    else if (n === 199) setCredit(3000)
+    else setCredit(n)
+  }
 
   return (
     <div className="content-page">
@@ -240,7 +251,7 @@ export function AdminDesk() {
         <div className="wallet-tx-list">
           {players.map((p) => (
             <button key={p.id} type="button" className="wallet-tx" onClick={() => run(() => openPlayer(p.id))}>
-              <div><strong>{p.accountNumber}</strong><small>{p.phone || p.email} · {coinsLabel(p.balance)} cash</small></div>
+              <div><strong>{p.accountNumber}</strong><small>{p.phone || p.email} · {inr(p.balance)} cash</small></div>
             </button>
           ))}
         </div>
@@ -248,9 +259,9 @@ export function AdminDesk() {
       {picked?.user && (
         <div className="payment-shell">
           <h3>{picked.user.accountNumber}</h3>
-          <p className="wallet-user">{picked.user.phone || picked.user.email} · cash {coinsLabel(picked.user.balance)}</p>
-          <div className="field"><label>INR paid</label><input className="input" type="number" value={rupees} onChange={(e) => { const n = Number(e.target.value); setRupees(n); if (n === 49) setCoins(500); else if (n === 99) setCoins(1200); else if (n === 199) setCoins(3000); else setCoins(Math.round(n * 10)) }} /></div>
-          <div className="field"><label>Cash BullCoins</label><input className="input" type="number" value={coins} onChange={(e) => setCoins(Number(e.target.value))} /></div>
+          <p className="wallet-user">{picked.user.phone || picked.user.email} · cash {inr(picked.user.balance)}</p>
+          <div className="field"><label>INR paid</label><input className="input" type="number" value={rupees} onChange={(e) => onPaidChange(Number(e.target.value))} /></div>
+          <div className="field"><label>Cash to credit, ₹</label><input className="input" type="number" value={credit} onChange={(e) => setCredit(Number(e.target.value))} /></div>
           <div className="field"><label>Deposit UTR</label><input className="input" value={utr} onChange={(e) => setUtr(e.target.value)} /></div>
           <button type="button" className="btn btn-yellow btn-block" onClick={() => run(settle)}>Settle bill</button>
         </div>
@@ -262,7 +273,7 @@ export function AdminDesk() {
         {cashouts.map((c) => (
           <div key={c.id} className="wallet-tx">
             <div>
-              <strong>{c.status} · {c.accountNumber} · {coinsLabel(c.coins)}</strong>
+              <strong>{c.status} · {c.accountNumber} · {inr(c.amount)}</strong>
               <small>{c.destination} · {c.payoutUtr || 'no payout UTR yet'}</small>
             </div>
             {c.status === 'PENDING' && (
