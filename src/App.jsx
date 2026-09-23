@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useApp } from './store.jsx'
-import { sendOtp, verifyOtp } from './api.js'
+import { api, sendOtp, verifyOtp } from './api.js'
 import { BillingPage, TelegramCashIn } from './BillingPages.jsx'
 import { OpsHealth, PresencePing, SuperAdmin } from './SuperAdmin.jsx'
 import { PayLogo } from './PayLogo.jsx'
@@ -45,7 +45,23 @@ const gameIconTags = {
   rooms: 'MULTIPLAYER', rummy: 'CARDS',
 }
 
+function casinoGameTo(g) {
+  if (g?.launchId) return `/casino/play/${g.launchId}`
+  if (g?.cat === 'live') return '/casino/live-casino'
+  if (g?.cat === 'slots') return '/casino/slots'
+  if (g?.cat === 'virtual') return '/casino/virtual-sports'
+  if (g?.cat === 'tv') return '/casino/tv-games'
+  return '/casino/instant-games'
+}
+
 function GameArtwork({ game }) {
+  if (game?.cover) {
+    return (
+      <div className="game-artwork game-artwork-photo">
+        <img src={game.cover} alt="" loading="lazy" decoding="async" />
+      </div>
+    )
+  }
   const fallback = Object.values(gameVisuals)[Math.abs([...String(game.name)].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % Object.keys(gameVisuals).length]
   const visual = gameVisuals[game.id] || fallback
   const iconKind = getGameIconKind(game)
@@ -1197,7 +1213,7 @@ function GameCarousel({ catalog }) {
     <div className="game-row" ref={rowRef}>
       {catalog.slice(0, 14).map((g) => {
         const iconKind = getGameIconKind(g)
-        return <NavLink key={g.id} to={`/casino/${g.cat === 'live' ? 'live-casino' : g.cat === 'slots' ? 'slots' : 'instant-games'}`} className="game-circle">
+        return <NavLink key={g.id} to={casinoGameTo(g)} className="game-circle">
           <div className="thumb">{iconKind ? <GameIcon game={g} kind={iconKind} /> : <GameArtwork game={g} />}</div>
           {g.name}
         </NavLink>
@@ -1224,7 +1240,7 @@ function HomeGameRail({ title, to, items }) {
         {items.map((g) => {
           const iconKind = getGameIconKind(g)
           return (
-            <NavLink key={g.id} to={to} className="home-game-tile">
+            <NavLink key={g.id} to={casinoGameTo(g)} className="home-game-tile">
               <div className="home-game-art">{iconKind ? <GameIcon game={g} kind={iconKind} /> : <GameArtwork game={g} />}</div>
               <span>{g.name}</span>
             </NavLink>
@@ -1527,12 +1543,52 @@ function Casino({ title, cat }) {
       <div className="content-section-title" id="game-collection"><h2>Explore {title}</h2><span>{items.length} games</span></div>
       {catalogLoading ? <SkeletonGrid count={6} type="games" /> : items.length ? <div className="casino-row">
         {items.map((g) => (
-          <div key={g.id} className="game-tile">
+          <NavLink key={g.id} to={casinoGameTo(g)} className="game-tile">
             <GameArtwork game={g} />
             <span>{g.name}</span>
-          </div>
+          </NavLink>
         ))}
       </div> : <EmptyState icon="casino" title="More games are on the way" detail="Browse another collection while this one is being updated." action={{ to: '/casino/live-casino', label: 'Browse live casino' }} />}
+    </div>
+  )
+}
+
+function PlayCasino() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { token, clubGames } = useApp()
+  const [frame, setFrame] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const game = clubGames.find((item) => String(item.launchId) === String(id) || item.id === id || item.id === `bb-${id}`)
+  const lobby = game?.cat === 'slots' ? '/casino/slots' : '/casino/instant-games'
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    setFrame('')
+    api('/api/games/launch', { method: 'POST', body: { gameId: id, demo: true, returnUrl: window.location.origin + lobby }, token })
+      .then((data) => {
+        if (!cancelled) setFrame(data.url)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || 'This game could not be opened.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [id, token, lobby])
+  return (
+    <div className="content-page play-casino">
+      <div className="play-casino-bar">
+        <button type="button" className="chip" onClick={() => navigate(lobby)}>Back to {game?.cat === 'slots' ? 'Slots' : 'Instant Games'}</button>
+        <h1>{game?.name || 'Club game'}</h1>
+        {game?.provider ? <span>{game.provider}</span> : null}
+      </div>
+      {loading ? <p className="hint">Opening the game table…</p> : null}
+      {error ? <EmptyState icon="casino" title="Game unavailable" detail={error} action={{ to: lobby, label: 'Browse games' }} /> : null}
+      {frame ? <iframe className="play-casino-frame" title={game?.name || 'Club game'} src={frame} allow="autoplay; fullscreen; payment" /> : null}
     </div>
   )
 }
@@ -2269,6 +2325,7 @@ export default function App() {
             <Route path="/casino/live-casino" element={<Casino title="Live Casino" cat="live" />} />
             <Route path="/casino/instant-games" element={<Casino title="Instant Games" cat="instant" />} />
             <Route path="/casino/slots" element={<Casino title="Slots" cat="slots" />} />
+            <Route path="/casino/play/:id" element={<PlayCasino />} />
             <Route path="/casino/virtual-sports" element={<Casino title="Virtual Sport" cat="virtual" />} />
             <Route path="/casino/tv-games" element={<Casino title="TV Games" cat="tv" />} />
             <Route path="/sport/:name" element={<Sport />} />

@@ -141,6 +141,19 @@ export function gameHue(slug = '') {
 }
 
 export function mapClubGame(game) {
+  if (game?.name && game?.cat) {
+    return {
+      id: String(game.id),
+      name: game.name,
+      cat: game.cat,
+      hue: game.hue ?? gameHue(String(game.id)),
+      cover: game.cover || null,
+      launchId: game.launchId ? String(game.launchId) : null,
+      provider: game.provider || '',
+      source: game.source || 'club',
+      genre: game.genre,
+    }
+  }
   const genre = String(game.genre || '').toLowerCase()
   let cat = 'instant'
   if (genre.includes('card') || genre.includes('board') || genre.includes('party')) cat = 'live'
@@ -153,6 +166,9 @@ export function mapClubGame(game) {
     cat,
     hue: gameHue(game.slug),
     cover: game.cover ? `${CLUB_ORIGIN}${game.cover}` : null,
+    launchId: null,
+    provider: '',
+    source: 'club',
     genre: game.genre,
   }
 }

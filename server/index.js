@@ -20,6 +20,7 @@ import {
 } from './billing.js'
 import { games, matchMarkets, matches, promotions } from '../src/data.js'
 import { feedHealth, getLiveCatalog } from './feeds.js'
+import { aggregatorHealth, clubGameCatalog, launchAggregatorGame } from './aggregator.js'
 import { isStrongPassword, isTenDigitPhone, passwordError } from '../src/authRules.js'
 import {
   accountBlockReason,
@@ -264,15 +265,16 @@ function findUser({ phone, email, accountNumber }) {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'bullwave-club', payments: true, time: new Date().toISOString(), feeds: feedHealth() })
+  res.json({ ok: true, service: 'bullwave-club', payments: true, time: new Date().toISOString(), feeds: feedHealth(), games: aggregatorHealth() })
 })
 
 app.get('/api/catalog', async (_req, res) => {
+  const lobby = await clubGameCatalog(games)
   try {
     const live = await getLiveCatalog()
-    res.json({ matches: live.matches, games, promotions, matchMarkets, feeds: live.feeds })
+    res.json({ matches: live.matches, games: lobby, promotions, matchMarkets, feeds: live.feeds, aggregator: aggregatorHealth() })
   } catch {
-    res.json({ matches, games, promotions, matchMarkets, feeds: { fallback: 'club' } })
+    res.json({ matches, games: lobby, promotions, matchMarkets, feeds: { fallback: 'club' }, aggregator: aggregatorHealth() })
   }
 })
 
@@ -302,9 +304,26 @@ app.get('/api/matches/:id', async (req, res) => {
   res.json({ match, markets: matchMarkets })
 })
 
-app.get('/api/games', (req, res) => {
+app.get('/api/games', async (req, res) => {
   const { cat } = req.query
-  res.json({ games: cat ? games.filter((g) => g.cat === cat) : games })
+  const lobby = await clubGameCatalog(games)
+  res.json({ games: cat ? lobby.filter((g) => g.cat === cat) : lobby })
+})
+
+app.post('/api/games/launch', async (req, res) => {
+  try {
+    const launched = await launchAggregatorGame({
+      gameId: req.body?.gameId || req.body?.id,
+      demo: req.body?.demo !== false,
+      userToken: req.user?.playerId || req.user?.id,
+      language: req.body?.language || 'en',
+      returnUrl: req.body?.returnUrl,
+      device: /mobile|android|iphone/i.test(String(req.headers['user-agent'] || '')) ? 'mobile' : 'desktop',
+    })
+    res.json(launched)
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message || 'Could not open this game.' })
+  }
 })
 
 app.get('/api/promotions', (_req, res) => {
