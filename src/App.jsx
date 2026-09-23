@@ -465,7 +465,7 @@ function Sidebar() {
   )
 }
 
-function Betslip() {
+function Betslip({ embedded = false }) {
   const { betslip, removeBet, clearSlip, placeBets, loggedIn, setAuthMode, slipOpen, setSlipOpen, lastAddedBetId } = useApp()
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
@@ -475,13 +475,10 @@ function Betslip() {
   const stakeValue = Number(stake)
   const stakeError = stake !== '' && (!Number.isFinite(stakeValue) || stakeValue < 10) ? 'Minimum stake is ₹10.' : ''
   const swipe = useSwipeDismiss(() => setSlipOpen(false), 'down')
-  return (
-    <>
-    {slipOpen && <div className="slip-backdrop" onClick={() => setSlipOpen(false)} />}
-    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`} {...swipe}>
+  const panel = (
       <div className="slip-panel">
-      <span className="sheet-grabber" aria-hidden="true" />
-      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}{betslip.length > 0 && <button type="button" className="slip-clear" onClick={clearSlip}>Clear</button>}<button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button></h3>
+      {!embedded && <span className="sheet-grabber" aria-hidden="true" />}
+      <h3><Icon name="ticket" size={21} /> Bet Slip {betslip.length ? `(${betslip.length})` : ''}{betslip.length > 0 && <button type="button" className="slip-clear" onClick={clearSlip}>Clear</button>}{!embedded && <button type="button" className="slip-close" onClick={() => setSlipOpen(false)} aria-label="Close bet slip"><Icon name="close" size={18} /></button>}</h3>
       <div className="slip-modes" role="tablist" aria-label="Bet type">{['Single', 'Combo', 'System'].map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'selected' : ''} onClick={() => setMode(item)}>{item}</button>)}</div>
       {betslip.length === 0 ? (
         <div className="slip-empty">
@@ -500,8 +497,8 @@ function Betslip() {
             </div>
           ))}
           <div className="stake">
-            <label htmlFor="bet-stake">Stake</label>
-            <div className="stake-input"><span>₹</span><input id="bet-stake" type="number" min="10" inputMode="decimal" placeholder="100" value={stake} onChange={(e) => { setStake(e.target.value); setSlipError('') }} /></div>
+            <label htmlFor={embedded ? 'bet-stake-rail' : 'bet-stake'}>Stake</label>
+            <div className="stake-input"><span>₹</span><input id={embedded ? 'bet-stake-rail' : 'bet-stake'} type="number" min="10" inputMode="decimal" placeholder="100" value={stake} onChange={(e) => { setStake(e.target.value); setSlipError('') }} /></div>
             <div className="stake-quick">{[100, 500, 1000].map((amount) => <button key={amount} type="button" className={stakeValue === amount ? 'on' : ''} onClick={() => setStake(String(amount))}>₹{amount}</button>)}</div>
             {stakeError && <p className="stake-error">{stakeError}</p>}
           </div>
@@ -535,6 +532,15 @@ function Betslip() {
         </>
       )}
       </div>
+  )
+  if (embedded) {
+    return <div className="betslip is-embedded">{panel}</div>
+  }
+  return (
+    <>
+    {slipOpen && <div className="slip-backdrop" onClick={() => setSlipOpen(false)} />}
+    <aside className={`betslip ${slipOpen ? 'is-open' : ''}`} {...swipe}>
+      {panel}
       <div className="slip-rewards"><span className="reward-crown" aria-hidden="true">♛</span><h3>Exclusive Rewards<br />for Members</h3><ul><li>Higher Odds</li><li>Early Access</li><li>Exclusive Promotions</li><li>Fast Withdrawals</li></ul><NavLink to="/vip">Join Now <span aria-hidden="true">→</span></NavLink></div>
     </aside>
     </>
@@ -1166,13 +1172,22 @@ function FeaturedEventStrip() {
 }
 
 function HomePromoRail() {
-  const { betslip, setSlipOpen } = useApp()
   const ads = [
     { image: 'casino-hero-v2.webp', title: 'Live Casino', to: '/casino/live-casino' },
     { image: 'royal-v1.webp', title: 'Club Rewards', to: '/vip' },
     { image: 'wheel-v1.webp', title: 'Weekly Offers', to: '/promotions' },
   ]
-  return <aside className="home-promo-rail" aria-label="Featured promotions"><button type="button" className="promo-slip-trigger" onClick={() => setSlipOpen(true)}><Icon name="ticket" size={17} /><span>Bet Slip</span><b>{betslip.length}</b></button>{ads.map((ad) => <NavLink key={ad.title} to={ad.to} className="promo-rail-ad"><img src={`${import.meta.env.BASE_URL}images/promotions/${ad.image}`} alt="" /><span>{ad.title}<Icon name="chevron" size={14} /></span></NavLink>)}</aside>
+  return (
+    <aside className="home-promo-rail" aria-label="Bet slip and promotions">
+      <Betslip embedded />
+      {ads.map((ad) => (
+        <NavLink key={ad.title} to={ad.to} className="promo-rail-ad">
+          <img src={`${import.meta.env.BASE_URL}images/promotions/${ad.image}`} alt="" />
+          <span>{ad.title}<Icon name="chevron" size={14} /></span>
+        </NavLink>
+      ))}
+    </aside>
+  )
 }
 
 function GameCarousel({ catalog }) {

@@ -2976,6 +2976,8 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .app.is-home .reference-home .sport-filter a { height: 49px; min-width: 118px; border: 0; border-right: 1px solid #3b474b; border-radius: 0; background: transparent; }
 .app.is-home .reference-home .sport-filter a.featured-sport { border-bottom: 3px solid var(--mint); background: #263e65; color: #fff; }
 .home-promo-rail { position: sticky; top: var(--header-h); height: calc(100vh - var(--header-h)); overflow-y: auto; border-left: 1px solid var(--line); background: #090f11; }
+.home-promo-rail .betslip.is-embedded { position: static; height: auto; overflow: visible; padding: 10px 10px 6px; border: 0; background: #0d181a; }
+.home-promo-rail .betslip.is-embedded .slip-empty { min-height: 168px; padding: 22px 12px 16px; }
 .promo-slip-trigger { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 13px; border: 0; border-bottom: 1px solid var(--line); background: #172225; color: #fff; font-weight: 800; }
 .promo-slip-trigger b { display: grid; place-items: center; min-width: 22px; height: 22px; margin-left: auto; border-radius: 4px; background: var(--mint); color: #0b1e1c; font-size: 10px; }
 .promo-rail-ad { position: relative; display: block; min-height: 205px; overflow: hidden; border-bottom: 5px solid #090f11; background: #131c20; }
