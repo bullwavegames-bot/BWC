@@ -370,11 +370,12 @@ function Header() {
         />
       </NavLink>
       <nav className="top-nav">
-        <NavLink to="/" end>Sports</NavLink>
-        <NavLink to="/live">Live</NavLink>
-        <NavLink to="/casino/live-casino">Games</NavLink>
-        <NavLink to="/vip">Rewards</NavLink>
-        <NavLink to="/promotions">Promotions</NavLink>
+        <NavLink to="/" end>Exchange</NavLink>
+        <NavLink to="/live">Live Sports</NavLink>
+        <NavLink to="/casino/live-casino">Live Casino</NavLink>
+        <NavLink to="/casino/slots">Slots</NavLink>
+        <NavLink to="/casino/instant-games">Instant</NavLink>
+        <NavLink to="/promotions">Offers</NavLink>
       </nav>
       <div className="header-right">
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
@@ -409,10 +410,11 @@ function Header() {
 
 function Sidebar() {
   const [leaguesOpen, setLeaguesOpen] = useState(false)
-  const { setAuthMode, catalogMatches } = useApp()
+  const { setAuthMode, setSearchOpen, catalogMatches } = useApp()
   const liveCount = catalogMatches.filter((m) => m.live).length
   return (
     <aside className="sidebar">
+      <button className="sidebar-search" type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={16} /><span>Search sports</span></button>
       <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
       {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => (
         <NavLink key={s.id} to={s.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
@@ -457,6 +459,7 @@ function Betslip() {
   const [stake, setStake] = useState('100')
   const [slipError, setSlipError] = useState('')
   const [mode, setMode] = useState('Single')
+  const [oddsAcceptance, setOddsAcceptance] = useState('all')
   const total = betslip.reduce((a, b) => a * (b.odd || 1), 1)
   const stakeValue = Number(stake)
   const stakeError = stake !== '' && (!Number.isFinite(stakeValue) || stakeValue < 10) ? 'Minimum stake is ₹10.' : ''
@@ -492,8 +495,10 @@ function Betslip() {
             {stakeError && <p className="stake-error">{stakeError}</p>}
           </div>
           <div className="slip-foot">
+            <label className="odds-preference"><span>Odds changes</span><select value={oddsAcceptance} onChange={(event) => setOddsAcceptance(event.target.value)}><option value="all">Accept all changes</option><option value="higher">Accept higher only</option><option value="fixed">Reject changes</option></select></label>
             {mode !== 'Single' && <p className="hint">{mode} bets are not available yet. Select Single to place a bet.</p>}
             <div className="row-between"><span>Total odds</span><b>{total.toFixed(2)}</b></div>
+            <div className="row-between"><span>Maximum exposure</span><b>₹{Number(stake || 0).toFixed(2)}</b></div>
             <div className="slip-payout"><span>Potential payout</span><b>₹{(total * Number(stake || 0)).toFixed(2)}</b></div>
             {slipError && <p className="hint" style={{ color: 'var(--coral)' }}>{slipError}</p>}
             <button
@@ -929,6 +934,65 @@ function MatchCard({ m }) {
   )
 }
 
+function ExchangeOdd({ match, market, side, price, locked = false }) {
+  const { addBet, betslip } = useApp()
+  const id = `${match.id}-${market}-${side}`
+  const selected = betslip.some((bet) => bet.id === id)
+  if (locked || price == null) return <button className="exchange-price is-locked" disabled aria-label={`${market} unavailable`}><Icon name="shield" size={13} /><span>--</span></button>
+  return <button type="button" className={`exchange-price is-${side} ${selected ? 'is-selected' : ''}`} aria-pressed={selected} onClick={() => addBet({ id, event: `${match.home} vs ${match.away}`, pick: `${side === 'back' ? 'Back' : 'Lay'} ${market}`, odd: price })}><strong>{Number(price).toFixed(2)}</strong><small>{side}</small></button>
+}
+
+function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events found' }) {
+  const { favorites, toggleFavorite } = useApp()
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState('All')
+  const [sort, setSort] = useState('Start time')
+  const [expanded, setExpanded] = useState([])
+  const shown = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    const filtered = matches.filter((match) => {
+      const statusMatch = status === 'All' || (status === 'Live' ? match.live : !match.live)
+      const queryMatch = !normalized || `${match.home} ${match.away} ${match.league}`.toLowerCase().includes(normalized)
+      return statusMatch && queryMatch
+    })
+    if (sort === 'Popularity') return [...filtered].sort((a, b) => Number(String(b.extra || '').replace(/\D/g, '')) - Number(String(a.extra || '').replace(/\D/g, '')))
+    if (sort === 'Competition') return [...filtered].sort((a, b) => a.league.localeCompare(b.league))
+    return filtered
+  }, [matches, query, status, sort])
+  const toggleExpanded = (id) => setExpanded((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id])
+  return <section className="exchange" aria-label={title}>
+    <header className="exchange-tools">
+      <div><span className="eyebrow">SPORTSBOOK</span><h2>{title}</h2><small>{shown.length} events</small></div>
+      <label className="exchange-search"><Icon name="search" size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search events or leagues" aria-label="Search events or leagues" />{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><Icon name="close" size={14} /></button>}</label>
+      <div className="exchange-filters" role="group" aria-label="Event status">{['All', 'Live', 'Upcoming'].map((item) => <button type="button" key={item} className={status === item ? 'on' : ''} onClick={() => setStatus(item)}>{item}</button>)}</div>
+      <label className="exchange-sort"><span>Sort</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option>Start time</option><option>Popularity</option><option>Competition</option></select></label>
+    </header>
+    <div className="exchange-scroll" tabIndex="0" aria-label="Scrollable betting markets">
+      <div className="exchange-table">
+        <div className="exchange-head"><span>Event</span><span>1</span><span>X</span><span>2</span><span>Markets</span></div>
+        {shown.map((match, index) => {
+          const markets = match.markets || []
+          const marketFor = (label) => markets.find((item) => item.label === label)
+          const base = (label) => marketFor(label)?.odd
+          const isLocked = marketFor('1')?.odd == null || (index > 0 && index % 5 === 0)
+          const open = expanded.includes(match.id)
+          return <article className={`exchange-event ${open ? 'is-open' : ''}`} key={match.id}>
+            <div className="exchange-row">
+              <button type="button" className={`exchange-star ${favorites.includes(match.id) ? 'on' : ''}`} onClick={() => toggleFavorite(match.id)} aria-label={favorites.includes(match.id) ? 'Remove from favorites' : 'Add to favorites'}>★</button>
+              <NavLink className="exchange-event-copy" to={`/match/${match.id}`}><span className={match.live ? 'exchange-live' : ''}>{match.live ? '● LIVE' : match.time}</span><strong>{match.home} <i>vs</i> {match.away}</strong><small>{match.league}</small><em><Icon name="tv" size={12} /> F1 · BM {match.live ? '· In-play' : ''}</em></NavLink>
+              {['1', 'X', '2'].map((label) => <div className="exchange-pair" key={label}><ExchangeOdd match={match} market={label} side="back" price={base(label)} locked={isLocked} /><ExchangeOdd match={match} market={label} side="lay" price={base(label) ? base(label) + .04 : null} locked={isLocked} /></div>)}
+              <button type="button" className="exchange-more" aria-expanded={open} onClick={() => toggleExpanded(match.id)}><span>{match.extra || '+18'}</span><Icon name="chevron" size={15} /></button>
+            </div>
+            {open && <div className="exchange-expanded"><span><Icon name="layers" size={15} /> More markets</span>{['Over 2.5', 'Under 2.5', 'Both score'].map((label, option) => <ExchangeOdd key={label} match={match} market={label} side="back" price={Number(((base('1') || base('2') || 1.75) + option * .36).toFixed(2))} />)}<NavLink to={`/match/${match.id}`}>View all <Icon name="chevron" size={14} /></NavLink></div>}
+          </article>
+        })}
+        {!shown.length && <div className="exchange-empty"><Icon name="search" size={25} /><strong>{emptyTitle}</strong><span>Change the filters or search for another team.</span><button type="button" onClick={() => { setQuery(''); setStatus('All') }}>Clear filters</button></div>}
+      </div>
+    </div>
+    <p className="exchange-key"><span className="back-key" /> Back <span className="lay-key" /> Lay <Icon name="shield" size={12} /> Suspended</p>
+  </section>
+}
+
 function Footer() {
   return (
     <footer className="footer">
@@ -939,9 +1003,11 @@ function Footer() {
         <NavLink to="/vip">Bullwave Club VIP</NavLink>
         <NavLink to="/about">About Bullwave Club</NavLink>
         <NavLink to="/faq">FAQ</NavLink>
-        <NavLink to="/more">More</NavLink>
+        <NavLink to="/responsible-play">Responsible Gaming</NavLink>
+        <NavLink to="/more">Rules &amp; Terms</NavLink>
+        <NavLink to="/more">Privacy</NavLink>
       </div>
-      18+ | Play responsibly. Bullwave Club sportsbook and casino UI.
+      18+ | Play responsibly. Support is available from the Help centre. Bullwave Club sportsbook and casino UI.
     </footer>
   )
 }
@@ -1118,6 +1184,7 @@ function Home() {
         <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
         <div className="personalized-row">{forYou.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="personalized-match"><span className={`top-match-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={18} /></span><span><small>{match.live ? 'LIVE' : match.time}</small><strong>{match.home} vs {match.away}</strong><em>{match.league}</em></span><Icon name="chevron" size={15} /></NavLink>)}</div>
       </section>
+      <ExchangeTable matches={matches} title="Sports exchange" />
       <div className="home-content-grid">
         <section className="live-feature-area">
           <h2 className="home-section-title"><Icon name="zap" size={24} /> Featured Live</h2>
@@ -1151,8 +1218,7 @@ function Live() {
           <button key={s.id} type="button" className={`chip ${sport === s.id ? 'on' : ''}`} onClick={() => setSport(s.id)}>{s.name}</button>
         ))}
       </div>
-      <div className="content-section-title"><h2>{sport === 'all-live' ? 'Live right now' : `${current?.name || 'Sport'} live`}</h2><span>{filtered.length} events</span></div>
-      {catalogLoading ? <SkeletonGrid count={4} /> : filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="live" title="No live events in this sport" detail="Try another sport or browse upcoming fixtures." action={{ to: '/upcoming', label: 'See upcoming events' }} />}
+      {catalogLoading ? <SkeletonGrid count={4} /> : <ExchangeTable matches={filtered} title={sport === 'all-live' ? 'Live right now' : `${current?.name || 'Sport'} live`} emptyTitle="No live events in this sport" />}
     </div>
   )
 }
@@ -1170,8 +1236,7 @@ function Upcoming() {
           <button key={c} type="button" className={`chip ${when === c ? 'on' : ''}`} onClick={() => setWhen(c)}>{c}</button>
         ))}
       </div>
-      <div className="content-section-title"><h2>{when === 'All' ? 'On the calendar' : when}</h2><span>{filtered.length} fixtures</span></div>
-      {catalogLoading ? <SkeletonGrid count={6} /> : filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No fixtures in this window" detail="Check all upcoming events for more matches." action={{ to: '/upcoming', label: 'All fixtures' }} />}
+      {catalogLoading ? <SkeletonGrid count={6} /> : <ExchangeTable matches={filtered} title={when === 'All' ? 'On the calendar' : when} emptyTitle="No fixtures in this window" />}
     </div>
   )
 }
@@ -1268,13 +1333,13 @@ function Sport() {
   return (
     <div className="content-page">
       <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
+      {key === 'camel' && <section className="camel-racing-banner" aria-label="Dubai camel racing"><div><span>Dubai race programme</span><h2>Desert speed. Live markets.</h2><p>Follow professional camel racing fixtures and available exchange markets.</p></div></section>}
       <div className="filters sticky-filters">
         {['All', 'Live', 'Upcoming'].map((c) => (
           <button key={c} type="button" className={`chip ${view === c ? 'on' : ''}`} onClick={() => setView(c)}>{c}</button>
         ))}
       </div>
-      <div className="content-section-title"><h2>{view === 'All' ? 'All events' : view}</h2><span>{shown.length} events</span></div>
-      {catalogLoading ? <SkeletonGrid count={6} /> : shown.length ? <div className="match-grid">{shown.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="cal" title="No events in this view" detail="Try another tab or see all live events." action={{ to: '/live', label: 'Browse live events' }} />}
+      {catalogLoading ? <SkeletonGrid count={6} /> : <ExchangeTable matches={shown} title={view === 'All' ? `${title} exchange` : `${view} ${title}`} emptyTitle="No events in this view" />}
     </div>
   )
 }
@@ -1948,6 +2013,8 @@ function MenuDrawer() {
 function MobileDock() {
   const { betslip, setMenuOpen, setSlipOpen, setSearchOpen, loggedIn } = useApp()
   return (
+    <>
+    {betslip.length > 0 && <button type="button" className="mobile-slip-summary" onClick={() => setSlipOpen(true)}><span><Icon name="ticket" size={16} /> {betslip.length} selection{betslip.length === 1 ? '' : 's'}</span><strong>Open bet slip <Icon name="chevron" size={14} /></strong></button>}
     <nav className="mobile-dock" aria-label="Mobile navigation">
       <NavLink to="/" end><Icon name="home" size={20} /><span>Home</span></NavLink>
       <NavLink to="/live"><Icon name="live" size={20} /><span>Live</span></NavLink>
@@ -1959,6 +2026,7 @@ function MobileDock() {
       </button>
       {loggedIn ? <NavLink to="/account"><Icon name="shield" size={20} /><span>Wallet</span></NavLink> : <button type="button" onClick={() => setMenuOpen(true)}><Icon name="menu" size={20} /><span>More</span></button>}
     </nav>
+    </>
   )
 }
 
@@ -2004,6 +2072,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/responsible-play" element={<ResponsiblePlay />} />
           </Routes>
+          <Footer />
         </main>
         <Betslip />
       </div>
