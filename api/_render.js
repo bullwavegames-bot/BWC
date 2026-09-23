@@ -12,7 +12,7 @@ export function readAdminKey(req) {
 
 export async function proxyRender(path, req) {
   const headers = { 'Content-Type': 'application/json' }
-  const incomingAuth = String(req.headers.authorization || '')
+  const incomingAuth = String(req.headers?.authorization || '')
   if (incomingAuth) headers.Authorization = incomingAuth
   const adminKey = readAdminKey(req)
   if (adminKey) {
@@ -22,7 +22,7 @@ export async function proxyRender(path, req) {
     }
   }
   const res = await fetch(`${RENDER_API}${path}`, {
-    method: req.method,
+    method: req.method || 'GET',
     headers,
     body: req.method === 'GET' || req.method === 'HEAD' ? undefined : JSON.stringify(req.body ?? {}),
   })
@@ -34,6 +34,64 @@ export async function proxyRender(path, req) {
     data = { error: text.slice(0, 180) || `Render ${res.status}` }
   }
   return { status: res.status, data }
+}
+
+export function staffEmails() {
+  return String(process.env.SUPER_ADMIN_EMAILS || '')
+    .split(/[,;\n]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+export function staffIds() {
+  return String(process.env.SUPER_ADMIN_USER_IDS || '')
+    .split(/[,;\n]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+export function isAllowlistedProfile(user) {
+  if (!user) return false
+  const email = String(user.email || '').toLowerCase()
+  if (email && staffEmails().includes(email)) return true
+  const marks = [user.id, user.playerId, user.accountNumber].map((item) => String(item || '').toLowerCase())
+  return marks.some((mark) => mark && staffIds().includes(mark))
+}
+
+export async function legacyAdminMe(req) {
+  const key = readAdminKey(req)
+  if (key) {
+    const probe = await proxyRender('/api/admin/players?q=', {
+      method: 'GET',
+      headers: {
+        'x-admin-key': key,
+        authorization: `Admin ${key}`,
+      },
+    })
+    if (probe.status === 401 || probe.status === 403) {
+      return { status: probe.status, data: { error: probe.data.error || 'Admin key does not match.' } }
+    }
+    if (probe.status === 503) return probe
+    if (probe.status < 500) {
+      return { status: 200, data: { ok: true, staff: 'ADMIN_KEY', via: 'key' } }
+    }
+  }
+
+  const auth = String(req.headers.authorization || '')
+  if (auth.startsWith('Bearer ')) {
+    const me = await proxyRender('/api/me', {
+      method: 'GET',
+      headers: { authorization: auth },
+    })
+    const user = me.data.user || me.data.profile
+    if (me.status === 401) return { status: 401, data: { error: me.data.error || 'Sign in required' } }
+    if (isAllowlistedProfile(user)) {
+      return { status: 200, data: { ok: true, staff: user.email || user.accountNumber || user.phone, via: 'allowlist' } }
+    }
+    return { status: 403, data: { error: 'Ordinary accounts cannot open Super Admin.' } }
+  }
+
+  return { status: 401, data: { error: 'Sign in with a Super Admin account, or paste ADMIN_KEY.' } }
 }
 
 export function razorpayKeys() {

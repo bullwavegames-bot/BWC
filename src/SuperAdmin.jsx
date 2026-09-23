@@ -30,6 +30,14 @@ export function SuperAdmin() {
     ...(key.trim() ? { 'x-admin-key': key.trim(), Authorization: token ? `Bearer ${token}` : `Admin ${key.trim()}` } : {}),
   })
 
+  const cleanError = (err) => {
+    const raw = String(err || '')
+    if (/<!DOCTYPE|Cannot GET|Cannot POST/i.test(raw)) {
+      return 'The API has not picked up the Super Admin routes yet. Paste ADMIN_KEY, or wait for Render to finish deploying.'
+    }
+    return raw || 'Request failed'
+  }
+
   const call = async (path, { method = 'GET', body } = {}) => {
     const res = await fetch(path, {
       method,
@@ -37,7 +45,7 @@ export function SuperAdmin() {
       body: method === 'GET' ? undefined : JSON.stringify({ ...(body || {}), ...(key.trim() ? { adminKey: key.trim() } : {}) }),
     })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Request failed')
+    if (!res.ok) throw new Error(cleanError(data.error || `Request failed (${res.status})`))
     return data
   }
 
@@ -79,7 +87,7 @@ export function SuperAdmin() {
         <p className="ops-lead">Sign in as allowlisted staff. ADMIN_KEY still works as a fallback for settle if the allowlist is not set.</p>
         {gate && <p className="hint is-bad">{gate}</p>}
         <div className="field"><label>ADMIN_KEY fallback</label><input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" /></div>
-        <button type="button" className="btn btn-ghost" onClick={() => sessionStorage.setItem('bwc_admin_key', key.trim())}>Save key on this device</button>
+        <button type="button" className="btn btn-ghost" onClick={() => { sessionStorage.setItem('bwc_admin_key', key.trim()); setGate('') }}>Save key on this device</button>
         {loggedIn && <p className="hint">Signed in as {user?.email || user?.phone}. This account is not Super Admin unless it is on the Render allowlist.</p>}
       </div>
     )
