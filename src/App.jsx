@@ -118,6 +118,25 @@ function Icon({ name, size = 18 }) {
     table: <><path d="M4 14h16M5.5 14l-1 6M18.5 14l1 6M12 14v6M4 17h16" /><path d="M8.4 4.2a4 4 0 1 1-3.7 6.6A4 4 0 0 1 8.4 4.2Z" /><path d="m7 11 2 4" /><circle cx="17.8" cy="7" r="1.4" fill="currentColor" stroke="none" /></>,
     horse: <><path d="M5 19c.8-4.9 3.4-8 7.7-9.5L15 4l2.3 4.2 2.7 1.5-1.8 3.6-4.1.5-2.5 5.2Z" /><path d="m12.7 9.5 2.8 2.5M8.2 12.2l-3-1.7M8.5 19l-2.7 2M12.2 19l2.1 2M16.7 8.3l2-3.3" /><circle cx="17" cy="10.1" r=".7" fill="currentColor" stroke="none" /></>,
     camel: <><path d="M4 18c1.2-5 3.2-8 7-9.2.4-3.2 1.8-6.2 4.8-7.2 2.2-.2 3.4 1.6 3.6 3.6 2.4-.4 4.6.8 6 2.8 2 .8 3.6 2.8 3.6 5.2V16h-3.2c-.4 2.2-2.2 3.8-4.4 3.8H7.2C5.4 19.8 4.2 19.2 4 18Z" /><path d="M9.2 10.4C7 11.4 5.8 13.6 5.4 16M15.4 9.2c2.2-.2 4.4 1.2 5.6 3.2" /><circle cx="18.2" cy="10.2" r=".7" fill="currentColor" stroke="none" /></>,
+    esports: <><rect x="3" y="8" width="18" height="10" rx="3" /><path d="M8 13h2M7 12v2M15 12.5h.01M17 12.5h.01M8 21h8" /></>,
+    volleyball: <><circle cx="12" cy="12" r="9" /><path d="M4.2 9c3 1.2 8.6.6 12.4-3.2M4.4 15.2c3.6-1 8.2.4 12.8 4.2M12.2 3.1c1.6 3.4 1.4 8.2-1.2 13.4" /></>,
+    hockey: <><path d="M4 5h5l7 12h4" /><path d="M15 17h5v3h-6z" /><circle cx="7" cy="18" r="2.2" /></>,
+    boxing: <><path d="M5 10c0-3 2.2-5 5-5h3c2.4 0 4 1.6 4 4v2c2.2.4 4 2.2 4 4.4C21 18 18.8 20 16 20H9c-2.8 0-5-2-5-5.2V10z" /><path d="M9 9v7" /></>,
+    mma: <><path d="M7 8h10v4c0 3.5-2.2 6-5 6s-5-2.5-5-6V8z" /><path d="M9 8V6h6v2M8 12h8" /></>,
+    handball: <><circle cx="12" cy="12" r="9" /><path d="M8 5c2 3 2 6 0 10M16 4.8c-1.4 3.2-1.2 7.2 1.4 11.2M7 16c2.4 1.8 6.4 2.2 10 .4" /></>,
+    futsal: <><circle cx="12" cy="12" r="9" /><path d="m12 8 3.6 2.6-1.4 4.2H9.8l-1.4-4.2z" /></>,
+    baseball: <><circle cx="12" cy="12" r="9" /><path d="M6 5.2c2.8 2.4 3.6 6.2 3.6 9.8 0 2.2-.4 4.2-1.4 6M18 5.2c-2.8 2.4-3.6 6.2-3.6 9.8 0 2.2.4 4.2 1.4 6" /></>,
+    american: <><path d="M7 7c4-3 10-3 14 2-4 5-10 8-15 5-2-1.2-3-4-1.6-6.4z" /><path d="M9 10h8M11.5 8v7M14.5 8.5v6" /></>,
+    australian: <><ellipse cx="12" cy="12" rx="9" ry="6" transform="rotate(-35 12 12)" /><path d="M8 10.5h8M10 8.8v6.2M14 8.8v6.2" /></>,
+    rugby: <><ellipse cx="12" cy="12" rx="9" ry="5.5" transform="rotate(28 12 12)" /><path d="M8.5 12h7M10 9.5v5M14 9.5v5" /></>,
+    motor: <><path d="M5 16h14l-1.5-5H8z" /><circle cx="8" cy="17.5" r="2" /><circle cx="16.5" cy="17.5" r="2" /><path d="M9 11 11 6h5l2 5" /></>,
+    snooker: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4" /></>,
+    darts: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><path d="M12 2v4M20.5 7.5 12 12" /></>,
+    chess: <><path d="M9 20h6M10 20V9h4v11M8 9h8M12 4v3M9.5 7h5" /><circle cx="12" cy="4" r="1.4" /></>,
+    biathlon: <><path d="M6 19 12 5l6 14M9 13h6" /><circle cx="7" cy="19" r="1.4" /><circle cx="17" cy="19" r="1.4" /></>,
+    national: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.8 2.8 4.2 5.8 4.2 9S14.8 18.2 12 21C9.2 18.2 7.8 15.2 7.8 12S9.2 5.8 12 3z" /></>,
+    special: <path d="m12 3 1.6 5.4H19l-4.4 3.2 1.7 5.4L12 14.6 7.7 17l1.7-5.4L5 8.4h5.4z" />,
+    replays: <><circle cx="12" cy="12" r="8" /><path d="M10 9v6l5-3zM16 5.2A9 9 0 0 0 5.5 9" /></>,
     ticket: <path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2z" />,
     plus: <path d="M12 5v14M5 12h14" />,
     minus: <path d="M5 12h14" />,
@@ -286,10 +305,20 @@ function LanguagePicker({ embedded = false }) {
 }
 
 function sportIcon(sport) {
-  if (sport === 'table-tennis' || sport === 'table') return 'table'
-  if (sport === 'camel-racing') return 'camel'
-  if (sport === 'horse-racing') return 'horse'
-  return sport || 'live'
+  const aliases = {
+    'table-tennis': 'table',
+    table: 'table',
+    'camel-racing': 'camel',
+    'horse-racing': 'horse',
+    'ice-hockey': 'hockey',
+    'american-football': 'american',
+    'australian-football': 'australian',
+    'motor-sports': 'motor',
+    'virtual-cricket': 'virtual',
+    esports: 'esports',
+    'e-sports': 'esports',
+  }
+  return aliases[sport] || sport || 'live'
 }
 
 const notificationSeed = [
@@ -380,7 +409,8 @@ function Header() {
 
 function Sidebar() {
   const [leaguesOpen, setLeaguesOpen] = useState(false)
-  const { setAuthMode } = useApp()
+  const { setAuthMode, catalogMatches } = useApp()
+  const liveCount = catalogMatches.filter((m) => m.live).length
   return (
     <aside className="sidebar">
       <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
@@ -389,12 +419,11 @@ function Sidebar() {
           <span className="dot" style={{ color: s.color || '#61D6B0' }}>
             <Icon name={s.icon} size={18} />
           </span>
-          {s.name}
-          {s.count ? <span className="side-count">{s.count}</span> : null}
+          <span className="side-label">{s.name}</span>
+          {s.live ? <span className="side-live">Live</span> : null}
+          {s.id === 'all-live' ? <span className="side-count">{liveCount || s.count}</span> : null}
         </NavLink>
       ))}
-      <NavLink to="/casino/virtual-sports" className="side-item"><span className="dot"><Icon name="virtual" size={18} /></span>Esports</NavLink>
-      <NavLink to="/live" className="side-item"><span className="dot"><Icon name="layers" size={18} /></span>All Sports</NavLink>
       <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <Icon name="chevron" size={16} /></button>
       {leaguesOpen && leagues.map((g) => (
         <div key={g.group} className="league-section">
@@ -1082,7 +1111,7 @@ function Home() {
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
       </section>
       <nav className="sport-filter" aria-label="Browse by sport">
-        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
+        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
       <section className="personalized-home">
@@ -1110,18 +1139,19 @@ function Home() {
 function Live() {
   const { catalogMatches: matches, catalogLoading } = useApp()
   const live = matches.filter((m) => m.live)
-  const [sport, setSport] = useState('All Live')
-  const liveKey = { 'Camel Riding': 'camel', 'Horse Racing': 'horse', 'Table Tennis': 'table-tennis' }
-  const filtered = sport === 'All Live' ? live : live.filter((m) => m.sport === (liveKey[sport] || sport.toLowerCase().replaceAll(' ', '-')))
+  const [sport, setSport] = useState('all-live')
+  const liveSports = sports.filter((s) => s.id === 'all-live' || (s.live && s.id !== 'virtual-cricket'))
+  const current = liveSports.find((s) => s.id === sport) || liveSports[0]
+  const filtered = sport === 'all-live' ? live : live.filter((m) => m.sport === sport || m.sport === current?.id)
   return (
     <div className="content-page">
       <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
       <div className="filters sticky-filters">
-        {['All Live', 'Cricket', 'Football', 'Basketball', 'Tennis', 'Horse Racing', 'Camel Riding'].map((c) => (
-          <button key={c} type="button" className={`chip ${sport === c ? 'on' : ''}`} onClick={() => setSport(c)}>{c}</button>
+        {liveSports.map((s) => (
+          <button key={s.id} type="button" className={`chip ${sport === s.id ? 'on' : ''}`} onClick={() => setSport(s.id)}>{s.name}</button>
         ))}
       </div>
-      <div className="content-section-title"><h2>{sport === 'All Live' ? 'Live right now' : `${sport} live`}</h2><span>{filtered.length} events</span></div>
+      <div className="content-section-title"><h2>{sport === 'all-live' ? 'Live right now' : `${current?.name || 'Sport'} live`}</h2><span>{filtered.length} events</span></div>
       {catalogLoading ? <SkeletonGrid count={4} /> : filtered.length ? <div className="match-grid">{filtered.map((m) => <MatchCard key={m.id} m={m} />)}</div> : <EmptyState icon="live" title="No live events in this sport" detail="Try another sport or browse upcoming fixtures." action={{ to: '/upcoming', label: 'See upcoming events' }} />}
     </div>
   )
@@ -1230,7 +1260,8 @@ function Sport() {
   const { catalogMatches: matches, catalogLoading } = useApp()
   const [view, setView] = useState('All')
   const key = (name || 'football').replace('-racing', '')
-  const list = matches.filter((m) => m.sport === key || m.sport === name)
+  const aliases = { hockey: 'ice-hockey', american: 'american-football', australian: 'australian-football', motor: 'motor-sports' }
+  const list = matches.filter((m) => m.sport === key || m.sport === name || m.sport === aliases[key])
   const shown = view === 'All' ? list : list.filter((m) => view === 'Live' ? m.live : !m.live)
   const title = (name || '').replaceAll('-', ' ')
   useEffect(() => setView('All'), [name])

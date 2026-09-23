@@ -287,6 +287,21 @@ img { max-width: 100%; }
   color: var(--muted);
   font-size: 12px;
 }
+.side-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-live {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(97, 214, 176, .16);
+  color: #61D6B0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.side-item .side-count { margin-left: 8px; }
+.side-item:has(.side-live) .side-count { margin-left: 6px; }
 .side-group {
   padding: 19px 15px 8px;
   color: #8ba8c8;
@@ -1688,6 +1703,7 @@ body { font-family: var(--font); background: var(--navy); }
 .sidebar .side-item.active .dot { color: var(--mint); }
 .sidebar .side-item .dot svg { filter: none; }
 .sidebar .side-count { background: #ed5357; color: white; border-radius: 4px; padding: 2px 7px; font-weight: 800; }
+.sidebar .side-live { background: rgba(104, 240, 218, .14); color: #68f0da; border: 1px solid rgba(104, 240, 218, .28); }
 .sidebar .league-toggle { margin-top: 14px; height: 64px; padding-inline: 14px; border-bottom: 1px solid var(--line); align-items: center; font-weight: 500; font-size: 13px; }
 .sidebar .league-toggle svg { color: #d8e0e1; }
 .side-utility { margin-top: 5px; padding-top: 4px; }
