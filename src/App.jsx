@@ -1153,6 +1153,141 @@ function GameCarousel({ catalog }) {
   </nav>
 }
 
+function HomeRailHead({ title, to, live }) {
+  return (
+    <div className="home-rail-head">
+      <h2>{title}{live ? <span className="home-rail-live">Live</span> : null}</h2>
+      <NavLink to={to}>All <span aria-hidden="true">›</span></NavLink>
+    </div>
+  )
+}
+
+function HomeGameRail({ title, to, items }) {
+  return (
+    <section className="home-rail">
+      <HomeRailHead title={title} to={to} />
+      <div className="home-game-scroller">
+        {items.map((g) => {
+          const iconKind = getGameIconKind(g)
+          return (
+            <NavLink key={g.id} to={to} className="home-game-tile">
+              <div className="home-game-art">{iconKind ? <GameIcon game={g} kind={iconKind} /> : <GameArtwork game={g} />}</div>
+              <span>{g.name}</span>
+            </NavLink>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function HomeEventCard({ m }) {
+  const { addBet, betslip } = useApp()
+  const selected = (id) => betslip.some((b) => b.id === id)
+  const priced = (m.markets || []).filter((mk) => mk.odd != null)
+  return (
+    <article className="home-event-card">
+      <NavLink to={`/match/${m.id}`} className="home-event-meta">
+        <small>{m.league}</small>
+        {m.extra ? <em>{m.extra} ›</em> : null}
+      </NavLink>
+      <NavLink to={`/match/${m.id}`} className="home-event-teams">
+        <div>
+          <strong>{m.home}</strong>
+          <strong>{m.away}</strong>
+        </div>
+        <div className="home-event-score">
+          <span className={m.live ? 'is-live' : ''}>{m.time}</span>
+          {m.score ? <b>{m.score[0]} · {m.score[1]}</b> : null}
+        </div>
+      </NavLink>
+      {priced.length ? (
+        <div className={`home-event-odds ${priced.length === 2 ? 'two' : ''}`}>
+          {priced.map((mk) => (
+            <OddButton key={mk.id} id={mk.id} odd={mk.odd} label={mk.label} selected={selected(mk.id)} onSelect={(price) => addBet({ id: mk.id, event: `${m.home} vs ${m.away}`, pick: mk.label, odd: price })} />
+          ))}
+        </div>
+      ) : (
+        <NavLink to={`/match/${m.id}`} className="home-event-more">View markets</NavLink>
+      )}
+    </article>
+  )
+}
+
+function HomeMatchRail({ title, to, live, list }) {
+  if (!list.length) return null
+  return (
+    <section className="home-rail">
+      <HomeRailHead title={title} to={to} live={live} />
+      <div className="home-match-scroller">
+        {list.slice(0, 6).map((m) => <HomeEventCard key={m.id} m={m} />)}
+      </div>
+    </section>
+  )
+}
+
+function HomeSportBoard({ matches }) {
+  const chips = sports.filter((s) => ['cricket', 'football', 'tennis', 'basketball', 'table-tennis', 'volleyball', 'esports', 'mma'].includes(s.id))
+  const [sport, setSport] = useState('cricket')
+  const list = matches.filter((m) => m.sport === sport).slice(0, 6)
+  return (
+    <section className="home-rail home-sport-board">
+      <HomeRailHead title="Sport" to="/live" />
+      <div className="home-sport-chips">
+        {chips.map((s) => (
+          <button key={s.id} type="button" className={sport === s.id ? 'on' : ''} onClick={() => setSport(s.id)}>
+            <Icon name={s.icon} size={16} />{s.name}
+          </button>
+        ))}
+      </div>
+      <div className="home-sport-list">
+        {list.length ? list.map((m) => <HomeEventCard key={m.id} m={m} />) : <p className="home-sport-empty">No events in this sport right now.</p>}
+      </div>
+      <NavLink to="/live" className="home-all-events">All events</NavLink>
+    </section>
+  )
+}
+
+function ClubHomeFooter() {
+  return (
+    <footer className="club-home-footer">
+      <div className="club-foot-cols">
+        <div>
+          <strong>Bullwave Club</strong>
+          <NavLink to="/about">About the club</NavLink>
+          <NavLink to="/promotions">Public offers</NavLink>
+          <NavLink to="/about">Privacy policy</NavLink>
+          <NavLink to="/faq">Terms and conditions</NavLink>
+        </div>
+        <div>
+          <strong>Help</strong>
+          <NavLink to="/faq">Betting rules</NavLink>
+          <NavLink to="/account">Wallet</NavLink>
+          <NavLink to="/account/withdraw">Withdrawal</NavLink>
+          <NavLink to="/account/deposit">Deposit</NavLink>
+          <NavLink to="/faq">Support</NavLink>
+        </div>
+        <div>
+          <strong>Info</strong>
+          <NavLink to="/responsible-play">Responsible play</NavLink>
+          <NavLink to="/responsible-play">Self-exclusion</NavLink>
+          <NavLink to="/faq">Player complaints</NavLink>
+        </div>
+      </div>
+      <div className="club-foot-block">
+        <strong>Available payment methods</strong>
+        <div className="club-pay-row">
+          {['upi', 'paytm', 'phonepe', 'card', 'netbanking', 'usdt'].map((id) => <span key={id} className="club-pay-mark"><PayLogo id={id} /></span>)}
+        </div>
+      </div>
+      <div className="club-foot-bottom">
+        <span>Play with a clear head. 18+ only.</span>
+        <div className="club-licenses"><b>18+</b><Icon name="shield" size={16} /></div>
+      </div>
+    </footer>
+  )
+}
+
 function Home() {
   const { catalogMatches: matches, clubGames, favorites, recentMatches } = useApp()
   const featured = matches.find((m) => m.live) || matches[0]
@@ -1170,6 +1305,12 @@ function Home() {
     { name: 'La Liga', sport: 'Football', mark: 'L', className: 'laliga', to: '/sport/football' },
     { name: 'Formula 1', sport: 'Motorsport', mark: 'F1', className: 'f1', to: '/live' },
   ]
+  const catalog = clubGames.length ? clubGames : games
+  const instantGames = catalog.filter((g) => g.cat === 'instant').slice(0, 10)
+  const slotGames = catalog.filter((g) => g.cat === 'slots').slice(0, 10)
+  const exclusiveGames = catalog.filter((g) => g.cat === 'live' || g.cat === 'instant').slice(0, 8)
+  const virtualCricket = matches.filter((m) => m.sport === 'virtual-cricket')
+  const footballRail = matches.filter((m) => m.sport === 'football').slice(0, 6)
   return (
     <div className="home-desk reference-home">
       <section className="home-hero" aria-label="Bullwave Club sports">
@@ -1199,6 +1340,15 @@ function Home() {
       </div>
       <section className="popular-leagues"><h2 className="home-section-title"><span aria-hidden="true">🏆</span> Popular Leagues</h2><div className="popular-league-grid">{leagueCards.map((league) => <NavLink to={league.to} key={league.name} className="popular-league"><span className={`league-logo ${league.className}`}>{league.mark}</span><span><strong>{league.name}</strong><small>{league.sport}</small></span></NavLink>)}</div></section>
       <footer className="home-brand-strip"><span>SPORTS BRING US TOGETHER.<br /><b>BULLWAVE</b> KEEPS US AHEAD.</span><div className="strip-brand"><span className="logo-emblem" aria-hidden="true" /><strong>BULL<span>WAVE</span><small>CLUB</small></strong></div><p>SPORTS<br />PEOPLE<br />PASSION<br />PROGRESS</p></footer>
+      <div className="home-discover">
+        <HomeGameRail title="Instant Games" to="/casino/instant-games" items={instantGames} />
+        <HomeMatchRail title="Virtual Cricket" to="/casino/virtual-sports" live list={virtualCricket} />
+        <HomeGameRail title="Top Slots" to="/casino/slots" items={slotGames} />
+        <HomeMatchRail title="Football" to="/sport/football" list={footballRail} />
+        <HomeGameRail title="Club Exclusive" to="/casino/live-casino" items={exclusiveGames} />
+        <HomeSportBoard matches={matches} />
+        <ClubHomeFooter />
+      </div>
     </div>
   )
 }

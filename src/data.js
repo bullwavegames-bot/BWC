@@ -288,6 +288,9 @@ export const matches = [
   { id: 'nt1', sport: 'national', league: 'National events. India', live: false, time: 'TODAY, 19:30', home: 'India', away: 'Rest of India', extra: '+15', markets: [{ id: 'nt1-1', label: '1', odd: 1.45 }, { id: 'nt1-2', label: '2', odd: 2.70 }] },
   { id: 'rp1', sport: 'replays', league: 'Replays. Classic', live: true, time: 'LIVE', home: 'Final 2011', away: 'Archive', extra: '+4', markets: [{ id: 'rp1-1', label: '1', odd: 1.50 }, { id: 'rp1-2', label: '2', odd: 2.50 }] },
   { id: 'sp1', sport: 'special', league: 'Special. Outrights', live: false, time: 'OPEN', home: 'World Cup winner', away: 'Field', extra: '+40', markets: [{ id: 'sp1-1', label: '1', odd: 3.80 }, { id: 'sp1-2', label: '2', odd: 1.28 }] },
+  { id: 'vc1', sport: 'virtual-cricket', league: 'Virtual Cricket. Club Cup', live: true, time: 'INNINGS 1', home: 'Wave XI', away: 'Storm XI', score: ['148/4', '92/3'], extra: '+14', markets: [{ id: 'vc1-1', label: '1', odd: 1.92 }, { id: 'vc1-2', label: '2', odd: 1.88 }] },
+  { id: 'vc2', sport: 'virtual-cricket', league: 'Virtual Cricket. Asia Cup', live: true, time: 'INNINGS 1', home: 'India (V)', away: 'Pakistan (V)', score: ['0/0', '4/0'], extra: '+65', markets: [{ id: 'vc2-1', label: '1', odd: 2.17 }, { id: 'vc2-x', label: 'X', odd: 14.00 }, { id: 'vc2-2', label: '2', odd: 1.71 }] },
+  { id: 'vc3', sport: 'virtual-cricket', league: 'Virtual Cricket. Super Over', live: true, time: 'INNINGS 1', home: 'Titans (V)', away: 'Royals (V)', score: ['12/1', '8/2'], extra: '+22', markets: [{ id: 'vc3-1', label: '1', odd: 2.08 }, { id: 'vc3-x', label: 'X', odd: 12.50 }, { id: 'vc3-2', label: '2', odd: 1.79 }] },
 ]
 
 export const matchMarkets = [
