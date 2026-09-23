@@ -235,6 +235,18 @@ function CatalogNotice() {
   return <div className="catalog-notice" role="alert"><Icon name="live" size={17} /><span>{catalogError}</span><button type="button" onClick={reloadCatalog}>Retry</button></div>
 }
 
+function SessionReminder() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const settings = loadPlaySettings()
+    if (!settings.reminder) return undefined
+    const timer = window.setTimeout(() => setVisible(true), Number(settings.reminder) * 60 * 1000)
+    return () => window.clearTimeout(timer)
+  }, [])
+  if (!visible) return null
+  return <div className="session-reminder" role="alertdialog" aria-modal="true" aria-label="Session time reminder"><span className="feature-icon"><Icon name="clock" size={20} /></span><div><strong>Time check</strong><p>You have been active for a while. Review your play and take a break if you need one.</p></div><NavLink to="/responsible-play" onClick={() => setVisible(false)}>Review limits</NavLink><button type="button" onClick={() => setVisible(false)}>Continue</button></div>
+}
+
 function LanguagePicker({ embedded = false }) {
   const { language, setLanguage, langOpen, setLangOpen } = useApp()
   const current = languages.find((l) => l.code === language) || languages[1]
@@ -279,6 +291,40 @@ function sportIcon(sport) {
   return sport || 'live'
 }
 
+const notificationSeed = [
+  { id: 'n1', group: 'Today', type: 'match', title: 'Camel race starts in 15 minutes', detail: 'Desert King vs Sand Storm', time: '12:15 PM', icon: 'clock' },
+  { id: 'n2', group: 'Today', type: 'odds', title: 'Odds moved on your selection', detail: 'India U-19 shortened from 1.82 to 1.76', time: '11:42 AM', icon: 'live' },
+  { id: 'n3', group: 'Today', type: 'bet', title: 'Bet settled', detail: 'Your football single was won', time: '10:08 AM', icon: 'ticket' },
+  { id: 'n4', group: 'Yesterday', type: 'wallet', title: 'Deposit completed', detail: '₹1,000 added through UPI', time: '6:31 PM', icon: 'plus' },
+  { id: 'n5', group: 'Yesterday', type: 'wallet', title: 'Withdrawal processing', detail: '₹500 is being reviewed', time: '3:12 PM', icon: 'minus' },
+  { id: 'n6', group: 'Earlier', type: 'promo', title: 'Weekend odds boost', detail: 'A new member promotion is available', time: 'Mon', icon: 'gift' },
+]
+
+function NotificationCenter({ onClose }) {
+  const [filter, setFilter] = useState('All')
+  const [read, setRead] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bwc_read_notifications')) || [] } catch { return [] }
+  })
+  const shown = notificationSeed.filter((item) => filter === 'All' || item.type === filter)
+  const groups = [...new Set(shown.map((item) => item.group))]
+  const markRead = (id) => {
+    const next = read.includes(id) ? read : [...read, id]
+    setRead(next)
+    localStorage.setItem('bwc_read_notifications', JSON.stringify(next))
+  }
+  const markAll = () => {
+    const next = notificationSeed.map((item) => item.id)
+    setRead(next)
+    localStorage.setItem('bwc_read_notifications', JSON.stringify(next))
+  }
+  return <section className="notifications-popover" role="dialog" aria-label="Notification centre">
+    <header><div><strong>Notifications</strong><small>{notificationSeed.length - read.length} unread</small></div><button type="button" onClick={onClose} aria-label="Close notifications"><Icon name="close" size={17} /></button></header>
+    <div className="notification-filters" role="tablist" aria-label="Notification types">{['All', 'match', 'bet', 'wallet', 'promo'].map((item) => <button key={item} type="button" role="tab" aria-selected={filter === item} className={filter === item ? 'on' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+    <div className="notification-list">{groups.map((group) => <div key={group} className="notification-group"><h3>{group}</h3>{shown.filter((item) => item.group === group).map((item) => <button key={item.id} type="button" className={read.includes(item.id) ? 'is-read' : ''} onClick={() => markRead(item.id)}><span className="notification-icon"><Icon name={item.icon} size={17} /></span><span><strong>{item.title}</strong><small>{item.detail}</small></span><time>{item.time}</time></button>)}</div>)}</div>
+    <footer><button type="button" onClick={markAll}>Mark all as read</button><NavLink to="/account/settings" onClick={onClose}>Preferences</NavLink></footer>
+  </section>
+}
+
 function Header() {
   const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, theme, setTheme } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -303,7 +349,7 @@ function Header() {
       <div className="header-right">
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
         <button className="icon-btn notification-btn" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Icon name="bell" size={21} /><i /></button>
-        {notificationsOpen && <div className="notifications-popover"><strong>Notifications</strong><p>You're all caught up.</p></div>}
+        {notificationsOpen && <NotificationCenter onClose={() => setNotificationsOpen(false)} />}
         <button
           type="button"
           className={`theme-toggle${light ? ' is-light' : ''}`}
@@ -368,6 +414,7 @@ function Sidebar() {
       ))}
       <div className="side-utility">
         <NavLink to="/account/settings" className="side-item"><span className="dot"><Icon name="gear" size={18} /></span>Settings</NavLink>
+        <NavLink to="/responsible-play" className="side-item"><span className="dot"><Icon name="shield" size={18} /></span>Responsible play</NavLink>
         <NavLink to="/faq" className="side-item"><span className="dot"><Icon name="help" size={18} /></span>Help</NavLink>
       </div>
       <div className="side-club"><span aria-hidden="true">♛</span><strong>Join Bullwave Club</strong><p>Get exclusive rewards,<br />boosted odds and more!</p><button type="button" onClick={() => setAuthMode('signup')}>Create Account</button></div>
@@ -1303,29 +1350,36 @@ const WALLET_FACTS = [
   { title: '18+ only', body: 'Play with money you can afford to lose. Set limits anytime.' },
 ]
 
-function WalletActivity({ userId }) {
+function WalletActivity({ userId, bets = [], bonus = 0 }) {
   const [rows, setRows] = useState(() => loadWalletTx(userId))
+  const [filter, setFilter] = useState('All')
   useEffect(() => { setRows(loadWalletTx(userId)) }, [userId])
-  if (!rows.length) {
+  const betRows = bets.map((bet) => ({ id: `bet-${bet.id}`, type: 'bet', method: `${bet.selections?.length || 1} selection bet`, amount: Number(bet.stake || 0), status: bet.status || 'Open', at: bet.createdAt, detail: `Potential return ${rupees(bet.possibleWin)}` }))
+  const bonusRows = bonus > 0 ? [{ id: 'bonus-balance', type: 'bonus', method: 'Club bonus balance', amount: bonus, status: 'Available', at: new Date().toISOString(), detail: 'Bonus funds may have wagering requirements.' }] : []
+  const timeline = [...rows, ...betRows, ...bonusRows].sort((a, b) => new Date(b.at) - new Date(a.at))
+  const filtered = timeline.filter((item) => filter === 'All' || item.type === filter)
+  if (!timeline.length) {
     return <p className="wallet-empty-tx">No wallet activity yet. Deposits and withdrawals will show up here.</p>
   }
   return (
-    <div className="wallet-tx-list">
-      {rows.map((t) => (
-        <div key={t.id} className="wallet-tx">
-          <div>
-            <strong>{t.type === 'withdraw' ? 'Withdrawal' : 'Deposit'} · {t.method}</strong>
-            <small>{new Date(t.at).toLocaleString()} · {t.status}</small>
-          </div>
-          <b className={t.type === 'withdraw' ? 'is-out' : 'is-in'}>{t.type === 'withdraw' ? '−' : '+'}{rupees(t.amount)}</b>
-        </div>
-      ))}
+    <div className="wallet-timeline-wrap">
+      <div className="wallet-timeline-filters" role="tablist" aria-label="Transaction types">{['All', 'deposit', 'withdraw', 'bonus', 'bet'].map((item) => <button key={item} type="button" role="tab" aria-selected={filter === item} className={filter === item ? 'on' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      <div className="wallet-timeline">
+        {filtered.map((t) => {
+          const incoming = ['deposit', 'bonus'].includes(t.type)
+          const label = t.type === 'withdraw' ? 'Withdrawal' : t.type === 'bet' ? 'Bet placed' : t.type === 'bonus' ? 'Bonus' : 'Deposit'
+          return <details key={t.id} className={`wallet-tx tx-${t.type}`}>
+            <summary><span className="tx-marker"><Icon name={incoming ? 'plus' : t.type === 'bet' ? 'ticket' : 'minus'} size={16} /></span><span><strong>{label}</strong><small>{t.method} · {new Date(t.at).toLocaleString()}</small></span><span className={`tx-status status-${String(t.status).toLowerCase()}`}>{t.status}</span><b className={incoming ? 'is-in' : 'is-out'}>{incoming ? '+' : '−'}{rupees(t.amount)}</b><Icon name="chevron" size={15} /></summary>
+            <div className="tx-details"><span>Reference</span><b>{String(t.id).slice(-10).toUpperCase()}</b><span>Details</span><b>{t.detail || `${label} through ${t.method}`}</b></div>
+          </details>
+        })}
+      </div>
     </div>
   )
 }
 
 function Account() {
-  const { user, loggedIn, setAuthMode, logout } = useApp()
+  const { user, loggedIn, setAuthMode, logout, myBets } = useApp()
   const cash = Number(user?.balance || 0)
   const bonus = bonusCash(user)
   const bonusLabel = typeof user?.bonus === 'string' && user.bonus && !Number(user.bonus) ? user.bonus : null
@@ -1378,7 +1432,7 @@ function Account() {
       {loggedIn && (
         <>
           <div className="content-section-title"><h2>Recent activity</h2><span>This device</span></div>
-          <WalletActivity userId={user?.id} />
+          <WalletActivity userId={user?.id} bets={myBets} bonus={bonus} />
         </>
       )}
       <div className="content-section-title"><h2>Quick access</h2><span>Manage your club account</span></div>
@@ -1709,12 +1763,44 @@ function More({ settings = false }) {
       </div>
       <div className="card menu-item" style={{ marginTop: 8 }}>Odds Format <select value={oddsFormat} onChange={(e) => setOddsFormat(e.target.value)} className="input" style={{ width: 140, height: 36 }}><option value="decimal">2.20</option><option value="fractional">6/5</option><option value="american">+120</option></select></div>
       <div className="card more-links" style={{ marginTop: 8 }}>
+        <NavLink className="menu-item" to="/responsible-play">Responsible play</NavLink>
         <NavLink className="menu-item" to="/about">About Bullwave Club</NavLink>
         <NavLink className="menu-item" to="/faq">FAQ</NavLink>
         <NavLink className="menu-item" to="/vip">VIP Club</NavLink>
       </div>
     </div>
   )
+}
+
+function loadPlaySettings() {
+  try {
+    return { depositLimit: 5000, reminder: 60, coolOff: 'None', ...JSON.parse(localStorage.getItem('bwc_play_settings') || '{}') }
+  } catch {
+    return { depositLimit: 5000, reminder: 60, coolOff: 'None' }
+  }
+}
+
+function ResponsiblePlay() {
+  const [settings, setSettings] = useState(loadPlaySettings)
+  const [saved, setSaved] = useState(false)
+  const update = (field, value) => setSettings((current) => ({ ...current, [field]: value }))
+  const save = () => {
+    localStorage.setItem('bwc_play_settings', JSON.stringify(settings))
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 2200)
+  }
+  return <div className="content-page responsible-page">
+    <PageIntro eyebrow="PLAY WITHIN LIMITS" title="Responsible play" description="Set practical boundaries, check your time, and step away whenever play stops feeling enjoyable." icon="shield" stats={[{ label: 'Age requirement', value: '18+' }, { label: 'Support', value: 'Always' }]} action={{ to: '/faq', label: 'Get help' }} />
+    <div className="age-message"><strong>18+ only</strong><span>Betting is entertainment, not a way to make money. Never chase losses or borrow to play.</span></div>
+    <div className="responsible-grid">
+      <section className="responsible-control"><span className="feature-icon"><Icon name="plus" size={20} /></span><div><h2>Deposit limit</h2><p>Set the most this device should allow you to deposit in a rolling 24-hour period.</p></div><label>Daily limit (₹)<input className="input" type="number" min="0" step="500" value={settings.depositLimit} onChange={(event) => update('depositLimit', Number(event.target.value))} /></label></section>
+      <section className="responsible-control"><span className="feature-icon"><Icon name="clock" size={20} /></span><div><h2>Session reminder</h2><p>Receive a visible reminder after you have been active for the selected time.</p></div><label>Reminder<select className="input" value={settings.reminder} onChange={(event) => update('reminder', Number(event.target.value))}><option value="30">Every 30 minutes</option><option value="60">Every 60 minutes</option><option value="120">Every 2 hours</option></select></label></section>
+      <section className="responsible-control"><span className="feature-icon"><Icon name="minus" size={20} /></span><div><h2>Take a break</h2><p>Pause betting controls on this device for a defined cooling-off period.</p></div><label>Cooling-off period<select className="input" value={settings.coolOff} onChange={(event) => update('coolOff', event.target.value)}><option>None</option><option>24 hours</option><option>7 days</option><option>30 days</option></select></label></section>
+      <section className="responsible-control self-exclusion"><span className="feature-icon"><Icon name="shield" size={20} /></span><div><h2>Self-exclusion</h2><p>For account-wide exclusion, contact support. This action must be verified and cannot be reversed early.</p></div><NavLink className="btn btn-ghost" to="/faq">Contact support</NavLink></section>
+    </div>
+    <div className="responsible-save"><button type="button" className="btn btn-yellow" onClick={save}>Save limits</button>{saved && <span role="status">Preferences saved on this device.</span>}</div>
+    <p className="responsible-disclaimer">Device preferences support safer play but do not replace account-level controls. Contact support for permanent self-exclusion or help with gambling-related harm.</p>
+  </div>
 }
 
 function About() {
@@ -1806,6 +1892,7 @@ function MenuDrawer() {
         <NavLink className="menu-item" to="/account" onClick={close}>Wallet</NavLink>
         <NavLink className="menu-item" to="/account/bets" onClick={close}>My bets</NavLink>
         <NavLink className="menu-item" to="/vip" onClick={close}>VIP</NavLink>
+        <NavLink className="menu-item" to="/responsible-play" onClick={close}>Responsible play</NavLink>
         <NavLink className="menu-item" to="/faq" onClick={close}>Help</NavLink>
         <div className="menu-auth">
           {loggedIn ? (
@@ -1877,6 +1964,7 @@ export default function App() {
             <Route path="/parlays" element={<Parlays />} />
             <Route path="/more" element={<More />} />
             <Route path="/about" element={<About />} />
+            <Route path="/responsible-play" element={<ResponsiblePlay />} />
           </Routes>
         </main>
         <Betslip />
@@ -1886,6 +1974,8 @@ export default function App() {
       <MenuDrawer />
       <MobileDock />
       <BetNotice />
+      <SessionReminder />
+      <NavLink className="responsible-float" to="/responsible-play"><Icon name="shield" size={15} />18+ Responsible play</NavLink>
     </div>
   )
 }
