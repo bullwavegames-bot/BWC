@@ -1,6 +1,13 @@
 const CLUB_ORIGIN = (import.meta.env.VITE_API_URL || 'https://bwc-wgbu.onrender.com').replace(/\/$/, '')
-const OTP_BASE = (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN).replace(/\/$/, '')
-const BASE = CLUB_ORIGIN
+
+function sameOriginApi() {
+  if (typeof window === 'undefined') return false
+  const host = window.location.hostname
+  return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.vercel.app')
+}
+
+const BASE = sameOriginApi() ? '' : CLUB_ORIGIN
+const OTP_BASE = BASE || (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN).replace(/\/$/, '')
 
 function fail(res, data, fallback) {
   const msg = data.error || data.message || data.msg

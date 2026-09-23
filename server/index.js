@@ -38,31 +38,17 @@ loadEnvFile()
 const app = express()
 const PORT = process.env.PORT || 4000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-bullwave-secret-change-me'
-const extraOrigins = (process.env.CORS_ORIGIN || process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim().replace(/\/$/, ''))
-  .filter(Boolean)
-
-function isAllowedOrigin(origin) {
-  if (!origin) return true
-  const value = origin.replace(/\/$/, '')
-  if (extraOrigins.includes(value)) return true
-  if (value === 'https://bwc-two.vercel.app') return true
-  if (value === 'https://bwc-wgbu.onrender.com') return true
-  if (/^https:\/\/([\w-]+\.)*vercel\.app$/.test(value)) return true
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(value)) return true
-  return false
-}
-
 app.use((req, res, next) => {
   const origin = req.headers.origin
-  if (origin && isAllowedOrigin(origin)) {
+  if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Access-Control-Allow-Credentials', 'true')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-    res.setHeader('Vary', 'Origin')
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*')
   }
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS')
+  res.setHeader('Vary', 'Origin')
   if (req.method === 'OPTIONS') return res.sendStatus(204)
   next()
 })
