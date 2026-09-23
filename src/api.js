@@ -6,8 +6,11 @@ function sameOriginApi() {
   return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.vercel.app')
 }
 
-const BASE = sameOriginApi() ? '' : CLUB_ORIGIN
-const OTP_BASE = BASE || (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN).replace(/\/$/, '')
+const useSiteProxy = sameOriginApi()
+const BASE = useSiteProxy ? '' : CLUB_ORIGIN
+const OTP_BASE = useSiteProxy
+  ? ''
+  : (import.meta.env.VITE_OTP_API_URL || CLUB_ORIGIN).replace(/\/$/, '')
 
 function fail(res, data, fallback) {
   const msg = data.error || data.message || data.msg
