@@ -1897,7 +1897,8 @@ body { font-family: var(--font); background: var(--navy); }
 }
 
 @media (max-width: 1480px) { .header { padding-inline: 20px; }.header .logo { width: auto; }.header .logo-img { height: 44px; }.top-nav { margin-left: 8px; margin-right: 10px; }.top-nav a { padding-inline: 12px; }.header-search { width: clamp(140px,14vw,220px); } }
-@media (max-width: 1200px) { .shell { grid-template-columns: var(--side-w) minmax(0,1fr); }.betslip { display: none; }.home-content-grid { grid-template-columns: minmax(0,1.8fr) minmax(280px,1fr); }.top-nav a { padding-inline: 9px; }.header-search { width: 160px; } }
+@media (max-width: 1380px) { .header { gap: 6px; padding-inline: 12px; }.top-nav { gap: 1px; margin-inline: 2px 5px; }.top-nav a { padding-inline: 7px; font-size: 11px; }.header-search { width: 36px; padding: 8px; }.header-search span { display: none; }.header-right { gap: 5px; } }
+@media (max-width: 1200px) { .shell { grid-template-columns: var(--side-w) minmax(0,1fr); }.betslip { display: none; }.home-content-grid { grid-template-columns: minmax(0,1.8fr) minmax(280px,1fr); }.top-nav a { padding-inline: 6px; }.header-search { width: 36px; } }
 @media (max-width: 900px) { .shell { grid-template-columns: 1fr; }.sidebar { display: none; }.header { padding-inline: 14px; }.mobile-menu { display: grid; margin-right: 7px; }.top-nav { display: none; }.header-search { width: 36px; height: 36px; padding: 8px; border: 0; }.header-search span { display: none; }.popular-leagues { width: 100%; margin-top: 18px; }.popular-league-grid { width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); }.home-brand-strip { padding-left: 25px; } }
 @media (max-width: 650px) { .header { height: 64px; }.header .logo { width: auto; height: 36px; padding: 0; }.header .logo-img { height: 32px; }.header-right { gap: 2px; }.header .btn-yellow { height: 33px; min-height: 33px; padding-inline: 10px; }.notification-btn { display: none; }.main { padding: 12px 12px 0; }.home-hero { height: 235px; background-position: 59% center; }.hero-message { left: 18px; top: 55px; }.hero-message h1 { font-size: 31px; }.hero-message > div { max-width: 205px; font-size: 13px; }.hero-message p { font-size: 8px; letter-spacing: 2px; }.hero-mantra { display: none; }.reference-home .sport-filter { padding-top: 12px; }.reference-home .sport-filter a { height: 48px; }.home-content-grid { display: block; margin-top: 18px; }.top-matches-panel { margin-top: 19px; }.live-feature-card { height: 285px; }.live-card-top { gap: 7px; padding-inline: 10px; }.live-scoreboard { padding-inline: 4px; }.live-team strong { font-size: 12px; }.live-center-score strong { font-size: 31px; }.live-center-score span { font-size: 15px; }.live-card-actions a { max-width: none; width: auto; flex: 1; white-space: nowrap; font-size: 11px; }.live-card-actions a:first-child { flex: 1.15; }.popular-league-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }.home-brand-strip { margin-inline: -12px; padding-inline: 12px; }.home-brand-strip > span { font-size: 7px; letter-spacing: 1px; }.strip-brand { display: none; }.home-brand-strip p { font-size: 7px; letter-spacing: 1px; } }
 
@@ -3002,6 +3003,31 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .odds-preference { display: grid; gap: 5px; margin-bottom: 10px; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .odds-preference select { width: 100%; text-transform: none; }
 .mobile-slip-summary { display: none; }
+.header-account { position: relative; display: flex; align-items: center; gap: 7px; }
+.header-wallet { display: grid; grid-template-columns: repeat(3,auto); align-items: center; min-height: 40px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #111d20; }
+.header-wallet > span { display: grid; gap: 1px; padding: 5px 9px; border-right: 1px solid var(--line); }
+.header-wallet > span:last-child { border-right: 0; }
+.header-wallet small { color: var(--muted); font-size: 7px; font-weight: 800; text-transform: uppercase; }
+.header-wallet b { font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.header-account .profile-avatar { color: #0c191b; }
+.account-menu { position: absolute; z-index: 75; top: calc(100% + 10px); right: 0; width: 205px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: #142124; box-shadow: 0 18px 45px rgba(0,0,0,.38); }
+.account-menu a, .account-menu button { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: var(--white); font-size: 11px; font-weight: 700; text-align: left; }
+.account-menu a:hover, .account-menu button:hover { background: var(--raised); color: var(--mint); }
+.account-menu button { border-top: 1px solid var(--line); color: var(--coral); }
+.announcement-strip { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 31px; padding: 5px 16px; border-bottom: 1px solid #2b4946; background: #16302f; color: #d8e6e4; font-size: 9px; }
+.announcement-strip span, .announcement-strip a { display: flex; align-items: center; gap: 6px; }
+.announcement-strip a { color: var(--mint); font-weight: 850; white-space: nowrap; }
+.reference-home > .quick-carousel { margin-top: 14px; padding: 8px 0; border: 1px solid var(--line); border-radius: 8px; background: #111d20; }
+.reference-home > .quick-carousel .quick-row { padding-block: 2px; }
+.reference-home > .quick-carousel .quick { min-width: 88px; }
+.exchange-market-drawer { border-bottom: 1px solid var(--line); background: #0b1719; }
+.exchange-market-tabs { display: flex; gap: 4px; padding: 7px 10px 0 39px; overflow-x: auto; scrollbar-width: none; }
+.exchange-market-tabs button { flex: none; min-height: 30px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 9px; font-weight: 800; }
+.exchange-market-tabs button.on { border-color: var(--mint); color: var(--mint); }
+.exchange-market-drawer .exchange-expanded { border-bottom: 0; }
+html[data-theme="light"] .header-wallet, html[data-theme="light"] .account-menu, html[data-theme="light"] .reference-home > .quick-carousel { background: #fff; }
+html[data-theme="light"] .account-menu a, html[data-theme="light"] .account-menu button { color: #142237; }
+html[data-theme="light"] .exchange-market-drawer { background: #f5f8fa; }
 .camel-racing-banner { position: relative; min-height: 210px; margin: 0 0 14px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(90deg,rgba(5,15,17,.88),rgba(5,15,17,.12) 62%),url('/images/hero/camel-racing-dubai-v1.png') center / cover; }
 .camel-racing-banner > div { position: absolute; top: 50%; left: clamp(18px,4vw,38px); width: min(380px,72%); transform: translateY(-50%); }
 .camel-racing-banner span { color: var(--mint); font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
@@ -3028,6 +3054,9 @@ html[data-theme="light"] .exchange-event-copy { color: #142237; }
   .mobile-slip-summary { position: fixed; z-index: 44; right: 10px; bottom: calc(69px + env(safe-area-inset-bottom)); left: 10px; display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 0 12px; border: 1px solid var(--mint); border-radius: 7px; background: #152528; color: var(--white); box-shadow: 0 8px 24px rgba(0,0,0,.32); }
   .mobile-slip-summary span, .mobile-slip-summary strong { display: flex; align-items: center; gap: 6px; font-size: 10px; }
   .responsible-float:has(~ .mobile-slip-summary) { bottom: calc(118px + env(safe-area-inset-bottom)); }
+  .announcement-strip { justify-content: space-between; }
+  .header-wallet > span:not(:first-child) { display: none; }
+  .header-wallet > span:first-child { border-right: 0; }
 }
 @media (max-width: 520px) {
   .exchange { margin-inline: -12px; border-right: 0; border-left: 0; border-radius: 0; }
@@ -3039,6 +3068,11 @@ html[data-theme="light"] .exchange-event-copy { color: #142237; }
   .exchange-expanded { grid-template-columns: 208px repeat(3,108px) 76px; padding-left: 37px; }
   .camel-racing-banner { min-height: 190px; margin-inline: -12px; border-radius: 0; background-position: 58% center; }
   .camel-racing-banner > div { left: 16px; width: 65%; }
+  .announcement-strip { min-height: 36px; padding-inline: 10px; }
+  .announcement-strip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .announcement-strip > span svg { flex: none; }
+  .reference-home > .quick-carousel { margin-inline: -12px; border-right: 0; border-left: 0; border-radius: 0; }
+  .exchange-market-tabs { padding-left: 37px; }
 }
 .ops-staff { display: inline-flex; align-items: center; gap: 9px; }
 .ops-staff button { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--muted); font-size: 9px; font-weight: 800; }

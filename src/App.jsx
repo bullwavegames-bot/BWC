@@ -6,7 +6,7 @@ import { BillingPage, TelegramCashIn } from './BillingPages.jsx'
 import { OpsHealth, PresencePing, SuperAdmin } from './SuperAdmin.jsx'
 import { PayLogo } from './PayLogo.jsx'
 import { PersonalData } from './PersonalData.jsx'
-import { ProfileAvatar, ProfileHub } from './ProfileHub.jsx'
+import { ProfileHub } from './ProfileHub.jsx'
 import { isStrongPassword, PASSWORD_HINT } from './authRules.js'
 import { accountLinks, faqs, games, languages, leagues, matchMarkets, promotions, shortcuts, sports } from './data.js'
 import GameIcon, { getGameIconKind } from './GameIcon.jsx'
@@ -205,6 +205,10 @@ function LiveTicker() {
   </section>
 }
 
+function AnnouncementStrip() {
+  return <aside className="announcement-strip" aria-label="Club announcement"><span><Icon name="gift" size={14} /> New member offer: explore today's boosted markets and club rewards.</span><NavLink to="/promotions">View offers <Icon name="chevron" size={13} /></NavLink></aside>
+}
+
 function BetNotice() {
   const { betNotice, setBetNotice, setSlipOpen } = useApp()
   if (!betNotice) return null
@@ -356,9 +360,12 @@ function NotificationCenter({ onClose }) {
 }
 
 function Header() {
-  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, theme, setTheme } = useApp()
+  const { setMenuOpen, setSearchOpen, setAuthMode, loggedIn, user, myBets, logout, theme, setTheme } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const light = theme === 'light'
+  const points = Number(user?.points || user?.bonusCoins || 0)
+  const exposure = (myBets || []).filter((bet) => !['won', 'lost', 'settled'].includes(String(bet.status || '').toLowerCase())).reduce((sum, bet) => sum + Number(bet.stake || 0), 0)
   return (
     <header className="header">
       <button className="icon-btn mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" /></button>
@@ -371,11 +378,11 @@ function Header() {
       </NavLink>
       <nav className="top-nav">
         <NavLink to="/" end>Exchange</NavLink>
-        <NavLink to="/live">Live Sports</NavLink>
         <NavLink to="/casino/live-casino">Live Casino</NavLink>
         <NavLink to="/casino/slots">Slots</NavLink>
-        <NavLink to="/casino/instant-games">Instant</NavLink>
-        <NavLink to="/promotions">Offers</NavLink>
+        <NavLink to="/casino/virtual-sports">Fantasy Games</NavLink>
+        <NavLink to="/casino/tv-games">Lottery</NavLink>
+        <NavLink to="/casino/instant-games">Crash</NavLink>
       </nav>
       <div className="header-right">
         <button className="header-search" onClick={() => setSearchOpen(true)} aria-label="Search sports, teams or leagues"><Icon name="search" size={20} /><span>Search sports, teams or leagues...</span></button>
@@ -395,10 +402,11 @@ function Header() {
         </button>
         <LanguagePicker />
         {loggedIn ? (
-          <>
-            <NavLink to="/account" className="btn btn-ghost header-cash">₹ {Number(user?.balance || 0).toFixed(2)}</NavLink>
-            <ProfileAvatar />
-          </>
+          <div className="header-account">
+            <NavLink to="/account" className="header-wallet"><span><small>Balance</small><b>₹{Number(user?.balance || 0).toFixed(2)}</b></span><span><small>Points</small><b>{points}</b></span><span><small>Exposure</small><b>₹{exposure.toFixed(2)}</b></span></NavLink>
+            <button type="button" className="profile-avatar" onClick={() => setAccountOpen((open) => !open)} aria-label="Open account menu" aria-expanded={accountOpen}><Icon name="shield" size={20} /><i /></button>
+            {accountOpen && <div className="account-menu" role="menu"><NavLink to="/account" onClick={() => setAccountOpen(false)}>Account</NavLink><NavLink to="/account/bets" onClick={() => setAccountOpen(false)}>Statement</NavLink><NavLink to="/more" onClick={() => setAccountOpen(false)}>Rules</NavLink><NavLink to="/responsible-play" onClick={() => setAccountOpen(false)}>Responsible play</NavLink><NavLink to="/account/settings" onClick={() => setAccountOpen(false)}>Settings</NavLink><button type="button" onClick={async () => { setAccountOpen(false); await logout() }}>Log out</button></div>}
+          </div>
         ) : (
           <button className="btn btn-ghost" onClick={() => setAuthMode('login')}>Log in</button>
         )}
@@ -423,7 +431,7 @@ function Sidebar() {
           </span>
           <span className="side-label">{s.name}</span>
           {s.live ? <span className="side-live">Live</span> : null}
-          {s.id === 'all-live' ? <span className="side-count">{liveCount || s.count}</span> : null}
+          <span className="side-count">{s.id === 'all-live' ? (liveCount || s.count) : catalogMatches.filter((match) => match.sport === s.id || match.sport === s.id.replace('-racing', '')).length}</span>
         </NavLink>
       ))}
       <button className="league-toggle" type="button" aria-expanded={leaguesOpen} onClick={() => setLeaguesOpen((open) => !open)}>Leagues <Icon name="chevron" size={16} /></button>
@@ -938,7 +946,7 @@ function ExchangeOdd({ match, market, side, price, locked = false }) {
   const { addBet, betslip } = useApp()
   const id = `${match.id}-${market}-${side}`
   const selected = betslip.some((bet) => bet.id === id)
-  if (locked || price == null) return <button className="exchange-price is-locked" disabled aria-label={`${market} unavailable`}><Icon name="shield" size={13} /><span>--</span></button>
+  if (locked || price == null) return <button className="exchange-price is-locked" disabled aria-label={`${market} suspended`}><Icon name="shield" size={12} /><span>Suspended</span></button>
   return <button type="button" className={`exchange-price is-${side} ${selected ? 'is-selected' : ''}`} aria-pressed={selected} onClick={() => addBet({ id, event: `${match.home} vs ${match.away}`, pick: `${side === 'back' ? 'Back' : 'Lay'} ${market}`, odd: price })}><strong>{Number(price).toFixed(2)}</strong><small>{side}</small></button>
 }
 
@@ -948,6 +956,7 @@ function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events 
   const [status, setStatus] = useState('All')
   const [sort, setSort] = useState('Start time')
   const [expanded, setExpanded] = useState([])
+  const [marketViews, setMarketViews] = useState({})
   const shown = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     const filtered = matches.filter((match) => {
@@ -976,6 +985,13 @@ function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events 
           const base = (label) => marketFor(label)?.odd
           const isLocked = marketFor('1')?.odd == null || (index > 0 && index % 5 === 0)
           const open = expanded.includes(match.id)
+          const marketView = marketViews[match.id] || 'Match odds'
+          const marketOptions = {
+            'Match odds': ['Home', 'Draw', 'Away'],
+            Bookmaker: ['Home book', 'Draw book', 'Away book'],
+            Fancy: ['Over 2.5', 'Under 2.5', 'Both score'],
+            Related: ['First score', 'Half-time', 'Winning margin'],
+          }
           return <article className={`exchange-event ${open ? 'is-open' : ''}`} key={match.id}>
             <div className="exchange-row">
               <button type="button" className={`exchange-star ${favorites.includes(match.id) ? 'on' : ''}`} onClick={() => toggleFavorite(match.id)} aria-label={favorites.includes(match.id) ? 'Remove from favorites' : 'Add to favorites'}>★</button>
@@ -983,7 +999,7 @@ function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events 
               {['1', 'X', '2'].map((label) => <div className="exchange-pair" key={label}><ExchangeOdd match={match} market={label} side="back" price={base(label)} locked={isLocked} /><ExchangeOdd match={match} market={label} side="lay" price={base(label) ? base(label) + .04 : null} locked={isLocked} /></div>)}
               <button type="button" className="exchange-more" aria-expanded={open} onClick={() => toggleExpanded(match.id)}><span>{match.extra || '+18'}</span><Icon name="chevron" size={15} /></button>
             </div>
-            {open && <div className="exchange-expanded"><span><Icon name="layers" size={15} /> More markets</span>{['Over 2.5', 'Under 2.5', 'Both score'].map((label, option) => <ExchangeOdd key={label} match={match} market={label} side="back" price={Number(((base('1') || base('2') || 1.75) + option * .36).toFixed(2))} />)}<NavLink to={`/match/${match.id}`}>View all <Icon name="chevron" size={14} /></NavLink></div>}
+            {open && <div className="exchange-market-drawer"><div className="exchange-market-tabs" role="tablist" aria-label={`${match.home} market groups`}>{Object.keys(marketOptions).map((item) => <button key={item} type="button" role="tab" aria-selected={marketView === item} className={marketView === item ? 'on' : ''} onClick={() => setMarketViews((views) => ({ ...views, [match.id]: item }))}>{item}</button>)}</div><div className="exchange-expanded"><span><Icon name="layers" size={15} /> {marketView}</span>{marketOptions[marketView].map((label, option) => <ExchangeOdd key={label} match={match} market={label} side="back" price={Number(((base('1') || base('2') || 1.75) + option * .36).toFixed(2))} />)}<NavLink to={`/match/${match.id}`}>View all <Icon name="chevron" size={14} /></NavLink></div></div>}
           </article>
         })}
         {!shown.length && <div className="exchange-empty"><Icon name="search" size={25} /><strong>{emptyTitle}</strong><span>Change the filters or search for another team.</span><button type="button" onClick={() => { setQuery(''); setStatus('All') }}>Clear filters</button></div>}
@@ -1321,6 +1337,7 @@ function Home() {
         {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
         <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
       </nav>
+      <ShortcutCarousel />
       <section className="personalized-home">
         <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
         <div className="personalized-row">{forYou.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="personalized-match"><span className={`top-match-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={18} /></span><span><small>{match.live ? 'LIVE' : match.time}</small><strong>{match.home} vs {match.away}</strong><em>{match.league}</em></span><Icon name="chevron" size={15} /></NavLink>)}</div>
@@ -2186,6 +2203,7 @@ export default function App() {
       <Header />
       <PresencePing />
       <LiveTicker />
+      <AnnouncementStrip />
       <ConnectivityBanner />
       <CatalogNotice />
       <div className="shell">
