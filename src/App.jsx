@@ -752,7 +752,7 @@ function AuthModal() {
         {(isLogin || authMode === 'signup') && (
           <>
             {isLogin && <div className="login-intro"><span>WELCOME BACK</span><p>Sign in to your Bullwave Club account</p></div>}
-            <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
+            <button className="btn-dark google-auth-btn" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
               <span className="g-mark">G</span> Continue with Google
             </button>
           </>
