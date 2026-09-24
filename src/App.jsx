@@ -2570,8 +2570,9 @@ function MobileDock() {
 
 export default function App() {
   const location = useLocation()
+  const { loggedIn } = useApp()
   const home = location.pathname === '/'
-  if (home) return <><LaunchLanding /><AuthModal /></>
+  if (home && !loggedIn) return <><LaunchLanding /><AuthModal /></>
   const casinoCat = location.pathname.startsWith('/casino/slots') ? 'slots'
     : location.pathname.startsWith('/casino/instant-games') ? 'instant'
     : location.pathname.startsWith('/casino/virtual-sports') ? 'virtual'
