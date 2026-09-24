@@ -754,7 +754,6 @@ function AuthModal() {
             <button className="btn-dark" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
               <span className="g-mark">G</span> Continue with Google
             </button>
-            <div className="or">or choose a login method</div>
           </>
         )}
         {authError && <p className="hint" style={{ color: 'var(--coral)' }}>{authError}</p>}
