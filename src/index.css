@@ -3031,56 +3031,6 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 html[data-theme="light"] .home-game-showcase { background: #fff; }
 html[data-theme="light"] .home-game-tabs button { background: #f2f6f5; }
 
-/* Betting777 reference landing page */
-.casino-reference-page { min-height: 100vh; overflow-x: hidden; background: #292d30; color: #c8cbcd; font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; }
-.casino-reference-nav { display: flex; align-items: center; justify-content: space-between; height: 88px; padding: 0 12px 0 0; border-top: 2px solid #57363c; background: #25292c; }
-.casino-reference-logo { display: block; width: 270px; height: 70px; overflow: hidden; }
-.casino-reference-logo img { display: block; width: 270px; height: 70px; object-fit: cover; object-position: left center; }
-.casino-reference-actions { display: flex; align-items: center; gap: 5px; }
-.casino-reference-actions > button, .casino-reference-actions > a:not(.casino-reference-gear):not(.casino-reference-apk) { display: grid; place-items: center; min-width: 80px; height: 48px; padding: 0 16px; border: 0; border-radius: 0; background: #08745c; color: #fff; font-size: 20px; }
-.casino-reference-gear { display: grid; place-items: center; width: 48px; height: 48px; color: #fff; }
-.casino-reference-apk { position: relative; display: grid; place-items: center; width: 48px; height: 54px; color: #8dd31d; font: 800 14px/1 Arial, sans-serif; }
-.casino-reference-apk::before { content: ''; position: absolute; inset: 7px 8px; border: 3px solid currentColor; border-radius: 2px; clip-path: polygon(0 0,75% 0,100% 24%,100% 100%,0 100%); }
-.casino-reference-apk span { position: relative; margin-top: 7px; padding-top: 4px; border-top: 2px solid currentColor; }
-.casino-reference-hero { position: relative; width: 100%; aspect-ratio: 2874 / 570; max-height: 340px; overflow: hidden; background: #a60000; }
-.casino-reference-hero img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.casino-reference-section { padding: 24px 0 0; background: #292d30; }
-.casino-reference-section h2 { width: max-content; margin: 0 0 13px 18px; padding-bottom: 3px; border-bottom: 1px solid #9da1a3; color: #bfc3c5; font-family: Impact, "Arial Narrow", "Roboto Condensed", sans-serif; font-size: 30px; font-weight: 700; letter-spacing: .6px; line-height: 1; text-transform: uppercase; }
-.casino-trending-row, .casino-live-row { display: flex; width: 100%; gap: 5px; overflow-x: auto; scrollbar-width: none; }
-.casino-trending-row::-webkit-scrollbar, .casino-live-row::-webkit-scrollbar { display: none; }
-.casino-trending-row a { flex: 1 0 0; min-width: 245px; height: 151px; overflow: hidden; background: #16191b; }
-.casino-trending-row img, .casino-live-row img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.casino-live-row { gap: 12px; padding: 16px 13px 22px; }
-.casino-live-row a { flex: 1 0 0; min-width: 202px; height: 128px; overflow: hidden; background: #171a1c; }
-.casino-reference-side-actions { position: fixed; z-index: 55; top: 51%; right: 0; display: grid; width: 56px; }
-.casino-reference-side-actions a { display: grid; place-items: center; width: 56px; height: 56px; font-size: 28px; font-weight: 900; }
-.casino-reference-side-actions a:first-child { background: #19c46a; color: #fff; }
-.casino-reference-side-actions a:last-child { background: #fff; color: #1886c7; }
-.casino-reference-chat-button { position: fixed; z-index: 56; right: 36px; bottom: 22px; display: grid; place-items: center; width: 68px; height: 68px; border: 0; border-radius: 50%; background: #16b95a; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
-.casino-reference-chat-button b { position: absolute; top: -2px; right: -2px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #da262e; color: #fff; font: 700 12px Arial, sans-serif; }
-.casino-reference-chat { position: fixed; z-index: 55; right: 28px; bottom: 101px; width: 260px; padding: 17px; border: 1px solid #d8d8d8; background: #fff; color: #293034; box-shadow: 0 8px 28px rgba(0,0,0,.28); }
-.casino-reference-chat strong { font-size: 15px; }.casino-reference-chat p { margin: 8px 0 14px; line-height: 1.45; }.casino-reference-chat a { color: #08745c; font-weight: 800; }
-
-@media (max-width: 760px) {
-  .casino-reference-nav { height: 64px; padding-right: 5px; }
-  .casino-reference-logo { width: 174px; height: 50px; }
-  .casino-reference-logo img { width: 190px; height: 50px; }
-  .casino-reference-actions { gap: 3px; }
-  .casino-reference-actions > button, .casino-reference-actions > a:not(.casino-reference-gear):not(.casino-reference-apk) { min-width: 55px; height: 38px; padding-inline: 9px; font-size: 14px; }
-  .casino-reference-gear { width: 36px; height: 38px; }
-  .casino-reference-apk { width: 36px; transform: scale(.82); }
-  .casino-reference-hero { min-height: 190px; max-height: none; aspect-ratio: 2874 / 760; }
-  .casino-reference-hero img { object-position: center; }
-  .casino-reference-section { padding-top: 19px; }
-  .casino-reference-section h2 { margin-left: 12px; font-size: 24px; }
-  .casino-trending-row a { flex-basis: 270px; min-width: 270px; height: 142px; }
-  .casino-live-row { padding-inline: 10px; }
-  .casino-live-row a { flex-basis: 220px; min-width: 220px; height: 132px; }
-  .casino-reference-side-actions { top: auto; bottom: 102px; width: 46px; }
-  .casino-reference-side-actions a { width: 46px; height: 46px; }
-  .casino-reference-chat-button { right: 17px; bottom: 19px; width: 58px; height: 58px; }
-}
-
 /* Dense exchange sportsbook */
 .sidebar-search { display: flex; align-items: center; gap: 9px; width: calc(100% - 16px); min-height: 40px; margin: 0 8px 12px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; background: #0b1517; color: var(--muted); text-align: left; }
 .sidebar-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

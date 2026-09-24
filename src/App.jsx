@@ -1527,82 +1527,6 @@ function Home() {
   )
 }
 
-const casinoTrending = [
-  ['Money Coming', 'money-coming.png', '/casino/slots'],
-  ['Chicken Road Cross', 'chicken-road.png', '/casino/instant-games'],
-  ['Fortune Garuda 1000X', 'fortune-garuda.png', '/casino/slots'],
-  ['20-20 Poker', 'poker-2020.png', '/casino/live-casino'],
-  ['20-20 Dragon Tiger', 'dragon-tiger.png', '/casino/live-casino'],
-  ['Golden Roulette', 'golden-roulette.png', '/casino/live-casino'],
-]
-
-const casinoLiveCards = [
-  ['Teenpatti Day', 'teenpatti-day.png'],
-  ['20-20 Teenpatti', 'teenpatti-2020.png'],
-  ['Teenpatti Test', 'teenpatti-test.png'],
-  ['Teenpatti Open', 'teenpatti-open.png'],
-  ['Poker Day', 'poker-day.png'],
-  ['20-20 Poker', 'poker-2020.png'],
-  ['Poker 6 Players', 'poker-six.png'],
-  ['Baccarat', 'baccarat.png'],
-]
-
-function CasinoReferenceSection({ title, children }) {
-  return <section className="casino-reference-section"><h2>{title}</h2>{children}</section>
-}
-
-function CasinoReferenceLanding() {
-  const { setAuthMode } = useApp()
-  const [chatOpen, setChatOpen] = useState(false)
-
-  useEffect(() => {
-    const previousTitle = document.title
-    document.title = 'BETTING777'
-    return () => {
-      document.title = previousTitle
-    }
-  }, [])
-
-  return (
-    <div className="casino-reference-page">
-      <header className="casino-reference-nav">
-        <NavLink to="/" className="casino-reference-logo" aria-label="Betting77 home"><img src={`${import.meta.env.BASE_URL}images/casino-landing/betting77-logo.png`} alt="Betting77" /></NavLink>
-        <div className="casino-reference-actions">
-          <NavLink to="/account/settings" className="casino-reference-gear" aria-label="Settings"><Icon name="gear" size={29} /></NavLink>
-          <button type="button" onClick={() => setAuthMode('login')}>Login</button>
-          <NavLink to="/casino/live-casino">Demo</NavLink>
-          <a className="casino-reference-apk" href="https://sitethemedata.com/apk/betting777-167.apk" aria-label="Download Android app"><span>APK</span></a>
-        </div>
-      </header>
-
-      <main>
-        <section className="casino-reference-hero" aria-label="Sic Bo live casino promotion">
-          <img src={`${import.meta.env.BASE_URL}images/casino-landing/sic-bo-hero.png`} alt="Sic Bo live casino game" />
-        </section>
-
-        <CasinoReferenceSection title="Now Trending">
-          <div className="casino-trending-row">
-            {casinoTrending.map(([name, image, to]) => <NavLink key={name} to={to} aria-label={name}><img src={`${import.meta.env.BASE_URL}images/casino-landing/trending/${image}`} alt={name} /></NavLink>)}
-          </div>
-        </CasinoReferenceSection>
-
-        <CasinoReferenceSection title="Our Live Casino">
-          <div className="casino-live-row">
-            {casinoLiveCards.map(([name, image]) => <NavLink key={name} to="/casino/live-casino" aria-label={name}><img src={`${import.meta.env.BASE_URL}images/casino-landing/live/${image}`} alt={name} /></NavLink>)}
-          </div>
-        </CasinoReferenceSection>
-      </main>
-
-      <div className="casino-reference-side-actions" aria-label="Support links">
-        <a href="https://wa.me/15558832593" target="_blank" rel="noreferrer" aria-label="WhatsApp support">☎</a>
-        <NavLink to="/faq" aria-label="Help and information"><Icon name="help" size={25} /></NavLink>
-      </div>
-      {chatOpen ? <div className="casino-reference-chat" role="status"><strong>Welcome to Bullwave Club</strong><p>How can we help you today?</p><NavLink to="/faq">Open help centre</NavLink></div> : null}
-      <button className="casino-reference-chat-button" type="button" onClick={() => setChatOpen((open) => !open)} aria-label={chatOpen ? 'Close support chat' : 'Open support chat'} aria-expanded={chatOpen}><Icon name="message" size={28} /><b>1</b></button>
-    </div>
-  )
-}
-
 function Live() {
   const { catalogMatches: matches, catalogLoading } = useApp()
   const live = matches.filter((m) => m.live)
@@ -2474,7 +2398,6 @@ function MobileDock() {
 export default function App() {
   const location = useLocation()
   const home = location.pathname === '/'
-  if (home) return <><CasinoReferenceLanding /><AuthModal /></>
   return (
     <div className="app">
       <Header />
