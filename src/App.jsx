@@ -2493,9 +2493,8 @@ function MobileDock() {
 export default function App() {
   const location = useLocation()
   const home = location.pathname === '/'
-  if (home) return <><LaunchLanding /><AuthModal /></>
   return (
-    <div className="app">
+    <div className={home ? 'app is-home' : 'app'}>
       <Header />
       <PresencePing />
       <LiveTicker />
