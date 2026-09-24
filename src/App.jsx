@@ -619,6 +619,18 @@ function AuthModal() {
     return () => window.clearTimeout(timer)
   }, [resendSeconds])
 
+  useEffect(() => {
+    const stripLoginMethodLine = () => {
+      document.querySelectorAll('.overlay .or, .modal .or').forEach((el) => el.remove())
+    }
+    stripLoginMethodLine()
+    const overlay = document.querySelector('.overlay')
+    if (!overlay) return undefined
+    const observer = new MutationObserver(stripLoginMethodLine)
+    observer.observe(overlay, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [authMode])
+
   if (!authMode) return null
   const isLogin = authMode === 'login'
   const isRecover = authMode === 'recover' || authMode === 'update-password'

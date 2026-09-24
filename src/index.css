@@ -1252,7 +1252,31 @@ a.game-tile { color: inherit; text-decoration: none; }
   padding: 0 12px;
 }
 .forgot { color: var(--mint); font-weight: 700; margin: 8px 0 14px; display: inline-block; }
-.or { display: none !important; }
+.or,
+.login-modal .or,
+.modal .or,
+.google-auth-btn + .or {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  border: 0 !important;
+}
+.or::before,
+.or::after,
+.login-modal .or::before,
+.login-modal .or::after {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: none !important;
+}
 .switch-auth { text-align: center; margin-top: 12px; color: var(--muted); }
 .switch-auth button { border: 0; background: 0; color: var(--mint); font-weight: 700; }
 
