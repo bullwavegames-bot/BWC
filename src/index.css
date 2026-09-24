@@ -3064,9 +3064,11 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
 .launch-fixture { display: flex; align-items: center; gap: 20px; height: 48px; overflow: hidden; background: #3d4142; color: #e0e6e5; font-size: 14px; }
 .launch-fixture a { display: flex; align-items: center; justify-content: center; align-self: stretch; gap: 9px; width: 195px; min-width: 195px; padding: 0 24px 0 12px; background: #087b60; clip-path: polygon(0 0,calc(100% - 24px) 0,100% 50%,calc(100% - 24px) 100%,0 100%); color: #fff; font-weight: 800; }
 .launch-fixture a span { font-size: 22px; }
-.launch-hero { position: relative; width: 100%; height: clamp(150px, 16vw, 200px); overflow: hidden; background: #10181c; touch-action: pan-y; }
+.launch-hero { position: relative; width: 100%; height: clamp(210px, 20vw, 280px); overflow: hidden; background: #10181c; touch-action: pan-y; }
 .launch-slide { position: absolute; inset: 0; background: #10181c; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility .5s ease; }
-.launch-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; filter: contrast(1.08) saturate(1.1) brightness(1.02); }
+.launch-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-position: center; }
+.launch-slide-blur { object-fit: cover; filter: blur(18px) saturate(1.1) brightness(.32); transform: scale(1.08); }
+.launch-slide-art { object-fit: contain; filter: contrast(1.08) saturate(1.1) brightness(1.02); }
 .launch-slide-poster { background: #10181c; }
 .launch-slide-poster .launch-slide-copy { display: none; }
 .launch-slide.is-active { opacity: 1; visibility: visible; }
@@ -3100,7 +3102,7 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
 .launch-chat { position: fixed; z-index: 55; right: 22px; bottom: 92px; width: 255px; padding: 16px; border: 1px solid #516467; border-radius: 5px; background: #26363a; box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .launch-chat p { margin: 8px 0 14px; line-height: 1.45; }.launch-chat a { color: #8be5d4; font-weight: 800; }
 @media (max-width: 900px) {
-  .launch-hero { height: 160px; }
+  .launch-hero { height: 210px; }
   .launch-slide-copy h1 { font-size: 38px; }
   .launch-card { flex-basis: calc((100% - 2 * 12px - 28px) / 3); }
 }
@@ -3111,7 +3113,7 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
   .launch-actions > button, .launch-actions > a { min-width: 52px; min-height: 42px; padding: 0 9px; font-size: 13px; }
   .launch-fixture { height: 44px; font-size: 11px; }
   .launch-fixture a { width: 155px; min-width: 155px; font-size: 12px; }
-  .launch-hero { height: 140px; }
+  .launch-hero { height: 180px; }
   .launch-slide { background-position: 56% center; }
   .launch-slide-poster .launch-slide-copy { right: 40px; bottom: 14px; left: auto; width: auto; }
   .launch-slide-copy { left: 47px; width: calc(100% - 90px); }
