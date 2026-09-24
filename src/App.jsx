@@ -1096,7 +1096,7 @@ function PromotionSlider() {
   )
 }
 
-function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/' }) {
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover }) {
   const navigate = useNavigate()
   const goBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -1105,22 +1105,35 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
     }
     navigate(backTo)
   }
-  return <section className="page-intro">
+  const coverSrc = cover ? `${import.meta.env.BASE_URL}images/hero/${cover}` : ''
+  return <section className={`page-intro${cover ? ' has-cover' : ''}`}>
+    {coverSrc ? <img className="page-intro-photo" src={coverSrc} alt="" /> : null}
     <div className="page-intro-copy">
       <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /> Back</button>
-      <span className="eyebrow">{eyebrow}</span>
-      <h1>{title}</h1>
-      <p>{description}</p>
-      {action && <NavLink className="page-intro-action" to={action.to}>{action.label}<span aria-hidden="true">↗</span></NavLink>}
+      {!cover && <>
+        <span className="eyebrow">{eyebrow}</span>
+        <h1>{title}</h1>
+        <p>{description}</p>
+        {action && <NavLink className="page-intro-action" to={action.to}>{action.label}<span aria-hidden="true">↗</span></NavLink>}
+      </>}
+      {cover ? <h1 className="sr-only">{title}</h1> : null}
     </div>
-    <div className="page-intro-detail">
+    {!cover && <div className="page-intro-detail">
       <div className="page-intro-emblem" aria-hidden="true"><Icon name={icon} size={42} /></div>
       {stats.length > 0 && <div className="page-intro-stats">{stats.map((item) => <div key={item.label}><b>{item.value}</b><span>{item.label}</span></div>)}</div>}
-    </div>
+    </div>}
   </section>
 }
 
 const homeSportIds = ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel']
+const sportCovers = {
+  tennis: 'sport-tennis.jpg',
+  football: 'sport-football.jpg',
+  basketball: 'sport-basketball.jpg',
+  'table-tennis': 'sport-table-tennis.jpg',
+  horse: 'sport-horse.jpg',
+  'horse-racing': 'sport-horse.jpg',
+}
 
 function SportFilter({ current, showBack = false }) {
   const navigate = useNavigate()
@@ -1674,7 +1687,7 @@ function Sport() {
   useEffect(() => setView('All'), [name])
   return (
     <div className="content-page">
-      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
+      <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} cover={sportCovers[name] || sportCovers[key]} />
       <SportFilter current={name} showBack />
       {key === 'camel' && <section className="camel-racing-banner" aria-label="Dubai camel racing"><div><span>Dubai race programme</span><h2>Desert speed. Live markets.</h2><p>Follow professional camel racing fixtures and available exchange markets.</p></div></section>}
       <div className="filters sticky-filters">
