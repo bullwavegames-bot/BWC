@@ -171,6 +171,7 @@ function Icon({ name, size = 18 }) {
     back: <path d="m15 5-7 7 7 7" />,
     help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
     message: <path d="M4 5h16v11H9l-5 4z" />,
+    whatsapp: <><path d="M20 11.5a8 8 0 0 1-11.8 7L3 20l1.6-4.9A8 8 0 1 1 20 11.5Z" /><path d="M8.6 8.4c.5-1 1.1-.7 1.5.2l.6 1.2-.7 1c.8 1.5 1.8 2.5 3.3 3.2l1-.7 1.2.6c.9.5 1.2 1 .2 1.5-.8.5-2.4.2-4.5-1.2-1.9-1.2-3.1-2.8-3.4-4.1-.2-.8.2-1.4.8-1.7Z" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
     moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z" />,
@@ -1543,6 +1544,97 @@ function Home() {
   )
 }
 
+const launchBanners = [
+  { title: 'THE ACTION STARTS HERE', kicker: 'BULLWAVE CLUB', image: 'hero/bullwave-hero.png', to: '/live', action: 'Explore live' },
+  { title: 'EVERY MOMENT COUNTS', kicker: 'SPORTS EXCHANGE', image: 'hero/sports-exchange-v2.png', to: '/live', action: 'View markets' },
+  { title: 'BACK YOUR GAME', kicker: 'CRICKET LIVE', image: 'hero/cricket-champion-v1.png', to: '/sport/cricket', action: 'See fixtures' },
+  { title: 'PLAY YOUR WAY', kicker: 'LIVE GAMES', image: 'promotions/casino-hero-v2.webp', to: '/casino/live-casino', action: 'Explore games' },
+]
+
+const launchTrending = [
+  { name: 'Football Live', image: 'hero/sport-football.jpg', to: '/sport/football' },
+  { name: 'Cricket Live', image: 'promotions/cricket-v1.webp', to: '/sport/cricket' },
+  { name: 'Basketball', image: 'hero/sport-basketball.jpg', to: '/sport/basketball' },
+  { name: 'Live Casino', image: 'promotions/casino-v1.webp', to: '/casino/live-casino' },
+  { name: 'Roulette', image: 'promotions/wheel-v1.webp', to: '/casino/live-casino' },
+  { name: 'Horse Racing', image: 'hero/sport-horse.jpg', to: '/sport/horse-racing' },
+  { name: 'Fantasy Sports', image: 'promotions/royal-v1.webp', to: '/casino/instant-games' },
+]
+
+const launchLive = [
+  { name: 'Cricket Exchange', image: 'hero/cricket-champion-v1.png', to: '/sport/cricket' },
+  { name: 'Football Markets', image: 'hero/sport-football.jpg', to: '/sport/football' },
+  { name: 'Live Cards', image: 'promotions/casino-card-v2.webp', to: '/casino/live-casino' },
+  { name: 'Table Tennis', image: 'hero/sport-table-tennis.jpg', to: '/sport/table-tennis' },
+  { name: 'Instant Games', image: 'promotions/dash-v1.webp', to: '/casino/instant-games' },
+  { name: 'Tennis Live', image: 'hero/sport-tennis.jpg', to: '/sport/tennis' },
+  { name: 'Esports', image: 'hero/sport-esports.jpg', to: '/sport/esports' },
+]
+
+function LaunchHero() {
+  const [active, setActive] = useState(0)
+  const touchStart = useRef(null)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+    const timer = window.setInterval(() => setActive((index) => (index + 1) % launchBanners.length), 4800)
+    return () => window.clearInterval(timer)
+  }, [])
+  const move = (direction) => setActive((index) => (index + direction + launchBanners.length) % launchBanners.length)
+  return (
+    <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
+      {launchBanners.map((banner, index) => <div key={banner.image} className={`launch-slide ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} style={{ backgroundImage: `linear-gradient(90deg,rgba(5,15,18,.72),rgba(5,15,18,.05) 72%),url("${import.meta.env.BASE_URL}images/${banner.image}")` }}>
+        <div className="launch-slide-copy"><span>{banner.kicker}</span><h1>{banner.title}</h1><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
+      </div>)}
+      <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
+      <button className="launch-hero-arrow next" type="button" onClick={() => move(1)} aria-label="Next campaign">›</button>
+      <div className="launch-hero-dots">{launchBanners.map((banner, index) => <button key={banner.image} type="button" className={index === active ? 'active' : ''} onClick={() => setActive(index)} aria-label={`Show campaign ${index + 1}`} aria-pressed={index === active} />)}</div>
+    </section>
+  )
+}
+
+function LaunchRail({ title, items }) {
+  const rail = useRef(null)
+  return <section className="launch-section"><div className="launch-section-head"><h2>{title}</h2><div><button type="button" onClick={() => rail.current?.scrollBy({ left: -rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} left`}>‹</button><button type="button" onClick={() => rail.current?.scrollBy({ left: rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} right`}>›</button></div></div><div className="launch-rail" ref={rail}>{items.map((item) => <NavLink key={item.name} to={item.to} className="launch-card"><img src={`${import.meta.env.BASE_URL}images/${item.image}`} alt="" loading="lazy" /><span>{item.name}</span></NavLink>)}</div></section>
+}
+
+function LaunchLanding() {
+  const { setAuthMode } = useApp()
+  const [chatOpen, setChatOpen] = useState(false)
+
+  useEffect(() => {
+    const previousTitle = document.title
+    document.title = 'Bullwave Club'
+    return () => {
+      document.title = previousTitle
+    }
+  }, [])
+
+  return (
+    <div className="launch-page">
+      <header className="launch-nav">
+        <NavLink to="/" className="launch-logo" aria-label="Bullwave Club home"><img src={`${import.meta.env.BASE_URL}images/brand/bullwave-header.png`} alt="Bullwave Club" /></NavLink>
+        <div className="launch-actions">
+          <NavLink to="/account/settings" className="launch-gear" aria-label="Settings"><Icon name="gear" size={25} /></NavLink>
+          <button type="button" onClick={() => setAuthMode('login')}>Login</button>
+          <NavLink to="/casino/live-casino">Demo</NavLink>
+        </div>
+      </header>
+      <div className="launch-fixture"><NavLink to="/live">Upcoming Fixture<span aria-hidden="true">›</span></NavLink><span>Live sports and games at Bullwave Club</span></div>
+      <main>
+        <LaunchHero />
+        <LaunchRail title="Now Trending" items={launchTrending} />
+        <LaunchRail title="Our Live Games" items={launchLive} />
+      </main>
+      <div className="launch-side-actions" aria-label="Support links">
+        <button type="button" onClick={() => setChatOpen(true)} aria-label="Contact support"><Icon name="whatsapp" size={27} /></button>
+        <NavLink to="/faq" aria-label="Help and information"><Icon name="help" size={25} /></NavLink>
+      </div>
+      {chatOpen ? <div className="launch-chat" role="status"><strong>Bullwave Club support</strong><p>How can we help you today?</p><NavLink to="/faq">Open help centre</NavLink></div> : null}
+      <button className="launch-chat-button" type="button" onClick={() => setChatOpen((open) => !open)} aria-label={chatOpen ? 'Close support chat' : 'Open support chat'} aria-expanded={chatOpen}><Icon name="message" size={28} /><b>1</b></button>
+    </div>
+  )
+}
+
 function Live() {
   const { catalogMatches: matches, catalogLoading } = useApp()
   const live = matches.filter((m) => m.live)
@@ -2414,6 +2506,7 @@ function MobileDock() {
 export default function App() {
   const location = useLocation()
   const home = location.pathname === '/'
+  if (home) return <><LaunchLanding /><AuthModal /></>
   return (
     <div className="app">
       <Header />
