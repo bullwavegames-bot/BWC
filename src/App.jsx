@@ -1591,7 +1591,7 @@ const launchBanners = [
 ]
 
 const launchTrending = promoRailAds.filter((ad) => ad.cat === 'live')
-const launchLive = promoRailAds.filter((ad) => ad.cat === 'live' || ad.cat === 'instant')
+const launchLive = promoRailAds.filter((ad) => ad.cat === 'instant')
 const launchSlots = promoRailAds.filter((ad) => ad.cat === 'slots' || ad.cat === 'tv')
 
 function LaunchHero() {
@@ -1607,7 +1607,8 @@ function LaunchHero() {
     <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
       {launchBanners.map((banner, index) => (
         <NavLink key={banner.image} to={banner.to} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} tabIndex={active === index ? 0 : -1} aria-label={banner.title}>
-          <img src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" />
+          <img className="launch-slide-blur" src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" aria-hidden="true" />
+          <img className="launch-slide-art" src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" />
         </NavLink>
       ))}
       <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
