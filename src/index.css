@@ -3067,6 +3067,8 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
 .launch-fixture a span { font-size: 22px; }
 .launch-hero { position: relative; height: clamp(320px,25vw,410px); overflow: hidden; background: #172329; touch-action: pan-y; }
 .launch-slide { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility .5s ease; }
+.launch-slide-poster { background-position: center; background-size: cover; }
+.launch-slide-poster .launch-slide-copy { top: auto; bottom: 28px; left: auto; right: 78px; width: auto; transform: none; text-shadow: none; }
 .launch-slide.is-active { opacity: 1; visibility: visible; }
 .launch-slide-copy { position: absolute; top: 50%; left: clamp(70px,7vw,120px); width: min(570px,55vw); transform: translateY(-50%); text-shadow: 0 2px 18px rgba(0,0,0,.5); }
 .launch-slide-copy > span { color: #86e0d1; font-size: 15px; font-weight: 900; }
@@ -3112,6 +3114,7 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
   .launch-fixture a { width: 155px; min-width: 155px; font-size: 12px; }
   .launch-hero { height: 230px; }
   .launch-slide { background-position: 56% center; }
+  .launch-slide-poster .launch-slide-copy { right: 40px; bottom: 14px; left: auto; width: auto; }
   .launch-slide-copy { left: 47px; width: calc(100% - 90px); }
   .launch-slide-copy > span { font-size: 10px; }
   .launch-slide-copy h1 { margin: 7px 0 12px; font-size: 26px; }

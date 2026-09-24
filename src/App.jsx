@@ -1572,10 +1572,22 @@ function Home() {
 }
 
 const launchBanners = [
-  { title: 'PLAY THE MOMENT', kicker: 'BULLWAVE LIVE GAMES', image: 'hero/bullwave-casino-poster-v1.jpg', to: '/casino/live-casino', action: 'Explore games' },
-  { title: 'EVERY MATCH MATTERS', kicker: 'FOOTBALL LIVE', image: 'hero/bullwave-football-poster-v1.jpg', to: '/sport/football', action: 'View markets' },
-  { title: 'BACK THE BIG SHOT', kicker: 'CRICKET LIVE', image: 'hero/bullwave-cricket-poster-v1.jpg', to: '/sport/cricket', action: 'See fixtures' },
-  { title: 'THE ACTION STARTS HERE', kicker: 'BULLWAVE CLUB', image: 'hero/bullwave-hero.png', to: '/live', action: 'Explore live' },
+  { title: 'Color Play', kicker: 'NEWLY LAUNCHED', image: 'launch-hero/color-play.png', to: '/casino/instant-games', action: 'Play now' },
+  { title: 'Cricket Live', kicker: 'SPORTS', image: 'launch-hero/cricket.png', to: '/sport/cricket', action: 'See fixtures' },
+  { title: 'Football Live', kicker: 'SPORTS', image: 'launch-hero/football.png', to: '/sport/football', action: 'View markets' },
+  { title: 'Tennis Live', kicker: 'SPORTS', image: 'launch-hero/tennis.png', to: '/sport/tennis', action: 'Open tennis' },
+  { title: 'Table Tennis', kicker: 'SPORTS', image: 'launch-hero/table-tennis.png', to: '/sport/table-tennis', action: 'Open table tennis' },
+  { title: 'Horse Racing', kicker: 'SPORTS', image: 'launch-hero/horse-racing.png', to: '/sport/horse-racing', action: 'View racing' },
+  { title: 'Camel Racing', kicker: 'SPORTS', image: 'launch-hero/camel-racing.png', to: '/sport/camel-racing', action: 'View racing' },
+  { title: 'Basketball Live', kicker: 'SPORTS', image: 'launch-hero/basketball.png', to: '/sport/basketball', action: 'Open basketball' },
+  { title: 'Esports Live', kicker: 'SPORTS', image: 'launch-hero/esports.png', to: '/sport/esports', action: 'Open esports' },
+  { title: 'Volleyball Live', kicker: 'SPORTS', image: 'launch-hero/volleyball.png', to: '/sport/volleyball', action: 'Open volleyball' },
+  { title: 'Ice Hockey', kicker: 'SPORTS', image: 'launch-hero/ice-hockey.png', to: '/sport/ice-hockey', action: 'Open hockey' },
+  { title: 'Boxing Live', kicker: 'SPORTS', image: 'launch-hero/boxing.png', to: '/sport/boxing', action: 'Open boxing' },
+  { title: 'MMA Live', kicker: 'SPORTS', image: 'launch-hero/mma.png', to: '/sport/mma', action: 'Open MMA' },
+  { title: 'Motor Live', kicker: 'SPORTS', image: 'launch-hero/motor.png', to: '/sport/motor-sports', action: 'Open motorsport' },
+  { title: 'Baseball Live', kicker: 'SPORTS', image: 'launch-hero/baseball.png', to: '/sport/baseball', action: 'Open baseball' },
+  { title: 'Virtual Cricket', kicker: 'VIRTUAL', image: 'launch-hero/virtual-cricket.png', to: '/casino/virtual-sports', action: 'Play virtual' },
 ]
 
 const launchTrending = promoRailAds.filter((ad) => ad.cat === 'live')
@@ -1593,8 +1605,8 @@ function LaunchHero() {
   const move = (direction) => setActive((index) => (index + direction + launchBanners.length) % launchBanners.length)
   return (
     <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
-      {launchBanners.map((banner, index) => <div key={banner.image} className={`launch-slide ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} style={{ backgroundImage: `linear-gradient(90deg,rgba(5,15,18,.72),rgba(5,15,18,.05) 72%),url("${import.meta.env.BASE_URL}images/${banner.image}")` }}>
-        <div className="launch-slide-copy"><span>{banner.kicker}</span><h1>{banner.title}</h1><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
+      {launchBanners.map((banner, index) => <div key={banner.image} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images/${banner.image}")` }}>
+        <div className="launch-slide-copy"><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
       </div>)}
       <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
       <button className="launch-hero-arrow next" type="button" onClick={() => move(1)} aria-label="Next campaign">›</button>
