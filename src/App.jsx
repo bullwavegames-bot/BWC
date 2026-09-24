@@ -621,9 +621,12 @@ function AuthModal() {
 
   useEffect(() => {
     const stripLoginMethodLine = () => {
-      document.querySelectorAll('.overlay .or, .modal .or, .google-auth-btn, .overlay .g-mark').forEach((el) => {
+      document.querySelectorAll('.overlay .or, .modal .or, .google-auth-btn, .overlay .g-mark, .overlay .btn-dark').forEach((el) => {
         const target = el.classList.contains('g-mark') ? el.closest('button') || el : el
         target.remove()
+      })
+      document.querySelectorAll('.overlay button, .modal button').forEach((btn) => {
+        if ((btn.textContent || '').toLowerCase().includes('continue with google')) btn.remove()
       })
     }
     stripLoginMethodLine()

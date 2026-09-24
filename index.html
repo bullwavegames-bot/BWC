@@ -5,12 +5,21 @@
     <link rel="icon" type="image/png" href="/images/brand/bullwave-emblem.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Bullwave Club | Sports Betting and Casino</title>
+    <meta name="bwc-build" content="no-google-auth" />
     <script>try { if (localStorage.getItem('bwc_theme') === 'light') document.documentElement.dataset.theme = 'light' } catch (e) {}</script>
     <style>
       .g-mark,
       .google-auth-btn,
+      .overlay .btn-dark,
+      .modal .btn-dark,
+      .login-modal .btn-dark,
       .overlay button.btn-dark:has(.g-mark) {
         display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
       }
       .or,
       .login-modal .or {
@@ -40,6 +49,29 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        function stripGoogleAuth() {
+          document.querySelectorAll('.or, .google-auth-btn, .g-mark').forEach(function (el) {
+            var target = el.classList && el.classList.contains('g-mark') ? (el.closest('button') || el) : el
+            if (target && target.parentNode) target.parentNode.removeChild(target)
+          })
+          document.querySelectorAll('button').forEach(function (btn) {
+            var text = (btn.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase()
+            if (text.indexOf('continue with google') !== -1 && btn.parentNode) btn.parentNode.removeChild(btn)
+          })
+        }
+        var observer = new MutationObserver(stripGoogleAuth)
+        observer.observe(document.documentElement, { childList: true, subtree: true })
+        stripGoogleAuth()
+        var ticks = 0
+        var timer = setInterval(function () {
+          stripGoogleAuth()
+          ticks += 1
+          if (ticks > 80) clearInterval(timer)
+        }, 250)
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
