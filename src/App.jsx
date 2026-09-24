@@ -1657,7 +1657,6 @@ function LaunchLanding() {
       <header className="launch-nav">
         <NavLink to="/" className="launch-logo" aria-label="Bullwave Club home"><img src={`${import.meta.env.BASE_URL}images/brand/bullwave-header.png`} alt="Bullwave Club" /></NavLink>
         <div className="launch-actions">
-          <NavLink to="/account/settings" className="launch-gear" aria-label="Settings"><Icon name="gear" size={25} /></NavLink>
           <button type="button" onClick={() => setAuthMode('login')}>Login</button>
           <NavLink to="/casino/live-casino">Demo</NavLink>
         </div>
