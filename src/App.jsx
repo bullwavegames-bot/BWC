@@ -1248,6 +1248,14 @@ function FeaturedEventStrip() {
 }
 
 function HomePromoRail() {
+  const gameAds = [
+    { image: 'money-coming.png', title: 'Money Coming', to: '/casino/slots' },
+    { image: 'chicken-road.png', title: 'Chicken Road Cross', to: '/casino/instant-games' },
+    { image: 'fortune-garuda.png', title: 'Fortune Garuda 1000', to: '/casino/slots' },
+    { image: 'dragon-tiger.png', title: '20-20 Dragon Tiger', to: '/casino/live-casino' },
+    { image: 'golden-roulette.png', title: 'Golden Roulette', to: '/casino/live-casino' },
+    { image: 'poker-2020.png', title: '20-20 Poker', to: '/casino/live-casino' },
+  ]
   const ads = [
     { image: 'casino-hero-v2.webp', title: 'Live Casino', to: '/casino/live-casino' },
     { image: 'royal-v1.webp', title: 'Club Rewards', to: '/vip' },
@@ -1256,6 +1264,11 @@ function HomePromoRail() {
   return (
     <aside className="home-promo-rail" aria-label="Bet slip and promotions">
       <Betslip embedded />
+      {gameAds.map((ad) => (
+        <NavLink key={ad.title} to={ad.to} className="promo-rail-ad promo-rail-game" aria-label={ad.title}>
+          <img src={`${import.meta.env.BASE_URL}images/casino-landing/trending/${ad.image}`} alt={ad.title} />
+        </NavLink>
+      ))}
       {ads.map((ad) => (
         <NavLink key={ad.title} to={ad.to} className="promo-rail-ad">
           <img src={`${import.meta.env.BASE_URL}images/promotions/${ad.image}`} alt="" />
