@@ -3011,8 +3011,8 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .promo-rail-ad { position: relative; display: block; min-height: 205px; overflow: hidden; border-bottom: 5px solid #090f11; background: #131c20; }
 .promo-rail-ad img { width: 100%; height: 205px; display: block; object-fit: cover; object-position: center; }
 .promo-rail-ad > span { position: absolute; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; align-items: center; padding: 9px 11px; background: rgba(5,12,14,.82); color: #fff; font-size: 10px; font-weight: 800; }
-.promo-rail-game { min-height: 148px; border-bottom: 4px solid #090f11; }
-.promo-rail-game img { height: 148px; object-fit: cover; object-position: center; }
+.promo-rail-game { min-height: 190px; border-bottom: 4px solid #090f11; }
+.promo-rail-game img { height: 190px; object-fit: cover; object-position: center; }
 .app.is-home > .shell > .betslip { display: none; }
 .app.is-home > .shell > .betslip.is-open { position: fixed; z-index: 70; top: var(--header-h); right: 0; bottom: 0; left: auto; display: flex; width: min(390px,100vw); height: calc(100dvh - var(--header-h)); flex-direction: column; overflow-y: auto; border-left: 1px solid var(--line); background: var(--navy); box-shadow: -18px 0 50px rgba(0,0,0,.42); }
 .app.is-home > .shell > .betslip.is-open .slip-close { display: grid; }
