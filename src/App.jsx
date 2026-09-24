@@ -1133,6 +1133,7 @@ const sportCovers = {
   'table-tennis': 'sport-table-tennis.jpg',
   horse: 'sport-horse.jpg',
   'horse-racing': 'sport-horse.jpg',
+  esports: 'sport-esports.jpg',
 }
 
 function SportFilter({ current, showBack = false }) {
@@ -1561,7 +1562,7 @@ function Promotions() {
   const shown = category === 'All offers' ? promotions : promotions.filter((p) => p.category === category)
   return (
     <div className="promotions-page">
-      <PageIntro eyebrow="BULLWAVE REWARDS" title="Promotions" description="Fresh boosts, free bets and member offers in one place." icon="gift" stats={[{ label: 'Offers', value: promotions.length }, { label: 'Categories', value: new Set(promotions.map((p) => p.category)).size }]} />
+      <PageIntro eyebrow="BULLWAVE REWARDS" title="Promotions" description="Fresh boosts, free bets and member offers in one place." icon="gift" stats={[{ label: 'Offers', value: promotions.length }, { label: 'Categories', value: new Set(promotions.map((p) => p.category)).size }]} cover="promo-rewards.jpg" />
       <div className="filters promo-tabs">
         {['All offers', 'Sports', 'Casino', 'Instant'].map((c) => <button key={c} type="button" className={`chip ${category === c ? 'on' : ''}`} onClick={() => setCategory(c)}>{c}</button>)}
       </div>
