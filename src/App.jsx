@@ -1254,6 +1254,20 @@ function HomePromoRail() {
     { image: 'dragon-tiger.png', title: 'Dragon Tiger', to: '/casino/live-casino' },
     { image: 'golden-wheel.png', title: 'Golden Wheel', to: '/casino/live-casino' },
     { image: 'royal-queen.png', title: 'Royal Queen', to: '/casino/live-casino' },
+    { image: 'baccarat.png', title: 'Baccarat', to: '/casino/live-casino' },
+    { image: 'mega-slots.png', title: 'Mega Slots', to: '/casino/slots' },
+    { image: 'crash-rush.png', title: 'Crash Rush', to: '/casino/instant-games' },
+    { image: 'teen-patti.png', title: 'Teen Patti', to: '/casino/live-casino' },
+    { image: 'lightning-wheel.png', title: 'Lightning Wheel', to: '/casino/live-casino' },
+    { image: 'andar-bahar.png', title: 'Andar Bahar', to: '/casino/live-casino' },
+    { image: 'sic-bo.png', title: 'Sic Bo', to: '/casino/live-casino' },
+    { image: 'blackjack.png', title: 'Blackjack', to: '/casino/live-casino' },
+    { image: 'lucky-keno.png', title: 'Lucky Keno', to: '/casino/tv-games' },
+    { image: 'gem-mines.png', title: 'Gem Mines', to: '/casino/instant-games' },
+    { image: 'cricket-live.png', title: 'Cricket Live', to: '/sport/cricket' },
+    { image: 'color-play.png', title: 'Color Play', to: '/casino/instant-games' },
+    { image: 'plinko-drop.png', title: 'Plinko Drop', to: '/casino/instant-games' },
+    { image: 'football-live.png', title: 'Football Live', to: '/sport/football' },
   ]
   return (
     <aside className="home-promo-rail" aria-label="Bet slip and promotions">
