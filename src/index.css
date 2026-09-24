@@ -3037,7 +3037,8 @@ html[data-theme="light"] .session-reminder > button { color: #142237; }
 .home-featured-game-copy small { overflow: hidden; color: #b9c7ca; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .home-featured-badge { position: absolute; z-index: 2; top: 7px; left: 7px; padding: 3px 6px; border-radius: 3px; background: rgba(19,117,83,.9); color: #fff; font-size: 8px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
 html[data-theme="light"] .home-game-showcase { background: #fff; }
-html[data-theme="light"] .home-game-tabs button { background: #f2f6f5; }
+html[data-theme="light"] .home-game-tabs button { background: #eef3f4; border-color: #c5d2d6; color: #102033; }
+html[data-theme="light"] .home-game-tabs button.active { background: #14614f; border-color: #0f4f40; color: #fff; }
 
 /* Dense exchange sportsbook */
 .sidebar-search { display: flex; align-items: center; gap: 9px; width: calc(100% - 16px); min-height: 40px; margin: 0 8px 12px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; background: #0b1517; color: var(--muted); text-align: left; }
