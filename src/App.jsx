@@ -1605,9 +1605,12 @@ function LaunchHero() {
   const move = (direction) => setActive((index) => (index + direction + launchBanners.length) % launchBanners.length)
   return (
     <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
-      {launchBanners.map((banner, index) => <div key={banner.image} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images/${banner.image}")` }}>
-        <div className="launch-slide-copy"><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
-      </div>)}
+      {launchBanners.map((banner, index) => (
+        <div key={banner.image} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index}>
+          <img src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt={banner.title} />
+          <div className="launch-slide-copy"><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
+        </div>
+      ))}
       <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
       <button className="launch-hero-arrow next" type="button" onClick={() => move(1)} aria-label="Next campaign">›</button>
       <div className="launch-hero-dots">{launchBanners.map((banner, index) => <button key={banner.image} type="button" className={index === active ? 'active' : ''} onClick={() => setActive(index)} aria-label={`Show campaign ${index + 1}`} aria-pressed={index === active} />)}</div>
