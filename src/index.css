@@ -3059,9 +3059,8 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
 .launch-logo { display: flex; align-items: center; width: 285px; height: 68px; }
 .launch-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .launch-actions { display: flex; align-items: center; gap: 6px; }
-.launch-actions > button, .launch-actions > a:not(.launch-gear) { display: grid; place-items: center; min-width: 78px; min-height: 46px; padding: 0 16px; border: 0; border-radius: 3px; background: #087b60; color: #fff; font-size: 16px; font-weight: 700; }
-.launch-actions > button:hover, .launch-actions > a:not(.launch-gear):hover { background: #0a9876; }
-.launch-gear { display: grid; place-items: center; width: 46px; height: 46px; color: #e9f2f0; }
+.launch-actions > button, .launch-actions > a { display: grid; place-items: center; min-width: 78px; min-height: 46px; padding: 0 16px; border: 0; border-radius: 3px; background: #087b60; color: #fff; font-size: 16px; font-weight: 700; }
+.launch-actions > button:hover, .launch-actions > a:hover { background: #0a9876; }
 .launch-fixture { display: flex; align-items: center; gap: 20px; height: 48px; overflow: hidden; background: #3d4142; color: #e0e6e5; font-size: 14px; }
 .launch-fixture a { display: flex; align-items: center; justify-content: center; align-self: stretch; gap: 9px; width: 195px; min-width: 195px; padding: 0 24px 0 12px; background: #087b60; clip-path: polygon(0 0,calc(100% - 24px) 0,100% 50%,calc(100% - 24px) 100%,0 100%); color: #fff; font-weight: 800; }
 .launch-fixture a span { font-size: 22px; }
@@ -3109,8 +3108,7 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
   .launch-nav { height: 64px; padding: 0 9px; }
   .launch-logo { width: min(42vw,190px); height: 52px; }
   .launch-actions { gap: 3px; }
-  .launch-actions > button, .launch-actions > a:not(.launch-gear) { min-width: 52px; min-height: 42px; padding: 0 9px; font-size: 13px; }
-  .launch-gear { width: 38px; height: 44px; }
+  .launch-actions > button, .launch-actions > a { min-width: 52px; min-height: 42px; padding: 0 9px; font-size: 13px; }
   .launch-fixture { height: 44px; font-size: 11px; }
   .launch-fixture a { width: 155px; min-width: 155px; font-size: 12px; }
   .launch-hero { height: 140px; }
