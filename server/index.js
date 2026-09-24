@@ -815,6 +815,44 @@ app.get('/api/bets', auth, (req, res) => {
 app.post('/api/bets', auth, placeBet)
 app.post('/api/me/bets', auth, placeBet)
 
-app.listen(PORT, () => {
-  console.log(`Bullwave Club API on port ${PORT}`)
+async function seedClubLoginUser() {
+  const email = String(process.env.CLUB_LOGIN_EMAIL || process.env.ADMIN_ID || '').trim().toLowerCase()
+  const password = String(process.env.CLUB_LOGIN_PASSWORD || process.env.ADMIN_PASSWORD || '').trim()
+  if (!email.includes('@') || !password) {
+    console.warn('Club login seed skipped. Set CLUB_LOGIN_EMAIL and CLUB_LOGIN_PASSWORD on the API host.')
+    return
+  }
+  const passwordHash = await bcrypt.hash(password, 10)
+  const existing = findUser({ email })
+  if (existing) {
+    existing.passwordHash = passwordHash
+    existing.deleted = false
+    return
+  }
+  const user = {
+    id: randomUUID(),
+    phone: null,
+    email,
+    accountNumber: `BW${Math.floor(10000000 + Math.random() * 90000000)}`,
+    playerId: nextPlayerId(),
+    passwordHash,
+    bonus: 'Welcome Casino 100%',
+    bonusCoins: 0,
+    promoCode: null,
+    balance: 0,
+    createdAt: new Date().toISOString(),
+  }
+  users.set(user.id, user)
+}
+
+async function start() {
+  await seedClubLoginUser()
+  app.listen(PORT, () => {
+    console.log(`Bullwave Club API on port ${PORT}`)
+  })
+}
+
+start().catch((err) => {
+  console.error(err)
+  process.exit(1)
 })
