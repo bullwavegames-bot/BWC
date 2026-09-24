@@ -1275,6 +1275,12 @@ const promoRailAds = [
   { image: 'football-live.png', title: 'Football Live', to: '/sport/football', cat: 'virtual' },
   { image: 'virtual-tennis.png', title: 'Virtual Tennis', to: '/casino/virtual-sports', cat: 'virtual' },
   { image: 'virtual-racing.png', title: 'Virtual Racing', to: '/casino/virtual-sports', cat: 'virtual' },
+  { image: 'lucky-sevens.png', title: 'Lucky Sevens', to: '/casino/slots', cat: 'slots' },
+  { image: 'wild-buffalo.png', title: 'Wild Buffalo', to: '/casino/slots', cat: 'slots' },
+  { image: 'ice-fishing.png', title: 'Ice Fishing', to: '/casino/live-casino', cat: 'live' },
+  { image: 'red-door.png', title: 'Red Door', to: '/casino/live-casino', cat: 'live' },
+  { image: 'big-baller.png', title: 'Big Baller', to: '/casino/live-casino', cat: 'live' },
+  { image: 'money-time.png', title: 'Money Time', to: '/casino/live-casino', cat: 'live' },
 ]
 
 function promoRailAdsFor(cat) {
@@ -1572,25 +1578,9 @@ const launchBanners = [
   { title: 'PLAY YOUR WAY', kicker: 'LIVE GAMES', image: 'promotions/casino-hero-v2.webp', to: '/casino/live-casino', action: 'Explore games' },
 ]
 
-const launchTrending = [
-  { name: 'Football Live', image: 'hero/sport-football.jpg', to: '/sport/football' },
-  { name: 'Cricket Live', image: 'promotions/cricket-v1.webp', to: '/sport/cricket' },
-  { name: 'Basketball', image: 'hero/sport-basketball.jpg', to: '/sport/basketball' },
-  { name: 'Live Casino', image: 'promotions/casino-v1.webp', to: '/casino/live-casino' },
-  { name: 'Roulette', image: 'promotions/wheel-v1.webp', to: '/casino/live-casino' },
-  { name: 'Horse Racing', image: 'hero/sport-horse.jpg', to: '/sport/horse-racing' },
-  { name: 'Fantasy Sports', image: 'promotions/royal-v1.webp', to: '/casino/instant-games' },
-]
-
-const launchLive = [
-  { name: 'Cricket Exchange', image: 'hero/cricket-champion-v1.png', to: '/sport/cricket' },
-  { name: 'Football Markets', image: 'hero/sport-football.jpg', to: '/sport/football' },
-  { name: 'Live Cards', image: 'promotions/casino-card-v2.webp', to: '/casino/live-casino' },
-  { name: 'Table Tennis', image: 'hero/sport-table-tennis.jpg', to: '/sport/table-tennis' },
-  { name: 'Instant Games', image: 'promotions/dash-v1.webp', to: '/casino/instant-games' },
-  { name: 'Tennis Live', image: 'hero/sport-tennis.jpg', to: '/sport/tennis' },
-  { name: 'Esports', image: 'hero/sport-esports.jpg', to: '/sport/esports' },
-]
+const launchTrending = promoRailAds.filter((ad) => ad.cat === 'live')
+const launchLive = promoRailAds.filter((ad) => ad.cat === 'live' || ad.cat === 'instant')
+const launchSlots = promoRailAds.filter((ad) => ad.cat === 'slots' || ad.cat === 'tv')
 
 function LaunchHero() {
   const [active, setActive] = useState(0)
@@ -1615,7 +1605,24 @@ function LaunchHero() {
 
 function LaunchRail({ title, items }) {
   const rail = useRef(null)
-  return <section className="launch-section"><div className="launch-section-head"><h2>{title}</h2><div><button type="button" onClick={() => rail.current?.scrollBy({ left: -rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} left`}>‹</button><button type="button" onClick={() => rail.current?.scrollBy({ left: rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} right`}>›</button></div></div><div className="launch-rail" ref={rail}>{items.map((item) => <NavLink key={item.name} to={item.to} className="launch-card"><img src={`${import.meta.env.BASE_URL}images/${item.image}`} alt="" loading="lazy" /><span>{item.name}</span></NavLink>)}</div></section>
+  return (
+    <section className="launch-section">
+      <div className="launch-section-head">
+        <h2>{title}</h2>
+        <div>
+          <button type="button" onClick={() => rail.current?.scrollBy({ left: -rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} left`}>‹</button>
+          <button type="button" onClick={() => rail.current?.scrollBy({ left: rail.current.clientWidth * .75, behavior: 'smooth' })} aria-label={`Scroll ${title} right`}>›</button>
+        </div>
+      </div>
+      <div className="launch-rail" ref={rail}>
+        {items.map((item) => (
+          <NavLink key={item.title} to={item.to} className="launch-card launch-card-poster" aria-label={item.title}>
+            <img src={promoRailSrc(item.image)} alt={item.title} loading="lazy" />
+          </NavLink>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 function LaunchLanding() {
@@ -1645,6 +1652,7 @@ function LaunchLanding() {
         <LaunchHero />
         <LaunchRail title="Now Trending" items={launchTrending} />
         <LaunchRail title="Our Live Games" items={launchLive} />
+        <LaunchRail title="Club Slots" items={launchSlots} />
       </main>
       <div className="launch-side-actions" aria-label="Support links">
         <button type="button" onClick={() => setChatOpen(true)} aria-label="Contact support"><Icon name="whatsapp" size={27} /></button>
