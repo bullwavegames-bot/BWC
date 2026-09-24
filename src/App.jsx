@@ -168,6 +168,7 @@ function Icon({ name, size = 18 }) {
     home: <><path d="m3 10 9-7 9 7v10H3z" /><path d="M9 20v-7h6v7" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
     chevron: <path d="m9 5 7 7-7 7" />,
+    back: <path d="m15 5-7 7 7 7" />,
     help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.3 1.4-2 1.5-2 3M12 17h.01" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
@@ -1095,9 +1096,18 @@ function PromotionSlider() {
   )
 }
 
-function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action }) {
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/' }) {
+  const navigate = useNavigate()
+  const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate(backTo)
+  }
   return <section className="page-intro">
     <div className="page-intro-copy">
+      <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /> Back</button>
       <span className="eyebrow">{eyebrow}</span>
       <h1>{title}</h1>
       <p>{description}</p>
@@ -1108,6 +1118,27 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
       {stats.length > 0 && <div className="page-intro-stats">{stats.map((item) => <div key={item.label}><b>{item.value}</b><span>{item.label}</span></div>)}</div>}
     </div>
   </section>
+}
+
+const homeSportIds = ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel']
+
+function SportFilter({ current, showBack = false }) {
+  const navigate = useNavigate()
+  const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) navigate(-1)
+    else navigate('/')
+  }
+  return (
+    <nav className="sport-filter" aria-label="Browse by sport">
+      {showBack ? <button type="button" className="sport-filter-back" onClick={goBack}><Icon name="back" size={16} /> Back</button> : null}
+      {sports.filter((s) => homeSportIds.includes(s.id)).map((s) => (
+        <NavLink key={s.id} to={s.to} className={({ isActive }) => (isActive || current === s.id ? 'featured-sport' : '')}>
+          <span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}
+        </NavLink>
+      ))}
+      <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
+    </nav>
+  )
 }
 
 function FeatureCards({ items }) {
@@ -1440,10 +1471,7 @@ function Home() {
         <div className="hero-mantra" aria-hidden="true">PLAY<br />WATCH<br />BET<br />WIN<i /></div>
         <div className="home-campaign-controls"><button type="button" onClick={() => setCampaign((campaign - 1 + campaigns.length) % campaigns.length)} aria-label="Previous campaign"><span aria-hidden="true">‹</span></button><div>{campaigns.map((slide, index) => <button key={slide.image} type="button" className={campaign === index ? 'on' : ''} onClick={() => setCampaign(index)} aria-label={`Show campaign ${index + 1}`} aria-pressed={campaign === index} />)}</div><button type="button" onClick={() => setCampaign((campaign + 1) % campaigns.length)} aria-label="Next campaign"><span aria-hidden="true">›</span></button></div>
       </section>
-      <nav className="sport-filter" aria-label="Browse by sport">
-        {sports.filter((s) => ['cricket', 'football', 'basketball', 'tennis', 'table-tennis', 'horse', 'esports', 'camel'].includes(s.id)).map((s, index) => <NavLink key={s.id} to={s.to} className={index === 0 ? 'featured-sport' : ''}><span className={`sport-filter-icon sport-${s.id}`}><Icon name={s.icon} size={22} /></span>{s.name}</NavLink>)}
-        <NavLink to="/live"><span className="sport-more">•••</span>More</NavLink>
-      </nav>
+      <SportFilter />
       <HomeGameShowcase catalog={catalog} loading={catalogLoading} />
       <ExchangeTable matches={matches} title="Sports exchange" />
       <section className="personalized-home">
@@ -1647,6 +1675,7 @@ function Sport() {
   return (
     <div className="content-page">
       <PageIntro eyebrow="SPORTSBOOK" title={title} description={`Browse ${title} fixtures, live scores and available markets.`} icon={sportIcon(name)} stats={[{ label: 'Events', value: list.length }, { label: 'Live now', value: list.filter((m) => m.live).length }]} action={{ to: '/live', label: 'All live events' }} />
+      <SportFilter current={name} showBack />
       {key === 'camel' && <section className="camel-racing-banner" aria-label="Dubai camel racing"><div><span>Dubai race programme</span><h2>Desert speed. Live markets.</h2><p>Follow professional camel racing fixtures and available exchange markets.</p></div></section>}
       <div className="filters sticky-filters">
         {['All', 'Live', 'Upcoming'].map((c) => (
