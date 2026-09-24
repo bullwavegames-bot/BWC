@@ -1606,10 +1606,9 @@ function LaunchHero() {
   return (
     <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
       {launchBanners.map((banner, index) => (
-        <div key={banner.image} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index}>
-          <img src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt={banner.title} />
-          <div className="launch-slide-copy"><NavLink to={banner.to} tabIndex={active === index ? 0 : -1}>{banner.action}<Icon name="chevron" size={18} /></NavLink></div>
-        </div>
+        <NavLink key={banner.image} to={banner.to} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} tabIndex={active === index ? 0 : -1} aria-label={banner.title}>
+          <img src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" />
+        </NavLink>
       ))}
       <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
       <button className="launch-hero-arrow next" type="button" onClick={() => move(1)} aria-label="Next campaign">›</button>
