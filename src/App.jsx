@@ -587,7 +587,7 @@ const dialingCountries = [
 ]
 
 function AuthModal() {
-  const { authMode, setAuthMode, login, loginWithPhone, register, loginWithGoogle, resetPasswordWithPhone, authError, setAuthError } = useApp()
+  const { authMode, setAuthMode, login, loginWithPhone, register, resetPasswordWithPhone, authError, setAuthError } = useApp()
   const [loginTab, setLoginTab] = useState('Phone')
   const [signupTab, setSignupTab] = useState('Phone')
   const [showPass, setShowPass] = useState(false)
@@ -621,7 +621,10 @@ function AuthModal() {
 
   useEffect(() => {
     const stripLoginMethodLine = () => {
-      document.querySelectorAll('.overlay .or, .modal .or').forEach((el) => el.remove())
+      document.querySelectorAll('.overlay .or, .modal .or, .google-auth-btn, .overlay .g-mark').forEach((el) => {
+        const target = el.classList.contains('g-mark') ? el.closest('button') || el : el
+        target.remove()
+      })
     }
     stripLoginMethodLine()
     const overlay = document.querySelector('.overlay')
@@ -761,14 +764,7 @@ function AuthModal() {
           <h1>{isLogin ? 'Log in' : isRecover ? 'Reset password' : 'Sign up'}</h1>
           <button className="icon-btn" type="button" aria-label="Support">🎧</button>
         </div>
-        {(isLogin || authMode === 'signup') && (
-          <>
-            {isLogin && <div className="login-intro"><span>WELCOME BACK</span><p>Sign in to your Bullwave Club account</p></div>}
-            <button className="btn-dark google-auth-btn" type="button" onClick={async () => { try { await loginWithGoogle() } catch (err) { setAuthError(err.message) } }}>
-              <span className="g-mark">G</span> Continue with Google
-            </button>
-          </>
-        )}
+        {isLogin && <div className="login-intro"><span>WELCOME BACK</span><p>Sign in to your Bullwave Club account</p></div>}
         {authError && <p className="hint" style={{ color: 'var(--coral)' }}>{authError}</p>}
 
         {isRecover ? (

@@ -990,7 +990,6 @@ a.game-tile { color: inherit; text-decoration: none; }
 .login-intro span { color: var(--mint); font-size: 10px; font-weight: 900; letter-spacing: .17em; }
 .login-intro p { margin: 7px 0 0; color: #b9c9d8; font-size: 13px; }
 .login-modal .btn-dark { height: 48px; border: 1px solid rgba(255,255,255,.09); background: #233448; transition: background 160ms ease, border-color 160ms ease; }
-.login-modal .google-auth-btn { margin-bottom: 18px; }
 .login-modal .btn-dark:hover { background: #2a4055; border-color: rgba(97,214,176,.35); }
 .login-modal .field { margin-bottom: 16px; }
 .auth-label { display: block; margin-bottom: 7px; color: #d5e2ed; font-size: 12px; font-weight: 750; }
@@ -1027,16 +1026,11 @@ a.game-tile { color: inherit; text-decoration: none; }
   align-items: center;
   margin-bottom: 16px;
 }
-.g-mark {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  color: #4285f4;
-  font-weight: 800;
-  font-size: 12px;
-  display: grid;
-  place-items: center;
+.g-mark,
+.google-auth-btn,
+.login-modal .google-auth-btn,
+.overlay button.btn-dark:has(.g-mark) {
+  display: none !important;
 }
 .tabs {
   display: grid;
