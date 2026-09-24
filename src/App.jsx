@@ -1248,33 +1248,53 @@ function FeaturedEventStrip() {
   return <nav className="featured-event-strip" aria-label="Featured fixtures">{items.map((item) => <NavLink key={item.label} to={item.to} className={`featured-event-tile tone-${item.tone}`}><Icon name={item.sport} size={22} /><span>{item.label}</span></NavLink>)}</nav>
 }
 
-function HomePromoRail() {
-  const gameAds = [
-    { image: 'live-poker.png', title: 'Live Poker', to: '/casino/live-casino' },
-    { image: 'dragon-tiger.png', title: 'Dragon Tiger', to: '/casino/live-casino' },
-    { image: 'golden-wheel.png', title: 'Golden Wheel', to: '/casino/live-casino' },
-    { image: 'royal-queen.png', title: 'Royal Queen', to: '/casino/live-casino' },
-    { image: 'baccarat.png', title: 'Baccarat', to: '/casino/live-casino' },
-    { image: 'mega-slots.png', title: 'Mega Slots', to: '/casino/slots' },
-    { image: 'crash-rush.png', title: 'Crash Rush', to: '/casino/instant-games' },
-    { image: 'teen-patti.png', title: 'Teen Patti', to: '/casino/live-casino' },
-    { image: 'lightning-wheel.png', title: 'Lightning Wheel', to: '/casino/live-casino' },
-    { image: 'andar-bahar.png', title: 'Andar Bahar', to: '/casino/live-casino' },
-    { image: 'sic-bo.png', title: 'Sic Bo', to: '/casino/live-casino' },
-    { image: 'blackjack.png', title: 'Blackjack', to: '/casino/live-casino' },
-    { image: 'lucky-keno.png', title: 'Lucky Keno', to: '/casino/tv-games' },
-    { image: 'gem-mines.png', title: 'Gem Mines', to: '/casino/instant-games' },
-    { image: 'cricket-live.png', title: 'Cricket Live', to: '/sport/cricket' },
-    { image: 'color-play.png', title: 'Color Play', to: '/casino/instant-games' },
-    { image: 'plinko-drop.png', title: 'Plinko Drop', to: '/casino/instant-games' },
-    { image: 'football-live.png', title: 'Football Live', to: '/sport/football' },
-  ]
+const promoRailAds = [
+  { image: 'live-poker.png', title: 'Live Poker', to: '/casino/live-casino', cat: 'live' },
+  { image: 'dragon-tiger.png', title: 'Dragon Tiger', to: '/casino/live-casino', cat: 'live' },
+  { image: 'golden-wheel.png', title: 'Golden Wheel', to: '/casino/live-casino', cat: 'live' },
+  { image: 'royal-queen.png', title: 'Royal Queen', to: '/casino/live-casino', cat: 'live' },
+  { image: 'baccarat.png', title: 'Baccarat', to: '/casino/live-casino', cat: 'live' },
+  { image: 'teen-patti.png', title: 'Teen Patti', to: '/casino/live-casino', cat: 'live' },
+  { image: 'lightning-wheel.png', title: 'Lightning Wheel', to: '/casino/live-casino', cat: 'live' },
+  { image: 'andar-bahar.png', title: 'Andar Bahar', to: '/casino/live-casino', cat: 'live' },
+  { image: 'sic-bo.png', title: 'Sic Bo', to: '/casino/live-casino', cat: 'live' },
+  { image: 'blackjack.png', title: 'Blackjack', to: '/casino/live-casino', cat: 'live' },
+  { image: 'mega-slots.png', title: 'Mega Slots', to: '/casino/slots', cat: 'slots' },
+  { image: 'fruit-frenzy.png', title: 'Fruit Frenzy', to: '/casino/slots', cat: 'slots' },
+  { image: 'pharaoh-gold.png', title: 'Pharaoh Gold', to: '/casino/slots', cat: 'slots' },
+  { image: 'gold-rush.png', title: 'Gold Rush', to: '/casino/slots', cat: 'slots' },
+  { image: 'crash-rush.png', title: 'Crash Rush', to: '/casino/instant-games', cat: 'instant' },
+  { image: 'gem-mines.png', title: 'Gem Mines', to: '/casino/instant-games', cat: 'instant' },
+  { image: 'color-play.png', title: 'Color Play', to: '/casino/instant-games', cat: 'instant' },
+  { image: 'plinko-drop.png', title: 'Plinko Drop', to: '/casino/instant-games', cat: 'instant' },
+  { image: 'coin-flip.png', title: 'Coin Flip', to: '/casino/instant-games', cat: 'instant' },
+  { image: 'lucky-keno.png', title: 'Lucky Keno', to: '/casino/tv-games', cat: 'tv' },
+  { image: 'prize-wheel.png', title: 'Prize Wheel', to: '/casino/tv-games', cat: 'tv' },
+  { image: 'trivia-live.png', title: 'Trivia Live', to: '/casino/tv-games', cat: 'tv' },
+  { image: 'cricket-live.png', title: 'Cricket Live', to: '/sport/cricket', cat: 'virtual' },
+  { image: 'football-live.png', title: 'Football Live', to: '/sport/football', cat: 'virtual' },
+  { image: 'virtual-tennis.png', title: 'Virtual Tennis', to: '/casino/virtual-sports', cat: 'virtual' },
+  { image: 'virtual-racing.png', title: 'Virtual Racing', to: '/casino/virtual-sports', cat: 'virtual' },
+]
+
+function promoRailAdsFor(cat) {
+  if (!cat) return promoRailAds
+  const matched = promoRailAds.filter((ad) => ad.cat === cat)
+  return matched.length ? matched : promoRailAds
+}
+
+function promoRailSrc(image) {
+  return `${import.meta.env.BASE_URL}images/promo-rail/${image}`
+}
+
+function HomePromoRail({ cat }) {
+  const gameAds = promoRailAdsFor(cat)
   return (
     <aside className="home-promo-rail" aria-label="Bet slip and promotions">
       <Betslip embedded />
       {gameAds.map((ad) => (
         <NavLink key={ad.title} to={ad.to} className="promo-rail-ad promo-rail-game" aria-label={ad.title}>
-          <img src={`${import.meta.env.BASE_URL}images/promo-rail/${ad.image}`} alt={ad.title} />
+          <img src={promoRailSrc(ad.image)} alt={ad.title} />
         </NavLink>
       ))}
     </aside>
@@ -1731,6 +1751,8 @@ function Casino({ title, cat }) {
   const { clubGames, catalogLoading } = useApp()
   const catalog = clubGames.length ? clubGames : games
   const items = catalog.filter((g) => g.cat === cat)
+  const posters = promoRailAdsFor(cat)
+  const featured = posters[0]
   const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Football, cricket, tennis, racing and other sports titles in one lobby.', tv: 'Game shows, wheels, keno and trivia in the Bullwave collection.' }
   const categories = [{ label: 'Live Casino', to: '/casino/live-casino', cat: 'live' }, { label: 'Instant Games', to: '/casino/instant-games', cat: 'instant' }, { label: 'Slots', to: '/casino/slots', cat: 'slots' }, { label: 'Virtual Sport', to: '/casino/virtual-sports', cat: 'virtual' }, { label: 'TV Games', to: '/casino/tv-games', cat: 'tv' }]
   return (
@@ -1739,7 +1761,26 @@ function Casino({ title, cat }) {
       <div className="filters category-tabs">
         {categories.map((category) => <NavLink key={category.cat} to={category.to} className={`chip ${cat === category.cat ? 'on' : ''}`}>{category.label}</NavLink>)}
       </div>
-      {items.length > 0 && <div className="game-spotlight"><div className="game-spotlight-art"><GameArtwork game={items[0]} /></div><div className="game-spotlight-copy"><span className="eyebrow">FEATURED IN {title.toUpperCase()}</span><h2>{items[0].name}</h2><p>Take a closer look at this club favorite, then browse the full collection below.</p><a href="#game-collection" className="page-intro-action">Browse games <span aria-hidden="true">↘</span></a></div></div>}
+      {featured && (
+        <NavLink to={featured.to} className="game-spotlight casino-poster-spotlight">
+          <div className="game-spotlight-art">
+            <img src={promoRailSrc(featured.image)} alt="" />
+          </div>
+          <div className="game-spotlight-copy">
+            <span className="eyebrow">FEATURED IN {title.toUpperCase()}</span>
+            <h2>{featured.title}</h2>
+            <p>Play this {title.toLowerCase()} highlight, then browse the full collection below.</p>
+            <span className="page-intro-action">Browse games <span aria-hidden="true">↘</span></span>
+          </div>
+        </NavLink>
+      )}
+      <div className="casino-poster-grid" aria-label={`${title} promotions`}>
+        {posters.map((poster) => (
+          <NavLink key={poster.title} to={poster.to} className="casino-poster-card" aria-label={poster.title}>
+            <img src={promoRailSrc(poster.image)} alt={poster.title} />
+          </NavLink>
+        ))}
+      </div>
       <div className="content-section-title" id="game-collection"><h2>Explore {title}</h2><span>{items.length} games</span></div>
       {catalogLoading ? <SkeletonGrid count={6} type="games" /> : items.length ? <div className="casino-row">
         {items.map((g) => (
@@ -2507,8 +2548,14 @@ function MobileDock() {
 export default function App() {
   const location = useLocation()
   const home = location.pathname === '/'
+  const casinoCat = location.pathname.startsWith('/casino/slots') ? 'slots'
+    : location.pathname.startsWith('/casino/instant-games') ? 'instant'
+    : location.pathname.startsWith('/casino/virtual-sports') ? 'virtual'
+    : location.pathname.startsWith('/casino/tv-games') ? 'tv'
+    : location.pathname.startsWith('/casino/live-casino') ? 'live'
+    : null
   return (
-    <div className={home ? 'app is-home' : 'app'}>
+    <div className={[home && 'is-home', (home || casinoCat) && 'has-promo-rail', 'app'].filter(Boolean).join(' ')}>
       <Header />
       <PresencePing />
       <LiveTicker />
@@ -2552,7 +2599,7 @@ export default function App() {
           </Routes>
           <Footer />
         </main>
-        {home && <HomePromoRail />}
+        {(home || casinoCat) && <HomePromoRail cat={casinoCat || undefined} />}
         <Betslip />
       </div>
       <AuthModal />
