@@ -1605,12 +1605,16 @@ function LaunchHero() {
   const move = (direction) => setActive((index) => (index + direction + launchBanners.length) % launchBanners.length)
   return (
     <section className="launch-hero" aria-label="Featured campaigns" aria-roledescription="carousel" onTouchStart={(event) => { touchStart.current = event.touches[0].clientX }} onTouchEnd={(event) => { if (touchStart.current !== null && Math.abs(event.changedTouches[0].clientX - touchStart.current) > 45) move(event.changedTouches[0].clientX < touchStart.current ? 1 : -1); touchStart.current = null }}>
-      {launchBanners.map((banner, index) => (
-        <NavLink key={banner.image} to={banner.to} className={`launch-slide launch-slide-poster ${active === index ? 'is-active' : ''}`} aria-hidden={active !== index} tabIndex={active === index ? 0 : -1} aria-label={banner.title}>
-          <img className="launch-slide-blur" src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" aria-hidden="true" />
-          <img className="launch-slide-art" src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" />
-        </NavLink>
-      ))}
+      <div className="launch-hero-track">
+        {[-1, 0, 1].map((offset) => {
+          const index = (active + offset + launchBanners.length) % launchBanners.length
+          const banner = launchBanners[index]
+          const artwork = <img src={`${import.meta.env.BASE_URL}images/${banner.image}`} alt="" />
+          return offset === 0
+            ? <NavLink key={`${index}-active`} to={banner.to} className="launch-slide is-active" aria-label={banner.title}>{artwork}</NavLink>
+            : <button key={`${index}-${offset}`} type="button" className="launch-slide" onClick={() => setActive(index)} aria-label={`Show ${banner.title}`}>{artwork}</button>
+        })}
+      </div>
       <button className="launch-hero-arrow prev" type="button" onClick={() => move(-1)} aria-label="Previous campaign">‹</button>
       <button className="launch-hero-arrow next" type="button" onClick={() => move(1)} aria-label="Next campaign">›</button>
       <div className="launch-hero-dots">{launchBanners.map((banner, index) => <button key={banner.image} type="button" className={index === active ? 'active' : ''} onClick={() => setActive(index)} aria-label={`Show campaign ${index + 1}`} aria-pressed={index === active} />)}</div>
