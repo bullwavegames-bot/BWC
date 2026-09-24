@@ -1566,10 +1566,10 @@ function Home() {
 }
 
 const launchBanners = [
+  { title: 'PLAY THE MOMENT', kicker: 'BULLWAVE LIVE GAMES', image: 'hero/bullwave-casino-poster-v1.jpg', to: '/casino/live-casino', action: 'Explore games' },
+  { title: 'EVERY MATCH MATTERS', kicker: 'FOOTBALL LIVE', image: 'hero/bullwave-football-poster-v1.jpg', to: '/sport/football', action: 'View markets' },
+  { title: 'BACK THE BIG SHOT', kicker: 'CRICKET LIVE', image: 'hero/bullwave-cricket-poster-v1.jpg', to: '/sport/cricket', action: 'See fixtures' },
   { title: 'THE ACTION STARTS HERE', kicker: 'BULLWAVE CLUB', image: 'hero/bullwave-hero.png', to: '/live', action: 'Explore live' },
-  { title: 'EVERY MOMENT COUNTS', kicker: 'SPORTS EXCHANGE', image: 'hero/sports-exchange-v2.png', to: '/live', action: 'View markets' },
-  { title: 'BACK YOUR GAME', kicker: 'CRICKET LIVE', image: 'hero/cricket-champion-v1.png', to: '/sport/cricket', action: 'See fixtures' },
-  { title: 'PLAY YOUR WAY', kicker: 'LIVE GAMES', image: 'promotions/casino-hero-v2.webp', to: '/casino/live-casino', action: 'Explore games' },
 ]
 
 const launchTrending = [
