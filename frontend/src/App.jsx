@@ -992,7 +992,7 @@ function ExchangeOdd({ match, market, side, price, locked = false }) {
   return <button type="button" className={`exchange-price is-${side} ${selected ? 'is-selected' : ''}`} aria-pressed={selected} onClick={() => addBet({ id, event: `${match.home} vs ${match.away}`, pick: `${side === 'back' ? 'Back' : 'Lay'} ${market}`, odd: price })}><strong>{Number(price).toFixed(2)}</strong><small>{side}</small></button>
 }
 
-function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events found' }) {
+function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events found', limit }) {
   const { favorites, toggleFavorite } = useApp()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('All')
@@ -1006,14 +1006,18 @@ function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events 
       const queryMatch = !normalized || `${match.home} ${match.away} ${match.league}`.toLowerCase().includes(normalized)
       return statusMatch && queryMatch
     })
-    if (sort === 'Popularity') return [...filtered].sort((a, b) => Number(String(b.extra || '').replace(/\D/g, '')) - Number(String(a.extra || '').replace(/\D/g, '')))
-    if (sort === 'Competition') return [...filtered].sort((a, b) => a.league.localeCompare(b.league))
-    return filtered
-  }, [matches, query, status, sort])
+    const ordered = sort === 'Popularity'
+      ? [...filtered].sort((a, b) => Number(String(b.extra || '').replace(/\D/g, '')) - Number(String(a.extra || '').replace(/\D/g, '')))
+      : sort === 'Competition'
+        ? [...filtered].sort((a, b) => a.league.localeCompare(b.league))
+        : filtered
+    return limit ? ordered.slice(0, limit) : ordered
+  }, [matches, query, status, sort, limit])
+  const total = matches.length
   const toggleExpanded = (id) => setExpanded((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id])
   return <section className="exchange" aria-label={title}>
     <header className="exchange-tools">
-      <div><span className="eyebrow">SPORTSBOOK</span><h2>{title}</h2><small>{shown.length} events</small></div>
+      <div><span className="eyebrow">SPORTSBOOK</span><h2>{title}</h2><small>{shown.length}{limit && total > shown.length ? ` of ${total}` : ''} events</small></div>
       <label className="exchange-search"><Icon name="search" size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search events or leagues" aria-label="Search events or leagues" />{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><Icon name="close" size={14} /></button>}</label>
       <div className="exchange-filters" role="group" aria-label="Event status">{['All', 'Live', 'Upcoming'].map((item) => <button type="button" key={item} className={status === item ? 'on' : ''} onClick={() => setStatus(item)}>{item}</button>)}</div>
       <label className="exchange-sort"><span>Sort</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option>Start time</option><option>Popularity</option><option>Competition</option></select></label>
@@ -1048,6 +1052,7 @@ function ExchangeTable({ matches, title = 'Match odds', emptyTitle = 'No events 
       </div>
     </div>
     <p className="exchange-key"><span className="back-key" /> Back <span className="lay-key" /> Lay <Icon name="shield" size={12} /> Suspended</p>
+    {limit && total > shown.length ? <NavLink to="/live" className="exchange-more-link">See all events</NavLink> : null}
   </section>
 }
 
@@ -1539,7 +1544,7 @@ function Home() {
       </section>
       <SportFilter />
       <HomeGameShowcase catalog={catalog} loading={catalogLoading} />
-      <ExchangeTable matches={matches} title="Sports exchange" />
+      <ExchangeTable matches={matches} title="Sports exchange" limit={8} />
       <section className="personalized-home">
         <div className="personalized-head"><div><span className="eyebrow">YOUR CLUB</span><h2>{personalMatches.length ? 'Picked for you' : 'Popular right now'}</h2></div><small>{personalMatches.length ? 'Based on favourites and recently viewed matches' : 'Your recommendations adapt as you explore'}</small></div>
         <div className="personalized-row">{forYou.map((match) => <NavLink key={match.id} to={`/match/${match.id}`} className="personalized-match"><span className={`top-match-icon sport-${match.sport}`}><Icon name={sportIcon(match.sport)} size={18} /></span><span><small>{match.live ? 'LIVE' : match.time}</small><strong>{match.home} vs {match.away}</strong><em>{match.league}</em></span><Icon name="chevron" size={15} /></NavLink>)}</div>

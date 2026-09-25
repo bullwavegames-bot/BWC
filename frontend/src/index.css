@@ -3195,6 +3195,7 @@ html[data-theme="light"] .home-game-tabs button.active { background: #14614f; bo
 .exchange-empty strong { color: var(--white); }.exchange-empty span { font-size: 10px; }
 .exchange-empty button { min-height: 36px; padding: 0 13px; border: 1px solid var(--mint); border-radius: 6px; background: transparent; color: var(--mint); font-weight: 800; }
 .exchange-key { display: flex; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; }
+.exchange-more-link { display: flex; align-items: center; justify-content: center; min-height: 42px; border-top: 1px solid var(--line); color: var(--mint); font-size: 13px; font-weight: 800; }
 .exchange-key span { width: 12px; height: 8px; margin-left: 5px; border-radius: 2px; }.back-key { background: #79c5ec; }.lay-key { background: #efa1bd; }
 .odds-preference { display: grid; gap: 5px; margin-bottom: 10px; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .odds-preference select { width: 100%; text-transform: none; }
