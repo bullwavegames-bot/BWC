@@ -2392,11 +2392,59 @@ function Parlays() {
   )
 }
 
+function ClubFillBoard() {
+  const { catalogMatches: matches } = useApp()
+  const live = matches.filter((match) => match.live).slice(0, 6)
+  const actions = [
+    { to: '/live', label: 'Live sports', icon: 'live' },
+    { to: '/casino/live-casino', label: 'Live casino', icon: 'casino' },
+    { to: '/casino/slots', label: 'Slots', icon: 'slots' },
+    { to: '/casino/instant-games', label: 'Instant games', icon: 'zap' },
+    { to: '/promotions', label: 'Promotions', icon: 'gift' },
+    { to: '/sport/cricket', label: 'Cricket', icon: 'cricket' },
+  ]
+  return (
+    <div className="club-fill">
+      <div className="club-fill-actions">
+        {actions.map((action) => (
+          <NavLink key={action.to} to={action.to} className="club-fill-action">
+            <span className="dot"><Icon name={action.icon} size={18} /></span>
+            {action.label}
+          </NavLink>
+        ))}
+      </div>
+      <div className="content-section-title"><h2>Hot games</h2><span>Tap a poster to play</span></div>
+      <div className="club-fill-posters">
+        {promoRailAds.map((ad) => (
+          <NavLink key={ad.title} to={ad.to} className="club-fill-poster" aria-label={ad.title}>
+            <img src={promoRailSrc(ad.image)} alt="" />
+          </NavLink>
+        ))}
+      </div>
+      {live.length ? (
+        <>
+          <div className="content-section-title"><h2>Live now</h2><NavLink to="/live">All live</NavLink></div>
+          <div className="club-fill-live">
+            {live.map((match) => (
+              <NavLink key={match.id} to={`/match/${match.id}`} className="club-fill-match">
+                <span className="club-fill-live-tag">LIVE</span>
+                <strong>{match.home} vs {match.away}</strong>
+                <small>{match.league}</small>
+              </NavLink>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 function More({ settings = false }) {
   const { oddsFormat, setOddsFormat, theme, setTheme } = useApp()
   return (
     <div className="content-page">
-      <PageIntro eyebrow="YOUR CLUB" title={settings ? 'Settings' : 'More'} description="Personalize the display and find more from Bullwave Club." icon="gear" stats={[{ label: 'Preferences', value: '3' }, { label: 'Club', value: 'Bullwave' }]} />
+      <PageIntro eyebrow="YOUR CLUB" title={settings ? 'Settings' : 'More'} description="Personalize the display and jump into live sports, casino and club rewards." icon="gear" stats={[{ label: 'Games', value: String(promoRailAds.length) }, { label: 'Club', value: 'Bullwave' }]} />
+      <ClubFillBoard />
       <div className="content-section-title"><h2>Preferences</h2><span>Make it yours</span></div>
       <div className="card menu-item">Theme <select value={theme} onChange={(e) => setTheme(e.target.value)} className="input" style={{ width: 140, height: 36 }}><option value="dark">Dark</option><option value="light">Light</option></select></div>
       <div className="card" style={{ marginTop: 8, padding: 8 }}>
@@ -2583,7 +2631,7 @@ export default function App() {
     : location.pathname.startsWith('/casino/live-casino') ? 'live'
     : null
   return (
-    <div className={[home && 'is-home', (home || casinoCat) && 'has-promo-rail', 'app'].filter(Boolean).join(' ')}>
+    <div className={[home && 'is-home', 'has-promo-rail', 'app'].filter(Boolean).join(' ')}>
       <Header />
       <PresencePing />
       <LiveTicker />
@@ -2627,7 +2675,7 @@ export default function App() {
           </Routes>
           <Footer />
         </main>
-        {(home || casinoCat) && <HomePromoRail cat={casinoCat || undefined} />}
+        <HomePromoRail cat={casinoCat || undefined} />
         <Betslip />
       </div>
       <AuthModal />

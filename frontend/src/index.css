@@ -1435,6 +1435,20 @@ a.feature-card:hover { transform: translateY(-4px); border-color: rgba(97,214,17
 .game-spotlight-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 70%, #142231); }
 .game-spotlight-art .game-artwork, .game-spotlight-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .casino-poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; margin: 0 0 22px; }
+.club-fill { margin: 0 0 22px; }
+.club-fill-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 0 0 18px; }
+.club-fill-action { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: #122024; color: #fff; font-size: 13px; font-weight: 800; }
+.club-fill-action:hover { border-color: #2c9a7c; background: #16343a; }
+.club-fill-posters { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; margin: 0 0 22px; }
+.club-fill-poster { display: block; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 10px; background: #10181c; }
+.club-fill-poster img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.club-fill-poster:hover img { transform: scale(1.04); }
+.club-fill-poster img { transition: transform .2s ease; }
+.club-fill-live { display: grid; gap: 8px; margin: 0 0 22px; }
+.club-fill-match { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #122024; color: #fff; }
+.club-fill-match:hover { border-color: #2c9a7c; }
+.club-fill-live-tag { width: max-content; padding: 2px 7px; border-radius: 4px; background: #c42b3a; color: #fff; font-size: 10px; font-weight: 850; }
+.club-fill-match small { color: var(--muted); }
 .casino-poster-card { display: block; overflow: hidden; border-radius: 8px; aspect-ratio: 1.95; background: #131c20; }
 .casino-poster-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .casino-poster-card:hover img { transform: scale(1.04); }
