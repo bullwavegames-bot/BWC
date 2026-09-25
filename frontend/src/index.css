@@ -237,10 +237,19 @@ img { max-width: 100%; }
 .sidebar, .betslip {
   background: var(--panel);
   border-right: 1px solid var(--line);
+}
+.betslip {
   overflow: auto;
   height: calc(100vh - var(--header-h));
   position: sticky;
   top: var(--header-h);
+}
+.sidebar {
+  position: relative;
+  align-self: stretch;
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
 }
 .betslip { border-right: 0; border-left: 1px solid var(--line); }
 .side-item {
@@ -2657,16 +2666,16 @@ html[data-theme="light"] .pdata-select { background: #f4f7fb; color: #142237; }
 .ticker-event b { color: var(--mint); font-size: 12px; font-variant-numeric: tabular-nums; }
 .ticker-event span { color: var(--muted); font-size: 9px; }
 .ticker-all { border-left: 1px solid var(--line); }
-.sidebar, .betslip { top: calc(var(--header-h) + var(--ticker-h)); height: calc(100vh - var(--header-h) - var(--ticker-h)); }
+.betslip { top: calc(var(--header-h) + var(--ticker-h)); height: calc(100vh - var(--header-h) - var(--ticker-h)); }
 
 @media (min-width: 901px) {
   .sidebar {
-    position: sticky;
-    top: calc(var(--header-h) + var(--ticker-h, 0px));
-    align-self: start;
-    height: calc(100vh - var(--header-h) - var(--ticker-h, 0px));
-    min-height: 0;
-    overflow: auto;
+    position: relative;
+    top: auto;
+    align-self: stretch;
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
   }
 }
 
