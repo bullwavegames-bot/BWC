@@ -158,7 +158,6 @@ function Icon({ name, size = 18 }) {
     special: <path d="m12 3 1.6 5.4H19l-4.4 3.2 1.7 5.4L12 14.6 7.7 17l1.7-5.4L5 8.4h5.4z" />,
     replays: <><circle cx="12" cy="12" r="8" /><path d="M10 9v6l5-3zM16 5.2A9 9 0 0 0 5.5 9" /></>,
     ticket: <path d="M4 8a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2z" />,
-    wallet: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M3 10h18M16 14.5h2" /></>,
     plus: <path d="M12 5v14M5 12h14" />,
     minus: <path d="M5 12h14" />,
     shield: <path d="M12 3 20 7v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />,
@@ -442,54 +441,12 @@ function Header() {
 
 function Sidebar() {
   const [leaguesOpen, setLeaguesOpen] = useState(false)
-  const { setAuthMode, setSearchOpen, catalogMatches, loggedIn } = useApp()
-  const liveMatches = catalogMatches.filter((match) => match.live)
-  const liveCount = liveMatches.length
-  const liveNow = liveMatches.slice(0, 3)
-  const casinoLinks = [
-    { to: '/casino/live-casino', label: 'Live Casino', icon: 'casino' },
-    { to: '/casino/slots', label: 'Slots', icon: 'slots' },
-    { to: '/casino/instant-games', label: 'Instant', icon: 'zap' },
-    { to: '/casino/virtual-sports', label: 'Virtual', icon: 'virtual' },
-    { to: '/casino/tv-games', label: 'TV Games', icon: 'tv' },
-  ]
+  const { setAuthMode, setSearchOpen, catalogMatches } = useApp()
+  const liveCount = catalogMatches.filter((m) => m.live).length
   return (
     <aside className="sidebar">
       <button className="sidebar-search" type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={16} /><span>Search sports</span></button>
       <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
-      <p className="side-group">Club</p>
-      <NavLink to="/promotions" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="gift" size={18} /></span>Promotions</NavLink>
-      <NavLink to="/parlays" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="layers" size={18} /></span>Top Parlays</NavLink>
-      <NavLink to="/upcoming" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="cal" size={18} /></span>Upcoming</NavLink>
-      <NavLink to="/vip" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="shield" size={18} /></span>VIP Club</NavLink>
-      {loggedIn ? (
-        <>
-          <p className="side-group">Account</p>
-          <NavLink to="/account" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="wallet" size={18} /></span>Wallet</NavLink>
-          <NavLink to="/account/deposit" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="plus" size={18} /></span>Deposit</NavLink>
-          <NavLink to="/account/bets" className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="ticket" size={18} /></span>My bets</NavLink>
-        </>
-      ) : null}
-      <p className="side-group">Casino</p>
-      {casinoLinks.map((item) => (
-        <NavLink key={item.to} to={item.to} className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}>
-          <span className="dot"><Icon name={item.icon} size={18} /></span>
-          {item.label}
-        </NavLink>
-      ))}
-      {liveNow.length ? (
-        <div className="side-live-box">
-          <p className="side-group">Live now</p>
-          {liveNow.map((match) => (
-            <NavLink key={match.id} to={`/match/${match.id}`} className="side-live-match">
-              <b>LIVE</b>
-              <strong>{match.home} vs {match.away}</strong>
-              <small>{match.score ? `${match.score[0]} · ${match.score[1]}` : match.league}</small>
-            </NavLink>
-          ))}
-        </div>
-      ) : null}
-      <p className="side-group">Sports</p>
       {sports.filter((s) => !['promos', 'parlays'].includes(s.id)).map((s) => {
         const count = s.id === 'all-live' ? (liveCount || s.count || 0) : catalogMatches.filter((match) => match.sport === s.id || match.sport === s.id.replace('-racing', '')).length
         return (

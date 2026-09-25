@@ -1763,13 +1763,6 @@ body { font-family: var(--font); background: var(--navy); }
 .sidebar .league-toggle { margin-top: 14px; height: 64px; padding-inline: 14px; border-bottom: 1px solid var(--line); align-items: center; font-weight: 500; font-size: 13px; }
 .sidebar .league-toggle svg { color: #d8e0e1; }
 .side-utility { margin-top: 5px; padding-top: 4px; }
-.side-live-box { margin: 8px 8px 12px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #0c1618; }
-.side-live-box .side-group { padding: 4px 4px 8px; }
-.side-live-match { display: grid; gap: 2px; padding: 8px; border-radius: 6px; color: #e8eef0; }
-.side-live-match:hover { background: #152326; }
-.side-live-match b { width: max-content; padding: 1px 6px; border-radius: 3px; background: #c42b3a; color: #fff; font-size: 9px; letter-spacing: .04em; }
-.side-live-match strong { font-size: 12px; line-height: 1.25; }
-.side-live-match small { color: var(--muted); font-size: 11px; }
 .side-club { margin-top: 17px; padding: 10px 12px 15px; border: 1px solid #2d464a; border-radius: 8px; text-align: center; background: linear-gradient(135deg,#152326,#112023); }
 .side-club > span { display: block; color: #ffd377; font-size: 25px; line-height: 31px; }
 .side-club strong { font-size: 13px; }
@@ -2661,12 +2654,12 @@ html[data-theme="light"] .pdata-select { background: #f4f7fb; color: #142237; }
 
 @media (min-width: 901px) {
   .sidebar {
-    position: sticky;
-    top: calc(var(--header-h) + var(--ticker-h, 0px));
-    align-self: start;
-    height: calc(100vh - var(--header-h) - var(--ticker-h, 0px));
-    min-height: 0;
-    overflow: auto;
+    position: relative;
+    top: auto;
+    align-self: stretch;
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
   }
 }
 
