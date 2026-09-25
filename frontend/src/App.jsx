@@ -1156,7 +1156,7 @@ function PromotionSlider() {
   )
 }
 
-function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover }) {
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover, art }) {
   const navigate = useNavigate()
   const goBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -1165,11 +1165,17 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
     }
     navigate(backTo)
   }
-  const coverSrc = cover ? `${import.meta.env.BASE_URL}images/hero/${cover}` : ''
-  return <section className={`page-intro${cover ? ' has-cover' : ''}`}>
+  const photo = (file) => {
+    if (!file) return ''
+    const path = file.includes('/') ? file : `hero/${file}`
+    return `${import.meta.env.BASE_URL}images/${path}`
+  }
+  const coverSrc = photo(cover)
+  const artSrc = photo(art)
+  return <section className={`page-intro${cover ? ' has-cover' : ''}${artSrc ? ' has-art' : ''}`} style={artSrc ? { '--page-art': `url('${artSrc}')` } : undefined}>
     {coverSrc ? <img className="page-intro-photo" src={coverSrc} alt="" /> : null}
     <div className="page-intro-copy">
-      <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /> Back</button>
+      <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /><span>Back</span></button>
       {!cover && <>
         <span className="eyebrow">{eyebrow}</span>
         <h1>{title}</h1>
@@ -1739,7 +1745,7 @@ function Live() {
   const filtered = sport === 'all-live' ? live : live.filter((m) => m.sport === sport || m.sport === current?.id)
   return (
     <div className="content-page">
-      <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} />
+      <PageIntro eyebrow="IN PLAY" title="Live Events" description="Follow the action as it happens and explore the markets available now." icon="live" stats={[{ label: 'Live events', value: live.length }, { label: 'Sports', value: new Set(live.map((m) => m.sport)).size }]} action={{ to: '/upcoming', label: 'Upcoming events' }} art="hero/sports-exchange-v2.png" />
       <div className="filters sticky-filters">
         {liveSports.map((s) => (
           <button key={s.id} type="button" className={`chip ${sport === s.id ? 'on' : ''}`} onClick={() => setSport(s.id)}>{s.name}</button>
@@ -1757,7 +1763,7 @@ function Upcoming() {
   const filtered = when === 'All' ? upcoming : upcoming.filter((m) => String(m.time || '').toUpperCase().startsWith(when.toUpperCase()))
   return (
     <div className="content-page">
-      <PageIntro eyebrow="NEXT UP" title="Upcoming events" description="Plan ahead with the fixtures and markets on the schedule." icon="cal" stats={[{ label: 'Fixtures', value: upcoming.length }, { label: 'Sports', value: new Set(upcoming.map((m) => m.sport)).size }]} action={{ to: '/live', label: 'Explore live events' }} />
+      <PageIntro eyebrow="NEXT UP" title="Upcoming events" description="Plan ahead with the fixtures and markets on the schedule." icon="cal" stats={[{ label: 'Fixtures', value: upcoming.length }, { label: 'Sports', value: new Set(upcoming.map((m) => m.sport)).size }]} action={{ to: '/live', label: 'Explore live events' }} art="hero/cricket-champion-v1.png" />
       <div className="filters sticky-filters">
         {['All', 'Today', 'Tomorrow'].map((c) => (
           <button key={c} type="button" className={`chip ${when === c ? 'on' : ''}`} onClick={() => setWhen(c)}>{c}</button>
@@ -2081,6 +2087,7 @@ function Account() {
         description="Cash you can bet or withdraw, plus bonus funds, limits and the details every member should know before moving money."
         icon="shield"
         stats={[{ label: 'Status', value: loggedIn ? 'Active' : 'Guest' }, { label: 'Cash', value: rupees(cash) }]}
+        art="promotions/dash-v1.webp"
       />
       <div className="card wallet-card">
         <div className="wallet-top">
@@ -2280,6 +2287,7 @@ function Deposit({ type }) {
         icon={withdrawing ? 'minus' : 'plus'}
         action={{ to: '/account', label: 'Back to wallet' }}
         stats={[{ label: 'Cash', value: rupees(cash) }, { label: 'Method', value: pay.time }]}
+        art="promotions/welcome-v1.webp"
       />
       <div className="content-section-title"><h2>Payment method</h2><span>Time · limits · fee</span></div>
       <div className="pay-grid">
@@ -2357,7 +2365,7 @@ function Bets() {
   const shown = filter === 'All' ? myBets : myBets.filter((b) => filter === 'Open' ? ['open', 'pending'].includes(String(b.status).toLowerCase()) : ['settled', 'won', 'lost'].includes(String(b.status).toLowerCase()))
   return (
     <div className="content-page">
-      <PageIntro eyebrow="BET HISTORY" title="My bets" description="Review your open and settled bets in one place." icon="ticket" stats={[{ label: 'Total bets', value: myBets.length }, { label: 'Open', value: myBets.filter((b) => ['open', 'pending'].includes(String(b.status).toLowerCase())).length }]} action={{ to: '/live', label: 'Explore events' }} />
+      <PageIntro eyebrow="BET HISTORY" title="My bets" description="Review your open and settled bets in one place." icon="ticket" stats={[{ label: 'Total bets', value: myBets.length }, { label: 'Open', value: myBets.filter((b) => ['open', 'pending'].includes(String(b.status).toLowerCase())).length }]} action={{ to: '/live', label: 'Explore events' }} art="hero/bullwave-match.png" />
       <div className="filters">
         {['All', 'Open', 'Settled'].map((c) => (
           <button key={c} type="button" className={`chip ${filter === c ? 'on' : ''}`} onClick={() => setFilter(c)}>{c}</button>
@@ -2380,7 +2388,7 @@ function Vip() {
   const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite']
   return (
     <div className="content-page">
-      <PageIntro eyebrow="MEMBER REWARDS" title="Bullwave Club VIP" description="A club journey with tiered rewards and exclusive offers." icon="shield" stats={[{ label: 'Tiers', value: tiers.length }, { label: 'Top tier', value: 'Elite' }]} action={{ to: '/account', label: 'My account' }} />
+      <PageIntro eyebrow="MEMBER REWARDS" title="Bullwave Club VIP" description="A club journey with tiered rewards and exclusive offers." icon="shield" stats={[{ label: 'Tiers', value: tiers.length }, { label: 'Top tier', value: 'Elite' }]} action={{ to: '/account', label: 'My account' }} art="promotions/royal-v1.webp" />
       <FeatureCards items={[{ icon: 'gift', title: 'Club offers', detail: 'Explore current rewards and promotions.', to: '/promotions' }, { icon: 'shield', title: 'Member area', detail: 'Keep track of your account and activity.', to: '/account' }, { icon: 'star', title: 'VIP tiers', detail: 'Browse the club journey below.' }]} />
       <div className="content-section-title"><h2>VIP tiers</h2><span>Find your level</span></div>
       <div className="tier-grid">
@@ -2398,7 +2406,7 @@ function Vip() {
 function Faq() {
   return (
     <div className="faq content-page">
-      <PageIntro eyebrow="HELP CENTER" title="Frequently asked questions" description="Quick answers to common questions about using Bullwave Club." icon="gear" stats={[{ label: 'Answers', value: faqs.length }, { label: 'Topics', value: 'Club help' }]} action={{ to: '/more', label: 'More options' }} />
+      <PageIntro eyebrow="HELP CENTER" title="Frequently asked questions" description="Quick answers to common questions about using Bullwave Club." icon="gear" stats={[{ label: 'Answers', value: faqs.length }, { label: 'Topics', value: 'Club help' }]} action={{ to: '/more', label: 'More options' }} art="promotions/shield-v1.webp" />
       <div className="content-section-title"><h2>Popular questions</h2><span>Select a question to expand</span></div>
       <div className="faq-list">{faqs.map((f) => (
         <details key={f.q}><summary>{f.q}<span aria-hidden="true">+</span></summary><p>{f.a}</p></details>
@@ -2413,7 +2421,7 @@ function Favorites() {
   const list = matches.filter((m) => favorites.includes(m.id))
   return (
     <div className="content-page">
-      <PageIntro eyebrow="YOUR PICKS" title="Favorites" description="Keep the matches you care about close at hand." icon="star" stats={[{ label: 'Saved events', value: list.length }, { label: 'Available', value: matches.length }]} action={{ to: '/live', label: 'Explore events' }} />
+      <PageIntro eyebrow="YOUR PICKS" title="Favorites" description="Keep the matches you care about close at hand." icon="star" stats={[{ label: 'Saved events', value: list.length }, { label: 'Available', value: matches.length }]} action={{ to: '/live', label: 'Explore events' }} art="hero/bullwave-hero.png" />
       {list.length === 0 ? <EmptyState icon="star" title="No favorites yet" detail="Tap the star on a match to save it here." action={{ to: '/live', label: 'Find live events' }} /> : (
         <div className="match-grid">{list.map((m) => <MatchCard key={m.id} m={m} />)}</div>
       )}
@@ -2427,7 +2435,7 @@ function Parlays() {
   const total = combo.reduce((a, m) => a * (m.markets[0]?.odd || 1), 1)
   return (
     <div className="content-page">
-      <PageIntro eyebrow="MATCH COMBINATIONS" title="Top Parlays" description="Explore a ready-made match combination and review each selection." icon="layers" stats={[{ label: 'Selections', value: combo.length }, { label: 'Combined odds', value: total.toFixed(2) }]} action={{ to: '/live', label: 'Explore events' }} />
+      <PageIntro eyebrow="MATCH COMBINATIONS" title="Top Parlays" description="Explore a ready-made match combination and review each selection." icon="layers" stats={[{ label: 'Selections', value: combo.length }, { label: 'Combined odds', value: total.toFixed(2) }]} action={{ to: '/live', label: 'Explore events' }} art="hero/sports-exchange-v2.png" />
       <div className="card parlay-card">
         <div className="eyebrow">FEATURED COMBINATION</div>
         {combo.map((m) => (
