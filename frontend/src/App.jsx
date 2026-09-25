@@ -1156,7 +1156,7 @@ function PromotionSlider() {
   )
 }
 
-function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover, art }) {
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover, art, showDetail = true }) {
   const navigate = useNavigate()
   const goBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -1184,7 +1184,7 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
       </>}
       {cover ? <h1 className="sr-only">{title}</h1> : null}
     </div>
-    {!cover && <div className="page-intro-detail">
+    {!cover && showDetail && <div className="page-intro-detail">
       <div className="page-intro-emblem" aria-hidden="true"><Icon name={icon} size={42} /></div>
       {stats.length > 0 && <div className="page-intro-stats">{stats.map((item) => <div key={item.label}><b>{item.value}</b><span>{item.label}</span></div>)}</div>}
     </div>}
@@ -1838,7 +1838,7 @@ function Casino({ title, cat }) {
   const casinoArt = { live: 'hero/live-casino-banner.png', instant: 'hero/instant-games-banner.png' }
   return (
     <div className="content-page">
-      <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} stats={[{ label: 'Games', value: items.length }, { label: 'Collection', value: title }]} action={{ to: '/promotions', label: 'View promotions' }} art={casinoArt[cat]} />
+      <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} action={{ to: '/promotions', label: 'View promotions' }} art={casinoArt[cat]} showDetail={false} />
       <div className="filters category-tabs">
         {categories.map((category) => <NavLink key={category.cat} to={category.to} className={`chip ${cat === category.cat ? 'on' : ''}`}>{category.label}</NavLink>)}
       </div>
