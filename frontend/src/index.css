@@ -1398,9 +1398,10 @@ a.game-tile { color: inherit; text-decoration: none; }
 .page-intro-copy, .page-intro-detail { position: relative; z-index: 1; min-width: 0; max-width: 100%; }
 .page-intro-copy { display: flex; flex-direction: column; align-items: flex-start; }
 .page-intro.has-art {
-  background-image: linear-gradient(90deg, rgba(7,16,26,.94) 0%, rgba(7,16,26,.82) 48%, rgba(7,16,26,.38) 100%), var(--page-art);
+  min-height: 230px;
+  background-image: linear-gradient(90deg, rgba(7,16,26,.94) 0%, rgba(7,16,26,.82) 42%, rgba(7,16,26,.28) 100%), var(--page-art);
   background-size: cover;
-  background-position: right center;
+  background-position: var(--page-art-pos, 70% 22%);
 }
 .page-intro.has-art .page-intro-copy, .page-intro.has-art .page-intro-detail { text-shadow: 0 8px 24px rgba(0,0,0,.45); }
 .page-intro.has-cover { display: block; min-height: 0; margin-bottom: 18px; padding: 0; border: 0; border-radius: 16px; background: #071218; box-shadow: 0 18px 42px rgba(0,0,0,.32); }

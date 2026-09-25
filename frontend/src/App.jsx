@@ -1156,7 +1156,7 @@ function PromotionSlider() {
   )
 }
 
-function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover, art, showDetail = true }) {
+function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star', stats = [], action, backTo = '/', cover, art, artPos, showDetail = true }) {
   const navigate = useNavigate()
   const goBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -1172,7 +1172,7 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
   }
   const coverSrc = photo(cover)
   const artSrc = photo(art)
-  return <section className={`page-intro${cover ? ' has-cover' : ''}${artSrc ? ' has-art' : ''}`} style={artSrc ? { '--page-art': `url('${artSrc}')` } : undefined}>
+  return <section className={`page-intro${cover ? ' has-cover' : ''}${artSrc ? ' has-art' : ''}`} style={artSrc ? { '--page-art': `url('${artSrc}')`, ...(artPos ? { '--page-art-pos': artPos } : {}) } : undefined}>
     {coverSrc ? <img className="page-intro-photo" src={coverSrc} alt="" /> : null}
     <div className="page-intro-copy">
       <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /><span>Back</span></button>
@@ -1836,9 +1836,10 @@ function Casino({ title, cat }) {
   const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Football, cricket, tennis, racing and other sports titles in one lobby.', tv: 'Game shows, wheels, keno and trivia in the Bullwave collection.' }
   const categories = [{ label: 'Live Casino', to: '/casino/live-casino', cat: 'live' }, { label: 'Instant Games', to: '/casino/instant-games', cat: 'instant' }, { label: 'Slots', to: '/casino/slots', cat: 'slots' }, { label: 'Virtual Sport', to: '/casino/virtual-sports', cat: 'virtual' }, { label: 'TV Games', to: '/casino/tv-games', cat: 'tv' }]
   const casinoArt = { live: 'hero/live-casino-banner.png', instant: 'hero/instant-games-banner.png' }
+  const casinoArtPos = { live: '72% 28%', instant: '80% 40%' }
   return (
     <div className="content-page">
-      <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} action={{ to: '/promotions', label: 'View promotions' }} art={casinoArt[cat]} showDetail={false} />
+      <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} action={{ to: '/promotions', label: 'View promotions' }} art={casinoArt[cat]} artPos={casinoArtPos[cat]} showDetail={false} />
       <div className="filters category-tabs">
         {categories.map((category) => <NavLink key={category.cat} to={category.to} className={`chip ${cat === category.cat ? 'on' : ''}`}>{category.label}</NavLink>)}
       </div>
