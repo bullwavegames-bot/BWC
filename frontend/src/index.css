@@ -172,6 +172,8 @@ img { max-width: 100%; }
   grid-template-columns: 28px 1fr 22px;
   align-items: center;
   gap: 10px;
+  appearance: none;
+  -webkit-appearance: none;
   border: 0;
   background: transparent;
   color: var(--white);
@@ -2046,6 +2048,31 @@ html[data-theme="light"] .top-nav a { color: #152235; }
 html[data-theme="light"] .top-nav a.active { color: #173858; background: #e7f0fa; }
 html[data-theme="light"] .header-search { border-color: #d8e0e9; color: #6d7885; }
 html[data-theme="light"] .header .lang { color: #142237; }
+html[data-theme="light"] .lang-menu {
+  background: #fff;
+  border-color: #e2e8ef;
+  box-shadow: 0 16px 40px rgba(16, 43, 77, .14);
+}
+html[data-theme="light"] .lang-menu.in-page {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+html[data-theme="light"] .lang-row {
+  color: #142237;
+  background: transparent;
+}
+html[data-theme="light"] .lang-row:hover,
+html[data-theme="light"] .lang-row.on {
+  background: #eef3f9;
+  color: #102e53;
+}
+html[data-theme="light"] .lang-name { color: inherit; }
+html[data-theme="light"] .lang-row.on .lang-radio {
+  border-color: #1db8a8;
+  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 9px #1db8a8;
+}
+html[data-theme="light"] .country-flag-image { box-shadow: 0 0 0 1px rgba(16, 43, 77, .16); }
 html[data-theme="light"] .icon-btn { color: #1b2b3d; }
 html[data-theme="light"] .icon-btn:hover { background: #edf3f9; }
 html[data-theme="light"] .notification-btn i { background: #f0555e; }
