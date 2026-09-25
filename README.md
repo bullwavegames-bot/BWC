@@ -2,22 +2,39 @@
 
 Bullwave Club sportsbook UI (React) and Node.js API.
 
+The repo is split into two folders:
+
+- `frontend` — Vite + React app (Vercel)
+- `backend` — Express API (Render)
+
 ## Run locally
 
 ```bash
+cd backend
 npm install
-npm run server
+npm start
+```
+
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-Frontend talks to the live API at `https://bwc-wgbu.onrender.com` (see `VITE_API_URL`). Auth uses Supabase. Copy `env.example` to `.env` for local keys.
+From the repo root you can also run `npm run server` and `npm run dev` after installing in each folder.
+
+Frontend talks to the live API at `https://bwc-wgbu.onrender.com` (see `VITE_API_URL`). Auth uses Supabase. Copy `frontend/env.example` to `frontend/.env` and `backend/env.example` to `backend/.env` for local keys.
+
+## Vercel
+
+Set the project **Root Directory** to `frontend`. Build command: `npm run build`. Output: `dist`.
 
 ## Render
 
-Web service start command: `npm start` (runs `node server/index.js`).
+Set the service **Root Directory** to `backend`. Start command: `npm start` (runs `node server/index.js`).
 Set `JWT_SECRET` and `CORS_ORIGIN` in the Render dashboard.
 
-The included `render.yaml` configures the Node web service, health check, and
+The included `backend/render.yaml` configures the Node web service, health check, and
 required secret placeholders. Connect the repository as a Render Blueprint or
 use the same values when creating a Web Service manually.
 

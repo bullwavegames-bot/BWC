@@ -35,7 +35,7 @@ import {
 
 function loadEnvFile() {
   const dir = dirname(fileURLToPath(import.meta.url))
-  for (const file of [join(dir, '.env'), join(dir, '..', '.env')]) {
+  for (const file of [join(dir, '.env'), join(dir, '..', '.env'), join(dir, '..', '..', '.env')]) {
     try {
       const text = readFileSync(file, 'utf8')
       for (const line of text.split(/\r?\n/)) {
