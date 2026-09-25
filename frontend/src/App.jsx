@@ -1836,8 +1836,8 @@ function Casino({ title, cat }) {
   const featured = posters[0]
   const descriptions = { live: 'Explore club tables and live-style games.', instant: 'Quick rounds, bright visuals and games you can pick up in a moment.', slots: 'Browse the reels, puzzles and colorful club favorites.', virtual: 'Football, cricket, tennis, racing and other sports titles in one lobby.', tv: 'Game shows, wheels, keno and trivia in the Bullwave collection.' }
   const categories = [{ label: 'Live Casino', to: '/casino/live-casino', cat: 'live' }, { label: 'Instant Games', to: '/casino/instant-games', cat: 'instant' }, { label: 'Slots', to: '/casino/slots', cat: 'slots' }, { label: 'Virtual Sport', to: '/casino/virtual-sports', cat: 'virtual' }, { label: 'TV Games', to: '/casino/tv-games', cat: 'tv' }]
-  const casinoArt = { live: 'hero/live-casino-banner.png', instant: 'hero/instant-games-banner.png', slots: 'hero/slots-banner.png', virtual: 'hero/virtual-sport-banner.png' }
-  const casinoArtPos = { live: '72% 28%', instant: '80% 40%', slots: '78% 48%', virtual: '72% 46%' }
+  const casinoArt = { live: 'hero/live-casino-banner.png', instant: 'hero/instant-games-banner.png', slots: 'hero/slots-banner.png', virtual: 'hero/virtual-sport-banner.png', tv: 'hero/tv-games-banner.png' }
+  const casinoArtPos = { live: '72% 28%', instant: '80% 40%', slots: '78% 48%', virtual: '72% 46%', tv: '78% 48%' }
   return (
     <div className="content-page">
       <PageIntro eyebrow="CLUB GAMES" title={title} description={descriptions[cat]} icon={cat === 'virtual' ? 'virtual' : cat === 'tv' ? 'tv' : cat === 'slots' ? 'slots' : 'casino'} action={{ to: '/promotions', label: 'View promotions' }} art={casinoArt[cat]} artPos={casinoArtPos[cat]} showDetail={false} />
