@@ -1401,22 +1401,17 @@ a.game-tile { color: inherit; text-decoration: none; }
   min-height: 230px;
   background: #0a1c28;
 }
-.page-intro.has-art::before {
-  content: '';
+.page-intro.has-art::before { display: none; }
+.page-intro-art {
   position: absolute;
   inset: 0;
   z-index: 0;
-  width: auto;
-  height: auto;
-  right: auto;
-  top: auto;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  background-image: var(--page-art);
-  background-size: cover;
-  background-position: var(--page-art-pos, 70% 22%);
-  filter: brightness(1.32) contrast(1.06) saturate(1.12);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--page-art-pos, 70% 22%);
+  pointer-events: none;
+  filter: brightness(1.28) contrast(1.04) saturate(1.08);
 }
 .page-intro.has-art::after {
   content: '';
@@ -1424,7 +1419,7 @@ a.game-tile { color: inherit; text-decoration: none; }
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(7,16,26,.68) 0%, rgba(7,16,26,.32) 40%, rgba(7,16,26,.06) 100%);
+  background: linear-gradient(90deg, rgba(7,16,26,.62) 0%, rgba(7,16,26,.28) 38%, rgba(7,16,26,.05) 100%);
 }
 .page-intro.has-art .page-intro-copy, .page-intro.has-art .page-intro-detail { text-shadow: 0 8px 24px rgba(0,0,0,.45); }
 .page-intro.has-cover { display: block; min-height: 0; margin-bottom: 18px; padding: 0; border: 0; border-radius: 16px; background: #071218; box-shadow: 0 18px 42px rgba(0,0,0,.32); }

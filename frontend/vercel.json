@@ -15,7 +15,7 @@
       "destination": "https://bwc-wgbu.onrender.com/api/:path*"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|images/|assets/).*)",
       "destination": "/index.html"
     }
   ]

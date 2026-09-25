@@ -1172,8 +1172,9 @@ function PageIntro({ eyebrow = 'BULLWAVE CLUB', title, description, icon = 'star
   }
   const coverSrc = photo(cover)
   const artSrc = photo(art)
-  return <section className={`page-intro${cover ? ' has-cover' : ''}${artSrc ? ' has-art' : ''}`} style={artSrc ? { '--page-art': `url('${artSrc}')`, ...(artPos ? { '--page-art-pos': artPos } : {}) } : undefined}>
+  return <section className={`page-intro${cover ? ' has-cover' : ''}${artSrc ? ' has-art' : ''}`} style={artSrc ? { '--page-art-pos': artPos || '70% 22%' } : undefined}>
     {coverSrc ? <img className="page-intro-photo" src={coverSrc} alt="" /> : null}
+    {artSrc && !coverSrc ? <img className="page-intro-art" src={artSrc} alt="" /> : null}
     <div className="page-intro-copy">
       <button type="button" className="page-back" onClick={goBack}><Icon name="back" size={16} /><span>Back</span></button>
       {!cover && <>
