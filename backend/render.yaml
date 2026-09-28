@@ -5,7 +5,7 @@ services:
     plan: free
     branch: main
     rootDir: backend
-    buildCommand: npm ci
+    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
