@@ -27,8 +27,18 @@ services:
       - key: OTP_TEST_ENABLED
         value: "false"
       - key: CASHOUT_PAYOUTS_ENABLED
-        value: "false"
+        value: "true"
       - key: ADMIN_KEY
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: CLUB_LOGIN_EMAIL
+        sync: false
+      - key: CLUB_LOGIN_PASSWORD
         sync: false
       - key: TELEGRAM_CHANNEL_URL
         sync: false

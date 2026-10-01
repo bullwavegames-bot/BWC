@@ -16,7 +16,8 @@ export function telegramChannel() {
 }
 
 export function cashoutPayoutsEnabled() {
-  return String(process.env.CASHOUT_PAYOUTS_ENABLED || 'false').toLowerCase() === 'true'
+  const raw = String(process.env.CASHOUT_PAYOUTS_ENABLED ?? 'true').toLowerCase()
+  return raw !== 'false' && raw !== '0' && raw !== 'off'
 }
 
 export function normalizeUtr(value) {
@@ -134,9 +135,14 @@ export function settleBill(user, { rupees, credit, utr, note, settledBy } = {}) 
 }
 
 export function requestCashout(user, { amount, destination, method }) {
+  if (!cashoutPayoutsEnabled()) {
+    const err = new Error('Cash-out is paused right now.')
+    err.status = 403
+    throw err
+  }
   const cash = Number(amount)
-  if (!Number.isFinite(cash) || cash <= 0) {
-    const err = new Error('Enter cash to withdraw.')
+  if (!Number.isFinite(cash) || cash < 200) {
+    const err = new Error('Minimum withdrawal is ₹200.')
     err.status = 400
     throw err
   }

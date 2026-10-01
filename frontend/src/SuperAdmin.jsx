@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { apiUrl } from './api.js'
 import { useApp } from './store.jsx'
 
 const PACKS = [
@@ -40,7 +41,7 @@ export function SuperAdmin() {
   }
 
   const call = async (path, { method = 'GET', body } = {}) => {
-    const res = await fetch(path, {
+    const res = await fetch(apiUrl(path), {
       method,
       headers: headers(),
       body: method === 'GET' ? undefined : JSON.stringify(body || {}),
@@ -51,7 +52,7 @@ export function SuperAdmin() {
   }
 
   const download = async (path, filename) => {
-    const res = await fetch(path, { headers: headers() })
+    const res = await fetch(apiUrl(path), { headers: headers() })
     if (!res.ok) throw new Error('Download failed')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
@@ -83,7 +84,7 @@ export function SuperAdmin() {
     setSigningIn(true)
     setGate('')
     try {
-      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, password: adminPassword }) })
+      const res = await fetch(apiUrl('/api/admin/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, password: adminPassword }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(cleanError(data.error || 'Admin sign-in failed'))
       sessionStorage.setItem('bwc_admin_token', data.token)
@@ -386,13 +387,13 @@ function HealthProbe() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const ping = () => {
-    fetch('/api/health').then((r) => r.json()).then(setData).catch((err) => setError(err.message))
+    fetch(apiUrl('/api/health')).then((r) => r.json()).then(setData).catch((err) => setError(err.message))
   }
   useEffect(() => { ping() }, [])
   return (
-    <div className="ops">
+    <div>
       <h2>Health check</h2>
-      <p className="ops-lead">Separate probe from Overview. Hits the live API without opening the staff desk.</p>
+      <p className="ops-lead">Hits the live API without leaving the staff desk.</p>
       <button type="button" className="btn btn-yellow" onClick={ping}>Ping API</button>
       {error && <p className="hint is-bad">{error}</p>}
       {data && <pre className="billing-proof">{JSON.stringify(data, null, 2)}</pre>}
@@ -406,7 +407,7 @@ export function PresencePing() {
   useEffect(() => {
     if (!loggedIn || !token) return undefined
     const inGame = loc.pathname.startsWith('/casino')
-    const send = () => fetch('/api/presence', {
+    const send = () => fetch(apiUrl('/api/presence'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ path: loc.pathname, screen: loc.pathname, inGame }),

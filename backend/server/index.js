@@ -61,18 +61,29 @@ loadEnvFile()
 const app = express()
 const PORT = process.env.PORT || 4000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-bullwave-secret-change-me'
+const CORS_ORIGINS = String(process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean)
+
+function originAllowed(origin) {
+  if (!origin) return false
+  if (!CORS_ORIGINS.length || CORS_ORIGINS.includes('*')) return true
+  return CORS_ORIGINS.includes(origin)
+}
+
 app.use((req, res, next) => {
   const origin = req.headers.origin
-  if (origin) {
+  if (origin && originAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Access-Control-Allow-Credentials', 'true')
-  } else {
+  } else if (!origin) {
     res.setHeader('Access-Control-Allow-Origin', '*')
   }
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key')
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS')
   res.setHeader('Vary', 'Origin')
-  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  if (req.method === 'OPTIONS') return res.sendStatus(origin && !originAllowed(origin) ? 403 : 204)
   next()
 })
 app.use(express.json())
@@ -139,7 +150,7 @@ function publicUser(user) {
     country: user.country || 'India',
     city: user.city || '',
     secretQuestion: user.secretQuestion || '',
-    secretAnswer: user.secretAnswer || '',
+    hasSecretAnswer: Boolean(user.secretAnswer),
     stopped: Boolean(user.stopped),
     banned: Boolean(user.banned),
     deleted: Boolean(user.deleted),
@@ -194,10 +205,11 @@ function admin(req, res, next) {
         return next()
       }
     } catch {
-      return res.status(401).json({ error: 'Admin session expired. Sign in again.' })
+      if (!incomingAdminKey(req)) {
+        return res.status(401).json({ error: 'Admin session expired. Sign in again.' })
+      }
     }
   }
-  if (adminId) return res.status(401).json({ error: 'Admin sign-in required.' })
   const bearerUser = jwtUserFromReq(req)
   if (bearerUser && isSuperAdminUser(bearerUser) && !accountBlockReason(bearerUser)) {
     req.adminUser = bearerUser
@@ -210,13 +222,27 @@ function admin(req, res, next) {
     return next()
   }
   const allowlist = String(process.env.SUPER_ADMIN_EMAILS || process.env.SUPER_ADMIN_USER_IDS || '').trim()
-  if (!envKey && !allowlist) {
-    return res.status(503).json({ error: 'Set SUPER_ADMIN_EMAILS or ADMIN_KEY on Render, then redeploy.' })
+  if (!adminId && !envKey && !allowlist) {
+    return res.status(503).json({ error: 'Set ADMIN_ID, SUPER_ADMIN_EMAILS, or ADMIN_KEY on Render, then redeploy.' })
   }
   if (bearerUser && !isSuperAdminUser(bearerUser)) {
     return res.status(403).json({ error: 'Ordinary accounts cannot open Super Admin.' })
   }
-  return res.status(401).json({ error: 'Sign in with a Super Admin account, or paste ADMIN_KEY.' })
+  return res.status(401).json({ error: 'Sign in with Super Admin, or use ADMIN_KEY.' })
+}
+
+function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization || ''
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null
+  if (!token) return next()
+  try {
+    const payload = jwt.verify(token, JWT_SECRET)
+    const user = users.get(payload.id)
+    if (user && !accountBlockReason(user)) req.user = user
+  } catch {
+    /* anonymous launch still allowed for demo */
+  }
+  next()
 }
 
 function findUsers(q) {
@@ -310,11 +336,13 @@ app.get('/api/games', async (req, res) => {
   res.json({ games: cat ? lobby.filter((g) => g.cat === cat) : lobby })
 })
 
-app.post('/api/games/launch', async (req, res) => {
+app.post('/api/games/launch', optionalAuth, async (req, res) => {
   try {
+    const demo = req.body?.demo !== false
+    if (!demo && !req.user) return res.status(401).json({ error: 'Sign in required' })
     const launched = await launchAggregatorGame({
       gameId: req.body?.gameId || req.body?.id,
-      demo: req.body?.demo !== false,
+      demo,
       userToken: req.user?.playerId || req.user?.id,
       language: req.body?.language || 'en',
       returnUrl: req.body?.returnUrl,
@@ -436,9 +464,11 @@ app.post('/api/auth/login', async (req, res) => {
     email: method === 'email' ? email?.trim() : undefined,
     accountNumber: method === 'account' ? accountNumber?.trim() : undefined,
   })
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user?.passwordHash || typeof user.passwordHash !== 'string') {
     return res.status(401).json({ error: 'Invalid login details' })
   }
+  const passwordOk = await bcrypt.compare(password, user.passwordHash).catch(() => false)
+  if (!passwordOk) return res.status(401).json({ error: 'Invalid login details' })
   const blocked = accountBlockReason(user)
   if (blocked) return res.status(401).json({ error: blocked })
   res.json({ token: sign(user), user: publicUser(user) })
@@ -569,7 +599,7 @@ app.post('/api/payments/verify', auth, (req, res) => {
 app.post('/api/wallet/deposit', auth, async (req, res) => {
   try {
     const order = await createDepositOrder(req.user, req.body?.amount, req.body?.method)
-    res.json(order)
+    res.json({ ...order, credited: false, message: 'Razorpay order created. Wallet credits only after /api/payments/verify.' })
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not start deposit' })
   }

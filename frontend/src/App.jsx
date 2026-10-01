@@ -3,7 +3,7 @@ import { NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'rea
 import { useApp } from './store.jsx'
 import { api, sendOtp, verifyOtp } from './api.js'
 import { BillingPage, TelegramCashIn } from './BillingPages.jsx'
-import { OpsHealth, PresencePing, SuperAdmin } from './SuperAdmin.jsx'
+import { PresencePing, SuperAdmin } from './SuperAdmin.jsx'
 import { PayLogo } from './PayLogo.jsx'
 import { PersonalData } from './PersonalData.jsx'
 import { ProfileHub } from './ProfileHub.jsx'
@@ -1823,7 +1823,7 @@ function PromoArtwork({ type }) {
   }
   return (
     <div className={`promo-art promo-art-${type}`} aria-hidden="true">
-      <img src={`/images/promotions/${pictures[type] || pictures.wheel}`} alt="" loading="lazy" decoding="async" />
+      <img src={`${import.meta.env.BASE_URL}images/promotions/${pictures[type] || pictures.wheel}`} alt="" loading="lazy" decoding="async" />
     </div>
   )
 }
@@ -1946,8 +1946,8 @@ function MatchPage() {
   const { id } = useParams()
   const { addBet, betslip, catalogMatches: matches, catalogLoading, recordMatchView } = useApp()
   const [marketTab, setMarketTab] = useState('Popular')
-  const m = matches.find((x) => x.id === id) || matches[4]
-  const liveWinner = (m.markets || []).filter((mk) => mk.odd != null).map((mk) => ({ label: mk.label, odd: mk.odd }))
+  const m = matches.find((x) => x.id === id)
+  const liveWinner = (m?.markets || []).filter((mk) => mk.odd != null).map((mk) => ({ label: mk.label, odd: mk.odd }))
   const visibleMarkets = [
     ...(marketTab === 'Popular' && liveWinner.length ? [{ name: 'Match winner', categories: ['Popular'], rows: [liveWinner] }] : []),
     ...matchMarkets.filter((market) => market.categories?.includes(marketTab)),
@@ -1955,7 +1955,12 @@ function MatchPage() {
   useEffect(() => {
     if (m?.id) recordMatchView(m.id)
   }, [m?.id])
-  if (catalogLoading) return <div className="content-page"><SkeletonGrid count={4} /></div>
+  if (catalogLoading && !m) {
+    return <div className="content-page"><SkeletonGrid count={4} /></div>
+  }
+  if (!m) {
+    return <div className="content-page"><EmptyState icon="live" title="Match not found" detail="This fixture is not in the current catalog." action={{ to: '/live', label: 'All events' }} /></div>
+  }
   return (
     <div className="content-page">
       <PageIntro eyebrow={m.live ? 'LIVE MATCH' : 'MATCH CENTER'} title={`${m.home} vs ${m.away}`} description={`${m.league} · ${m.time}`} icon={sportIcon(m.sport)} stats={[{ label: 'Markets', value: matchMarkets.length }, { label: 'Status', value: m.live ? 'Live' : 'Upcoming' }]} action={{ to: '/live', label: 'All events' }} />
@@ -2174,6 +2179,7 @@ function Deposit({ type }) {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [tick, setTick] = useState(0)
+  const [payoutsOn, setPayoutsOn] = useState(true)
   const pay = PAY_METHODS.find((p) => p.id === method) || PAY_METHODS[0]
   const cash = Number(user?.balance || 0)
   const value = Number(amount)
@@ -2183,10 +2189,20 @@ function Deposit({ type }) {
   const overCash = withdrawing && Number.isFinite(value) && value > cash
   const quick = withdrawing ? [200, 500, 1000, 2000, 5000] : [100, 500, 1000, 2000, 5000, 10000]
 
+  useEffect(() => {
+    if (!withdrawing) return undefined
+    api('/api/billing/config').then((data) => setPayoutsOn(data.cashoutPayoutsEnabled !== false)).catch(() => {})
+    return undefined
+  }, [withdrawing])
+
   const submit = async () => {
     setMessage('')
     if (!loggedIn) {
       setAuthMode('login')
+      return
+    }
+    if (withdrawing && !payoutsOn) {
+      setMessage('Cash-out is paused right now.')
       return
     }
     if (!Number.isFinite(value) || value <= 0) {
@@ -2218,7 +2234,7 @@ function Deposit({ type }) {
           userId: user?.id,
           type: 'withdraw',
           method: pay.name,
-          amount: value / 10,
+          amount: value,
           status: 'PENDING · 12 hours',
           at: new Date().toISOString(),
         })
@@ -2325,8 +2341,9 @@ function Deposit({ type }) {
           <span>Fee</span><b>{pay.fee}</b>
           <span>{withdrawing ? 'ETA' : 'Credited'}</span><b>{withdrawing ? '12 hours' : pay.time}</b>
         </div>
-        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add |locked|not in-app/i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
-        <button className="btn btn-yellow btn-block" disabled={busy} onClick={submit}>
+        {withdrawing && !payoutsOn && <p className="hint is-bad">Cash-out is paused right now.</p>}
+        {message && <p className={`hint ${/fail|error|invalid|only|minimum|add |locked|not in-app|paused/i.test(message) ? 'is-bad' : 'is-ok'}`}>{message}</p>}
+        <button className="btn btn-yellow btn-block" disabled={busy || (withdrawing && !payoutsOn)} onClick={submit}>
           {busy ? 'Please wait…' : withdrawing ? 'Lock cash-out' : 'Pay with Razorpay'}
         </button>
         <p className="wallet-legal">By continuing you confirm you are 18+, the payment account is yours, and you have read the wallet notes below.</p>
@@ -2722,7 +2739,6 @@ export default function App() {
             <Route path="/account/verify" element={<PersonalData />} />
             <Route path="/account/personal-data" element={<PersonalData />} />
             <Route path="/account/settings" element={<More settings />} />
-            <Route path="/ops/health" element={<OpsHealth />} />
             <Route path="/ops/*" element={<SuperAdmin />} />
             <Route path="/vip" element={<Vip />} />
             <Route path="/faq" element={<Faq />} />
@@ -2731,6 +2747,7 @@ export default function App() {
             <Route path="/more" element={<More />} />
             <Route path="/about" element={<About />} />
             <Route path="/responsible-play" element={<ResponsiblePlay />} />
+            <Route path="*" element={<EmptyState icon="search" title="Page not found" detail="That address is not in the club." action={{ to: '/', label: 'Back to home' }} />} />
           </Routes>
           <Footer />
         </main>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { api } from './api.js'
+import { api, apiUrl } from './api.js'
 import { useApp } from './store.jsx'
 
 function inr(n) {
@@ -107,7 +107,7 @@ export function BillingPage() {
   }
 
   const download = async (id) => {
-    const res = await fetch(`/api/billing/receipts/${id}.pdf`, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(apiUrl(`/api/billing/receipts/${id}.pdf`), { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) throw new Error('Could not download PDF')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)

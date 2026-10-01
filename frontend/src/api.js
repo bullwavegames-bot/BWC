@@ -54,6 +54,10 @@ export async function loginWithPhoneOtp(phone, otp) {
   return data
 }
 
+export function apiUrl(path) {
+  return `${BASE}${path}`
+}
+
 export async function api(path, { method = 'GET', body, token } = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -88,7 +92,7 @@ export function mapAccount(data, extra = {}) {
     country: profile.country || extra.country || 'India',
     city: profile.city || extra.city || '',
     secretQuestion: profile.secretQuestion || extra.secretQuestion || '',
-    secretAnswer: profile.secretAnswer || extra.secretAnswer || '',
+    hasSecretAnswer: Boolean(profile.hasSecretAnswer ?? extra.hasSecretAnswer),
     stopped: Boolean(profile.stopped ?? extra.stopped),
     banned: Boolean(profile.banned ?? extra.banned),
     superAdmin: Boolean(profile.superAdmin ?? extra.superAdmin),

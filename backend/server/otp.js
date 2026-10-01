@@ -152,6 +152,12 @@ export async function verifyOtp(rawPhone, code, { consume = false } = {}) {
     return { ok: true, phone, verified: true }
   }
 
+  if (!cfg.apiKey) {
+    const err = new Error('MSG91 is not configured on the server.')
+    err.status = 503
+    throw err
+  }
+
   const verifyUrl = new URL('https://control.msg91.com/api/v5/otp/verify')
   verifyUrl.searchParams.set('mobile', phone)
   verifyUrl.searchParams.set('otp', otp)
