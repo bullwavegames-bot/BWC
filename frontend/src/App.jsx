@@ -454,7 +454,7 @@ function Sidebar() {
     { to: '/casino/tv-games', label: 'TV Games', icon: 'tv' },
   ]
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Sports and account navigation" tabIndex={0}>
       <button className="sidebar-search" type="button" onClick={() => setSearchOpen(true)}><Icon name="search" size={16} /><span>Search sports</span></button>
       <NavLink to="/" end className={({ isActive }) => `side-item side-home ${isActive ? 'active' : ''}`}><span className="dot"><Icon name="home" size={19} /></span>Home</NavLink>
       <p className="side-group">Club</p>

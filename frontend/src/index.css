@@ -2726,13 +2726,21 @@ html[data-theme="light"] .pdata-select { background: #f4f7fb; color: #142237; }
 
 @media (min-width: 901px) {
   .sidebar {
-    position: relative;
-    top: auto;
-    align-self: stretch;
-    height: auto;
-    min-height: 100%;
-    overflow: visible;
+    position: sticky;
+    top: calc(var(--header-h) + var(--ticker-h));
+    align-self: start;
+    height: calc(100dvh - var(--header-h) - var(--ticker-h));
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) var(--panel);
+    scrollbar-gutter: stable;
   }
+  .sidebar::-webkit-scrollbar { width: 8px; }
+  .sidebar::-webkit-scrollbar-track { background: var(--panel); }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--muted); border: 2px solid var(--panel); border-radius: 4px; }
 }
 
 .odd b { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
